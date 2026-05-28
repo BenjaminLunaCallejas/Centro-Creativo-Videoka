@@ -13,20 +13,18 @@
         .task-done { text-decoration: line-through; opacity: 0.6; }
 
         textarea {
-    min-height: 100px; /* Asegura que siempre tengan un tamaño visible decente */
-    resize: vertical !important; /* Fuerza estrictamente la dirección vertical */
-            max-width: 100% !important; /* Evita que la caja rompa el diseño a lo ancho */
-            word-wrap: break-word; /* Obliga al texto largo a saltar a la siguiente línea */
+            min-height: 100px;
+            resize: vertical !important;
+            max-width: 100% !important;
+            word-wrap: break-word;
         }
         
-        /* Estética de scroll */
         .custom-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
         .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* Calendario */
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(120px, 1fr)); gap: 1px; background-color: #e2e8f0; border: 1px solid #e2e8f0; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(100px, 1fr)); gap: 1px; background-color: #e2e8f0; border: 1px solid #e2e8f0; }
         .calendar-day { background-color: white; min-height: 120px; padding: 0.5rem; overflow-y: auto; }
         .calendar-day.today { background-color: #f0f7ff; border: 2px solid #6366f1; }
         .content-item { font-size: 0.7rem; padding: 4px; margin-bottom: 3px; border-radius: 4px; background: #eef2ff; border-left: 3px solid #6366f1; cursor: pointer; transition: all 0.2s; position: relative; }
@@ -34,29 +32,28 @@
         .edit-mini-btn { position: absolute; right: 2px; top: 2px; opacity: 0; transition: opacity 0.2s; }
         .content-item:hover .edit-mini-btn { opacity: 1; }
 
-       /* --- Ajuste Columnas Notas y Blog de Notas (Estilo Trello Perfeccionado) --- */
         #notas .flex.gap-6, #blog_notas .flex.gap-6 {
             min-width: max-content !important; 
-            align-items: stretch !important; /* Fuerza a que todas midan lo mismo de alto */
+            align-items: stretch !important;
             display: flex !important;
             padding-bottom: 1rem;
         }
         #notas .flex.gap-6 > div, #blog_notas .flex.gap-6 > div {
-            flex: 0 0 290px !important; /* Ancho rígido por columna */
-            background-color: #f1f5f9 !important; /* Fondo gris de tablero */
+            flex: 0 0 290px !important;
+            background-color: #f1f5f9 !important;
             border: 1px solid #e2e8f0 !important;
             border-radius: 0.75rem !important;
-            min-height: 520px !important; /* Altura mínima idéntica para todas */
+            min-height: 520px !important;
             display: flex !important;
             flex-direction: column !important;
         }
         #notas ul, #blog_notas ul {
-            flex-grow: 1 !important; /* Permite soltar elementos en zonas vacías */
+            flex-grow: 1 !important;
             min-height: 250px !important;
         }
         #notas ul li, #blog_notas ul li {
             max-width: 100% !important;
-            background-color: #ffffff !important; /* Tarjetas blancas */
+            background-color: #ffffff !important;
             border: 1px solid #e2e8f0 !important;
             border-radius: 0.5rem !important;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
@@ -72,12 +69,122 @@
             display: block !important;
         }
 
-        /* Modal */
         #modalOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
         .modal-card { background: white; width: 90%; max-width: 650px; border-radius: 12px; padding: 2rem; position: relative; max-height: 90vh; overflow-y: auto; }
     </style>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1feaolyJTUyUOYSvwf4qGMrDKSx-rEmw",
+            authDomain: "centro-creativo-videoka.firebaseapp.com",
+            projectId: "centro-creativo-videoka",
+            storageBucket: "centro-creativo-videoka.firebasestorage.app",
+            messagingSenderId: "932471930746",
+            appId: "1:932471930746:web:36b89e4b41afe144e960c3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        window.currentUserUID = null;
+
+        // Autenticación
+        window.iniciarSesionGoogle = () => {
+            signInWithPopup(auth, provider).catch(error => console.error("Error Auth:", error));
+        };
+        window.cerrarSesion = () => signOut(auth).then(() => window.location.reload());
+
+        // Motor de Respaldo a Firestore
+        let syncTimeout = null;
+        window.syncToCloud = async () => {
+            if (!window.currentUserUID) return;
+            const fullData = {
+                contentIdeas: localStorage.getItem('contentIdeas'),
+                ejesTags: localStorage.getItem('ejesTags'),
+                contentTasks: localStorage.getItem('contentTasks'),
+                blocNotasTasks: localStorage.getItem('blocNotasTasks'),
+                historyTasks: localStorage.getItem('historyTasks'),
+                historyNotas: localStorage.getItem('historyNotas'),
+                tablaIAGuardada: localStorage.getItem('tablaIAGuardada'),
+                temaCentral: localStorage.getItem('temaCentral'),
+                descCreador: localStorage.getItem('descCreador'),
+                identidadTono: localStorage.getItem('identidadTono'),
+                nichoContenido: localStorage.getItem('nichoContenido'),
+                publicoObjetivo: localStorage.getItem('publicoObjetivo'),
+                strat_awareness: localStorage.getItem('strat_awareness'),
+                strat_consideracion: localStorage.getItem('strat_consideracion'),
+                strat_conversion: localStorage.getItem('strat_conversion'),
+                strat_fidelizacion: localStorage.getItem('strat_fidelizacion'),
+                arquetiposSeleccionados: localStorage.getItem('arquetiposSeleccionados')
+            };
+            for(let i=1; i<=3; i++) {
+                fullData[`starFormat${i}_name`] = localStorage.getItem(`starFormat${i}_name`);
+                fullData[`starFormat${i}_desc`] = localStorage.getItem(`starFormat${i}_desc`);
+            }
+            try {
+                await setDoc(doc(db, "videoka_planner", window.currentUserUID), fullData);
+            } catch (e) { console.error("Error guardando:", e); }
+        };
+
+        // Interceptor: Captura cualquier guardado en localStorage y lo empuja a la nube
+        const originalSetItem = localStorage.setItem;
+        localStorage.setItem = function(key, value) {
+            originalSetItem.apply(this, arguments);
+            if (syncTimeout) clearTimeout(syncTimeout);
+            syncTimeout = setTimeout(window.syncToCloud, 1000); // Espera 1 seg antes de respaldar masivamente
+        };
+
+        // Escucha de Estado de Sesión
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                window.currentUserUID = user.uid;
+                document.getElementById('loginScreen').style.display = 'none';
+                
+                // Actualiza Perfil UI
+                const pics = document.querySelectorAll('.user-pic');
+                pics.forEach(p => { p.src = user.photoURL; p.classList.remove('hidden'); });
+                const name = document.getElementById('userNameDesktop');
+                if(name) name.innerText = user.displayName;
+
+                // Hidratación de Datos
+                const docSnap = await getDoc(doc(db, "videoka_planner", user.uid));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    localStorage.clear(); // Limpia datos de sesiones previas
+                    for (const [key, value] of Object.entries(data)) {
+                        if (value !== null && value !== undefined) {
+                            originalSetItem.call(localStorage, key, value);
+                        }
+                    }
+                } else {
+                    window.syncToCloud(); // Si es nuevo en la nube, sube su localStorage actual
+                }
+                
+                // Inicia la App
+                if(typeof window.initAppState === 'function') window.initAppState();
+            } else {
+                document.getElementById('loginScreen').style.display = 'flex';
+                window.currentUserUID = null;
+            }
+        });
+    </script>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased">
+
+    <div id="loginScreen" class="fixed inset-0 bg-slate-900 z-[2000] flex flex-col items-center justify-center text-white">
+        <h1 class="text-4xl font-bold text-indigo-400 mb-6 text-center">Centro Creativo<br>Videoka</h1>
+        <p class="mb-8 text-slate-300 text-center max-w-md px-4">Inicia sesión para sincronizar tu planificador estratégico de contenido en la nube segura de Firebase.</p>
+        <button onclick="iniciarSesionGoogle()" class="bg-white text-slate-900 px-6 py-3 rounded-lg font-bold hover:bg-gray-200 transition shadow-lg flex items-center gap-3">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6" alt="Google">
+            Continuar con Google
+        </button>
+    </div>
 
     <div id="modalOverlay" onclick="closeModal(event)">
         <div class="modal-card shadow-2xl custom-scroll" onclick="event.stopPropagation()">
@@ -86,25 +193,38 @@
         </div>
     </div>
 
-    <div class="flex h-screen overflow-hidden">
-        <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-lg">
-            <div class="p-6">
-                <h1 class="text-2xl font-bold tracking-wider text-indigo-400">Centro Creativo<br>Videoka</h1>
+    <div class="flex flex-col md:flex-row h-screen overflow-hidden">
+        
+        <aside class="w-full md:w-64 bg-slate-900 text-white flex flex-col shadow-lg flex-shrink-0 z-20">
+            <div class="p-4 md:p-6 flex justify-between items-center">
+                <h1 class="text-xl md:text-2xl font-bold tracking-wider text-indigo-400">Centro Creativo<br class="hidden md:block">Videoka</h1>
+                <div class="md:hidden flex items-center gap-2">
+                    <img class="user-pic w-8 h-8 rounded-full hidden" src="" alt="Perfil">
+                    <button onclick="cerrarSesion()" class="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded">Salir</button>
+                </div>
             </div>
-            <nav class="flex-1 px-4 space-y-2">
-                <button onclick="switchTab('estrategia')" class="w-full text-left px-4 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition" id="btn-estrategia">1. Estrategia y Marca</button>
-                <button onclick="switchTab('notas')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-notas">2. Ideas y Tendencias</button>
-                <button onclick="switchTab('estrategia_resumen')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-estrategia_resumen">3. Estrategia de Contenido</button>
-                <button onclick="switchTab('ideas')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-ideas">4. Repositorio y Guiones</button>
-                <button onclick="switchTab('planificador')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-planificador">5. Planificador</button>
-                <!-- NUEVA PESTAÑA 6 -->
-               <button onclick="switchTab('blog_notas')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-blog_notas">6. Blog de Notas</button>
+            
+            <nav class="flex md:flex-col overflow-x-auto md:overflow-visible px-4 pb-4 md:pb-0 space-x-2 md:space-x-0 md:space-y-2 custom-scroll flex-1">
+                <button onclick="switchTab('estrategia')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition" id="btn-estrategia">1. Estrategia y Marca</button>
+                <button onclick="switchTab('notas')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-notas">2. Ideas y Tendencias</button>
+                <button onclick="switchTab('estrategia_resumen')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-estrategia_resumen">3. Estrategia de Contenido</button>
+                <button onclick="switchTab('ideas')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-ideas">4. Repositorio y Guiones</button>
+                <button onclick="switchTab('planificador')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-planificador">5. Planificador</button>
+                <button onclick="switchTab('blog_notas')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-blog_notas">6. Blog de Notas</button>
             </nav>
+
+            <div class="hidden md:flex p-4 border-t border-slate-700 items-center justify-between">
+                <div class="flex items-center gap-2 overflow-hidden">
+                    <img class="user-pic w-8 h-8 rounded-full hidden" src="" alt="Perfil">
+                    <span id="userNameDesktop" class="text-xs truncate text-slate-300"></span>
+                </div>
+                <button onclick="cerrarSesion()" class="text-xs bg-red-500/20 text-red-400 hover:bg-red-500/40 px-3 py-2 rounded transition">Salir</button>
+            </div>
         </aside>
 
-        <main class="flex-1 overflow-y-auto p-8 custom-scroll">
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 custom-scroll">
             
-            <section id="estrategia" class="tab-content active max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+            <section id="estrategia" class="tab-content active max-w-4xl mx-auto bg-white p-4 md:p-8 rounded-xl shadow-sm border border-gray-100">
                 <h2 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Identidad y Estrategia Central</h2>
                 
                 <div class="grid grid-cols-1 gap-6 mb-6">
@@ -158,14 +278,14 @@
 
                           <div>
                         <label class="block text-sm font-semibold text-gray-600 mb-2">Personalidad basada en Arquetipos (Selecciona máximo 2 para evitar dilución de mensaje)</label>
-                        <div id="arquetiposContainer" class="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 border rounded-lg bg-gray-50 max-h-64 overflow-y-auto custom-scroll"></div>
+                        <div id="arquetiposContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-4 border rounded-lg bg-gray-50 max-h-64 overflow-y-auto custom-scroll"></div>
                         <div id="arquetipoDescripcion" class="mt-4 p-5 bg-indigo-50 border-l-4 border-indigo-500 text-sm text-indigo-900 hidden"></div>
                     </div>
                 </div>
 
                     <div class="border-t pt-4 mt-4">
                         <label class="block text-sm font-semibold text-gray-600 mb-1">Identidad y Tono de Comunicación</label>
-                        <p class="text-xs text-gray-500 mb-2">Define la identidad de tu marca (personalidad basada en arquetipos, propósito, valor diferencial), tu tono de voz, y el estilo de tu comunicación. <br><span class="font-medium">Ejemplo:</span> <em>Mi personalidad mezcla los arquetipos de “El Sabio” y “El Bufón”. Mi propósito es despertar curiosidad y motivar a las personas a aprender mientras se entretienen. Mi valor diferencial es combinar ciencia y humor, haciendo que conceptos complejos se vuelvan virales y accesibles.Tono académico pero accesible, uso lenguaje científico intercalado con referencias de la cultura pop, evito el sarcasmo, ritmo rápido y directo.</em></p>
+                        <p class="text-xs text-gray-500 mb-2">Define la identidad de tu marca, tu tono de voz, y el estilo de tu comunicación. <br><span class="font-medium">Ejemplo:</span> <em>Mi personalidad mezcla los arquetipos de “El Sabio” y “El Bufón”. Tono académico pero accesible, uso lenguaje científico intercalado con referencias de la cultura pop, ritmo rápido y directo.</em></p>
                         <textarea id="identidadTono" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Mi tono es inspirador, riguroso y disruptivo..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll"></textarea>
                     </div>
                     
@@ -195,7 +315,7 @@
                     </div>
                 </div>
 
-                <button onclick="guardarEstrategia()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition">Guardar Toda la Estrategia</button>
+                <button onclick="guardarEstrategia()" class="w-full md:w-auto bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition">Guardar Toda la Estrategia</button>
                 <span id="estrategia-msg" class="ml-4 text-green-600 font-semibold hidden">¡Configuración guardada!</span>
             </section>
             
@@ -204,7 +324,7 @@
     
     <div class="mb-6 p-4 bg-indigo-50 border-l-4 border-indigo-600 rounded-r-lg shadow-sm">
         <p class="text-xs text-indigo-800 leading-relaxed text-justify">
-            <strong>Instrucciones:</strong> Registre los datos correspondientes en cada columna... (tu texto de instrucciones)
+            <strong>Instrucciones:</strong> Registre los datos correspondientes en cada columna para organizar la ideación.
         </p>
     </div>
 
@@ -253,13 +373,11 @@
     </div>
 </section>
 
-            <!-- PESTAÑA 3 REUBICADA: ESTRATEGIA DE CONTENIDO -->
-            <section id="estrategia_resumen" class="tab-content max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+            <section id="estrategia_resumen" class="tab-content max-w-4xl mx-auto bg-white p-4 md:p-8 rounded-xl shadow-sm border border-gray-100">
                 <h2 class="text-3xl font-bold mb-6 text-indigo-900 border-b pb-2">Estrategia de Contenido Resumida</h2>
                 
                 <div id="resumenContent" class="space-y-6">
-                    <!-- Aquí se genera dinámicamente el resumen -->
-                </div>
+                    </div>
 <div class="mt-8 border-t pt-6 bg-indigo-50/30 p-6 rounded-xl border border-indigo-100">
     <h3 class="text-xl font-bold mb-2 text-indigo-800 flex items-center gap-2">⭐ Formatos Estrella</h3>
     <p class="text-xs text-gray-500 mb-4 italic">Define hasta 3 formatos ganadores para que la IA los considere en el calendario.</p>
@@ -283,17 +401,16 @@
                     <h3 class="text-xl font-bold mb-4 text-gray-800">AI Prompt Generator</h3>
                     <p class="text-sm text-gray-500 mb-4">Copia este prompt para usarlo en ChatGPT, Claude o Gemini y generar tu calendario de 30 días.</p>
                     <div class="relative">
-                        <textarea id="aiPromptArea" rows="12" class="w-full p-4 bg-slate-900 text-indigo-200 font-mono text-xs rounded-lg border border-slate-700 leading-relaxed" readonly></textarea>
+                        <textarea id="aiPromptArea" rows="12" class="w-full p-4 bg-slate-900 text-indigo-200 font-mono text-xs rounded-lg border border-slate-700 leading-relaxed custom-scroll" readonly></textarea>
                         <button onclick="copyPrompt()" class="absolute top-2 right-2 bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-500 transition">Copiar Prompt</button>
                     </div>
                 </div>
-                <!-- NUEVO MÓDULO: TABLA DINÁMICA DEL CALENDARIO GENERADO -->
-               <div class="mt-8 border-t-2 border-indigo-200 pt-6">
+                <div class="mt-8 border-t-2 border-indigo-200 pt-6">
                     <h3 class="text-xl font-bold mb-4 text-indigo-900">📥 Importar y Ejecutar Calendario de IA</h3>
                     <p class="text-sm text-gray-500 mb-4">Pega en este cuadro la tabla generada por tu IA. Luego haz clic en "Generar y Guardar Tabla" para procesarla y almacenarla de forma persistente.</p>
                     <textarea id="tablaIAPaste" rows="4" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 text-xs custom-scroll bg-indigo-50/20" placeholder="Pega tu tabla aquí (Asegúrate de copiar los datos desde la fila de encabezados)..."></textarea>
                     
-                   <button onclick="guardarYProcesarTabla()" class="mt-3 bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-md transition">
+                   <button onclick="guardarYProcesarTabla()" class="mt-3 w-full md:w-auto bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-md transition">
     Generar y Guardar Tabla
 </button>
                     <div id="calendarioTablaContainer" class="mt-6 hidden">
@@ -320,9 +437,8 @@
                 </div>
             </section>
 
-            <!-- PESTAÑA 4 REUBICADA: REPOSITORIO Y GUIONES -->
             <section id="ideas" class="tab-content max-w-5xl mx-auto">
-                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 mb-8">
+                <div class="bg-white p-4 md:p-8 rounded-xl shadow-sm border border-gray-100 mb-8">
                     <h2 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Generador de Ideas y Guiones</h2>
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -426,23 +542,21 @@
         <option value="">Ninguno / Formato Libre</option>
     </select>
 </div>
-                    </div> <!-- CIERRE DEL GRID DE ARRIBA -->
+                    </div>
 
-                    <!-- GANCHO EXPANDIDO Y REUBICADO -->
                     <div class="mb-6">
                         <label class="block text-sm font-semibold text-indigo-600 mb-2">Idea de Gancho (HOOK)</label>
                         <textarea id="ideaHook" oninput="updateLivePrompt()" placeholder="Ej: ¿Sabías que...?" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50/30 custom-scroll" rows="3"></textarea>
                     </div>
 <div class="mb-6">
-    <label class="block text-sm font-semibold text-indigo-600 mb-2">Enlaces de Referencia (Información relevante) <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
-    <textarea id="ideaEnlaces" oninput="updateLivePrompt()" placeholder="Ej: https://ejemplo.com/articulo-cientifico (Deja vacío si no aplica)" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50/30 custom-scroll" rows="3"></textarea>
+    <label class="block text-sm font-semibold text-indigo-600 mb-2">Enlaces de Referencia <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
+    <textarea id="ideaEnlaces" oninput="updateLivePrompt()" placeholder="Ej: https://ejemplo.com (Deja vacío si no aplica)" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50/30 custom-scroll" rows="3"></textarea>
 </div>
 
 <div class="mb-6">
-    <label class="block text-sm font-semibold text-indigo-600 mb-2">Idea Inicial o Guion Base para el Video <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
-    <textarea id="ideaGuionBase" oninput="updateLivePrompt()" placeholder="Ej: Deseo explicar los 3 pilares del desarrollo celular... (Deja vacío si no aplica)" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50/30 custom-scroll" rows="3"></textarea>
+    <label class="block text-sm font-semibold text-indigo-600 mb-2">Idea Inicial o Guion Base <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
+    <textarea id="ideaGuionBase" oninput="updateLivePrompt()" placeholder="Ej: Deseo explicar los 3 pilares... (Deja vacío si no aplica)" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50/30 custom-scroll" rows="3"></textarea>
 </div>
-                    <!-- AI SCRIPT PROMPT REUBICADO -->
                     <div class="mb-8 border-t-2 border-dashed pt-6 bg-slate-50 p-6 rounded-xl">
                         <h3 class="text-sm font-bold text-indigo-900 mb-3 uppercase tracking-wider flex items-center gap-2">
                             ✨ AI SCRIPT PROMPT (Basado en tu selección)
@@ -454,11 +568,10 @@
                         <p class="text-[10px] text-slate-400 mt-2 italic">Este prompt se actualiza automáticamente según los selectores de arriba.</p>
                     </div>
 
-                    <!-- GUION Y DEMÁS ELEMENTOS -->
                     <div class="mb-4">
                         <label class="block text-sm font-semibold text-gray-600 mb-1">Guion</label>
                         <p class="text-[10px] text-gray-400 mb-2">💡 Estructura: [HOOK] -> [FRASE DE REFUERZO] -> [CUERPO] -> [CIERRE]</p>
-                        <textarea id="ideaGuion" rows="5" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Escribe aquí la estructura de tu guion..."></textarea>
+                        <textarea id="ideaGuion" rows="5" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" placeholder="Escribe aquí la estructura de tu guion..."></textarea>
                     </div>
 
                     <div class="mb-4 bg-slate-50 p-4 rounded-lg border border-slate-100">
@@ -466,7 +579,7 @@
                         <div class="text-[10px] text-indigo-500 mb-3 leading-tight">
                             🔑 <b>Copy Efectivo:</b> Resumir guion • Dato adicional relevante • Cero faltas de ortografía • Palabras clave SEO • CTA claro • Máx. 4 líneas.
                         </div>
-                        <textarea id="ideaCopy" rows="3" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Escribe el copy de la publicación..."></textarea>
+                        <textarea id="ideaCopy" rows="3" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" placeholder="Escribe el copy de la publicación..."></textarea>
                     </div>
 
                     <div class="mb-6">
@@ -475,7 +588,7 @@
                         <input type="text" id="ideaHashtags" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400" placeholder="#tag1 #tag2 #tag3 #tag4">
                     </div>
 
-                    <div class="flex gap-4">
+                    <div class="flex flex-col md:flex-row gap-4">
                         <button id="btnGuardarGuion" onclick="guardarIdea()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition flex-1">Guardar Guion Estructurado</button>
                         <button id="btnCancelarEdicion" onclick="cancelarEdicion()" class="bg-gray-200 text-gray-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition hidden">Cancelar</button>
                     </div>
@@ -484,9 +597,8 @@
                 <div id="listaIdeas" class="grid grid-cols-1 gap-4"></div>
             </section>
 
-            <!-- PESTAÑA 5 REUBICADA: PLANIFICADOR -->
             <section id="planificador" class="tab-content max-w-6xl mx-auto">
-                <div class="flex justify-between items-center mb-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <div class="flex flex-col">
                         <h2 class="text-3xl font-bold text-gray-800">Planificador Cronológico</h2>
                         <p id="calendarHeader" class="text-sm text-indigo-600 font-bold uppercase mt-1"></p>
@@ -503,7 +615,6 @@
                 </div>
             </section>
 
-            <!-- NUEVA PESTAÑA 6: BLOG DE NOTAS -->
             <section id="blog_notas" class="tab-content w-full">
                 <h2 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Blog de Notas Aislado</h2>
                 <div class="overflow-x-auto pb-4 custom-scroll">
@@ -585,53 +696,40 @@
             "El Amigo": { adjetivo: "cercana, realista y confiable", contenido: "el 'día a día' sin filtros, charlas tipo podcast relajado y confesiones de errores comunes" }
         };
 
-        let ideas = JSON.parse(localStorage.getItem('contentIdeas')) || [];
-        let ejesTags = JSON.parse(localStorage.getItem('ejesTags')) || [];
-        let tasks = JSON.parse(localStorage.getItem('contentTasks')) || { ideas: [], audios: [], tendencias: [], proximos: [] };
-        
-        // --- FUNCIÓN NUEVA: CONVIERTE TEXTO EN ENLACES CLICKEABLES ---
+        // Variables de estado (Se inicializan vacías, se llenan en initAppState)
+        let ideas = [];
+        let ejesTags = [];
+        let tasks = { ideas: [], audios: [], tendencias: [], proximos: [] };
+        let blocNotas = { rapidas: [], borradores: [], recursos: [], personales: [] };
+        let historyTasks = [];
+        let historyNotas = [];
+        let tablaIAParsed = [];
+        let editandoId = null;
+
         function linkify(text) {
             const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/g;
             return text.replace(urlRegex, function(url) {
                 let href = url;
-                if (!href.match('^https?:\/\/')) {
-                    href = 'http://' + href;
-                }
-                // event.stopPropagation() es la clave: evita que el clic en el enlace active el tachado
+                if (!href.match('^https?:\/\/')) href = 'http://' + href;
                 return `<a href="${href}" target="_blank" onclick="event.stopPropagation()" class="text-indigo-500 hover:text-indigo-700 underline font-bold">${url}</a>`;
             });
         }
-        // ESTADO INDEPENDIENTE PARA EL BLOG DE NOTAS
-        let blocNotas = JSON.parse(localStorage.getItem('blocNotasTasks')) || { rapidas: [], borradores: [], recursos: [], personales: [] };
-        
-        let editandoId = null;
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('aside button').forEach(btn => btn.classList.remove('bg-slate-800'));
-            document.getElementById(tabId).classList.add('active');
-
+            
             const target = document.getElementById(tabId);
-    target.classList.add('active');
+            target.classList.add('active');
             autoResizeTextareas();
             
-            // Si no es el blog de notas, aplicamos el fondo estándar. Si es el blog de notas, mantenemos la coherencia de UI.
-            if(tabId !== 'blog_notas') {
-                document.getElementById('btn-' + tabId).classList.add('bg-slate-800');
-            } else {
-                document.getElementById('btn-' + tabId).classList.add('bg-slate-800');
-            }
+            document.getElementById('btn-' + tabId).classList.add('bg-slate-800');
             
             if(tabId === 'planificador') renderCalendario('mes');
             if(tabId === 'estrategia_resumen') renderEstrategiaResumen();
             if(tabId === 'ideas') actualizarSelectFormatosEstrella();
         }
         
-// Agrega esto debajo de let tasks y let blocNotas
-let historyTasks = JSON.parse(localStorage.getItem('historyTasks')) || [];
-let historyNotas = JSON.parse(localStorage.getItem('historyNotas')) || [];
-        
-        // ESTRATEGIA & ARQUETIPOS
         function initArquetipos() {
             const container = document.getElementById('arquetiposContainer');
             const seleccionados = JSON.parse(localStorage.getItem('arquetiposSeleccionados')) || [];
@@ -665,7 +763,7 @@ let historyNotas = JSON.parse(localStorage.getItem('historyNotas')) || [];
                         </div>`;
                 } else {
                     descBox.innerHTML = `<div class="text-amber-600 font-bold">⚠️ Atención: Has seleccionado ${selected.length} arquetipos.</div>
-                                         <p class="text-xs">Para mantener una identidad clara y no confundir a tu audiencia, se recomienda elegir máximo 2. Seleccionar demasiados diluye tu autoridad y personalidad.</p>`;
+                                         <p class="text-xs">Para mantener una identidad clara y no confundir a tu audiencia, se recomienda elegir máximo 2.</p>`;
                 }
             } else descBox.classList.add('hidden');
             localStorage.setItem('arquetiposSeleccionados', JSON.stringify(selected));
@@ -678,12 +776,13 @@ let historyNotas = JSON.parse(localStorage.getItem('historyNotas')) || [];
             setTimeout(() => status.style.opacity = 0, 2000);
         }
 
-function saveStrategyExtras() {
+        function saveStrategyExtras() {
             localStorage.setItem('nichoContenido', document.getElementById('nichoContenido').value);
             localStorage.setItem('publicoObjetivo', document.getElementById('publicoObjetivo').value);
             localStorage.setItem('descCreador', document.getElementById('descCreador').value);
-            localStorage.setItem('identidadTono', document.getElementById('identidadTono').value); // LÍNEA AÑADIDA
+            localStorage.setItem('identidadTono', document.getElementById('identidadTono').value);
         }
+
         function saveFunnel() {
             localStorage.setItem('strat_awareness', document.getElementById('strat_awareness').value);
             localStorage.setItem('strat_consideracion', document.getElementById('strat_consideracion').value);
@@ -699,14 +798,15 @@ function saveStrategyExtras() {
             msg.classList.remove('hidden');
             setTimeout(() => msg.classList.add('hidden'), 3000);
         }
-function saveStarFormats() {
-    for(let i=1; i<=3; i++) {
-        localStorage.setItem(`starFormat${i}_name`, document.getElementById(`starFormat${i}_name`).value);
-        localStorage.setItem(`starFormat${i}_desc`, document.getElementById(`starFormat${i}_desc`).value);
-    }
-    renderEstrategiaResumen(); // Esto actualiza el prompt en tiempo real
-}
-        // TAGS
+
+        function saveStarFormats() {
+            for(let i=1; i<=3; i++) {
+                localStorage.setItem(`starFormat${i}_name`, document.getElementById(`starFormat${i}_name`).value);
+                localStorage.setItem(`starFormat${i}_desc`, document.getElementById(`starFormat${i}_desc`).value);
+            }
+            renderEstrategiaResumen();
+        }
+
         function setupTagsInput(inputId, listId, arrayVar, storageKey) {
             const input = document.getElementById(inputId);
             input.addEventListener('keypress', (e) => {
@@ -732,7 +832,6 @@ function saveStarFormats() {
             renderTags(listId, ejesTags, storageKey);
         }
 
-        // TAREAS (PESTAÑA 2 ORIGINAL)
         function addTask(cat) {
             const input = document.getElementById(`inputTarea_${cat}`);
             if(!input.value.trim()) return;
@@ -742,26 +841,25 @@ function saveStarFormats() {
             localStorage.setItem('contentTasks', JSON.stringify(tasks));
         }
 
- function renderTasks() {
+        function renderTasks() {
             ['ideas', 'audios', 'tendencias', 'proximos'].forEach(cat => {
                 const list = document.getElementById(`lista_${cat}`);
                 if (!list) return;
-                if (!tasks[cat]) tasks[cat] = []; // Evita el error silencioso de lectura
+                if (!tasks[cat]) tasks[cat] = [];
                 list.innerHTML = '';
                 tasks[cat].forEach((t, i) => {
                     list.innerHTML += `<li draggable="true" ondragstart="dragTask(event, '${cat}', ${i})" class="flex justify-between items-start p-2 bg-slate-50 rounded border hover:bg-white transition cursor-default">
                         <span onclick="tasks['${cat}'][${i}].done = !tasks['${cat}'][${i}].done; renderTasks();" class="flex-1 ${t.done ? 'task-done' : ''}">${linkify(t.text)}</span>
                         <div class="flex gap-2 ml-2 shrink-0">
-                            <button onclick="copyTaskText('${cat}', ${i})" class="text-emerald-500 hover:text-emerald-700 font-bold" title="Copiar al portapapeles">📋</button>
-                            <button onclick="editTask('${cat}', ${i})" class="text-indigo-400 hover:text-indigo-600 font-bold" title="Editar nota">✏️</button>
-                            <button onclick="archiveTask('${cat}', ${i})" class="text-red-400 font-bold hover:text-red-600" title="Eliminar / Archivar nota">×</button>
+                            <button onclick="copyTaskText('${cat}', ${i})" class="text-emerald-500 hover:text-emerald-700 font-bold" title="Copiar">📋</button>
+                            <button onclick="editTask('${cat}', ${i})" class="text-indigo-400 hover:text-indigo-600 font-bold" title="Editar">✏️</button>
+                            <button onclick="archiveTask('${cat}', ${i})" class="text-red-400 font-bold hover:text-red-600" title="Eliminar">×</button>
                         </div>
                     </li>`;
                 });
             });
         }
 
-        // LÓGICA AISLADA PARA BLOG DE NOTAS (PESTAÑA 6)
         function addNota(cat) {
             const input = document.getElementById(`inputNota_${cat}`);
             if(!input.value.trim()) return;
@@ -771,19 +869,19 @@ function saveStarFormats() {
             localStorage.setItem('blocNotasTasks', JSON.stringify(blocNotas));
         }
 
-      function renderNotas() {
+        function renderNotas() {
             ['rapidas', 'borradores', 'recursos', 'personales'].forEach(cat => {
                 const list = document.getElementById(`lista_${cat}`);
                 if (!list) return;
-                if (!blocNotas[cat]) blocNotas[cat] = []; // Evita el error silencioso de lectura
+                if (!blocNotas[cat]) blocNotas[cat] = [];
                 list.innerHTML = '';
                 blocNotas[cat].forEach((t, i) => {
                     list.innerHTML += `<li draggable="true" ondragstart="dragNota(event, '${cat}', ${i})" class="flex justify-between items-start p-2 bg-slate-50 rounded border hover:bg-white transition cursor-default">
                         <span onclick="blocNotas['${cat}'][${i}].done = !blocNotas['${cat}'][${i}].done; renderNotas();" class="flex-1 ${t.done ? 'task-done' : ''}">${linkify(t.text)}</span>
                         <div class="flex gap-2 ml-2 shrink-0">
-                            <button onclick="copyNotaText('${cat}', ${i})" class="text-emerald-500 hover:text-emerald-700 font-bold" title="Copiar al portapapeles">📋</button>
-                            <button onclick="editNota('${cat}', ${i})" class="text-indigo-400 hover:text-indigo-600 font-bold" title="Editar nota">✏️</button>
-                            <button onclick="archiveNota('${cat}', ${i})" class="text-red-400 font-bold hover:text-red-600" title="Eliminar / Archivar nota">×</button>
+                            <button onclick="copyNotaText('${cat}', ${i})" class="text-emerald-500 hover:text-emerald-700 font-bold" title="Copiar">📋</button>
+                            <button onclick="editNota('${cat}', ${i})" class="text-indigo-400 hover:text-indigo-600 font-bold" title="Editar">✏️</button>
+                            <button onclick="archiveNota('${cat}', ${i})" class="text-red-400 font-bold hover:text-red-600" title="Eliminar">×</button>
                         </div>
                     </li>`;
                 });
@@ -801,15 +899,11 @@ function saveStarFormats() {
         }
 
         function copyNotaText(cat, index) {
-            const textoNota = blocNotas[cat][index].text;
-            navigator.clipboard.writeText(textoNota).then(() => {
+            navigator.clipboard.writeText(blocNotas[cat][index].text).then(() => {
                 alert('¡Anotación copiada al portapapeles!');
-            }).catch(err => {
-                console.error('Error al intentar copiar el texto: ', err);
-            });
+            }).catch(err => console.error('Error al intentar copiar:', err));
         }
 
-       // SINCRO DINÁMICA DE OPCIONES PARA FORMATOS ESTRELLA
         function actualizarSelectFormatosEstrella() {
             const select = document.getElementById('ideaStarFormat');
             if (!select) return;
@@ -828,7 +922,6 @@ function saveStarFormats() {
             select.value = valorActual;
         }
 
-        // REPOSITORIO
         function guardarIdea() {
             const titulo = document.getElementById('ideaTitulo').value;
             if(!titulo) return alert('Título requerido');
@@ -901,10 +994,9 @@ function saveStarFormats() {
             editandoId = null;
             document.getElementById('btnGuardarGuion').innerText = "Guardar Guion Estructurado";
             document.getElementById('btnCancelarEdicion').classList.add('hidden');
-           ['ideaTitulo','ideaGuion','ideaCopy','ideaHashtags','ideaFecha','ideaHora', 'ideaHook', 'ideaEnlaces', 'ideaGuionBase', 'ideaStarFormat'].forEach(id => document.getElementById(id).value = '');
-    updateLivePrompt();
-    
-}
+            ['ideaTitulo','ideaGuion','ideaCopy','ideaHashtags','ideaFecha','ideaHora', 'ideaHook', 'ideaEnlaces', 'ideaGuionBase', 'ideaStarFormat'].forEach(id => document.getElementById(id).value = '');
+            updateLivePrompt();
+        }
 
         function renderIdeas() {
             const container = document.getElementById('listaIdeas');
@@ -973,7 +1065,7 @@ function saveStarFormats() {
                 container.innerHTML = html;
             } else if (vista === 'semana') {
                 header.innerText = `Semana del 4 al 10 de Mayo`;
-                let html = '<div class="flex gap-2 p-4">';
+                let html = '<div class="flex gap-2 p-4 min-w-max">';
                 let lunesRef = new Date(2026, 4, 4);
 
                 for(let i=0; i<7; i++) {
@@ -1001,7 +1093,7 @@ function saveStarFormats() {
                 header.innerText = `Vista Diaria`;
                 let hoyISO = dActual.toISOString().split('T')[0];
                 let daily = ideas.filter(id => id.fecha === hoyISO).sort((a,b) => a.hora.localeCompare(b.hora));
-                container.innerHTML = `<div class="p-8 max-w-lg mx-auto">
+                container.innerHTML = `<div class="p-4 md:p-8 max-w-lg mx-auto">
                     <h3 class="text-xl font-bold mb-4 border-b pb-2 capitalize">${nombreHoy}</h3>
                     ${daily.map(di => `<div class="p-4 mb-2 bg-indigo-50 border border-indigo-200 rounded-lg cursor-pointer flex justify-between items-center" onclick="openModal(${di.id})">
                         <span><b>${di.hora}</b> - ${di.titulo}</span>
@@ -1012,7 +1104,6 @@ function saveStarFormats() {
             }
         }
 
-        // LÓGICA DE ESTRATEGIA RESUMIDA (LA PESTAÑA 3 PERMANECE INTACTA DEL BLOG DE NOTAS)
         function renderEstrategiaResumen() {
             const container = document.getElementById('resumenContent');
             const promptArea = document.getElementById('aiPromptArea');
@@ -1024,16 +1115,15 @@ function saveStarFormats() {
             const tono = localStorage.getItem('identidadTono') || 'Tono no definido';
             const arq = JSON.parse(localStorage.getItem('arquetiposSeleccionados')) || [];
             const ejes = JSON.parse(localStorage.getItem('ejesTags')) || [];
-            // Carga de Formatos Estrella para el Prompt
-let lineasFormatos = [];
-for(let i=1; i<=3; i++) {
-    const fn = localStorage.getItem(`starFormat${i}_name`);
-    const fd = localStorage.getItem(`starFormat${i}_desc`);
-    if(fn) lineasFormatos.push(`- Formato "${fn}": ${fd}`);
-}
-const seccionFormatos = lineasFormatos.length > 0 ? `\nMIS FORMATOS ESTRELLA (Úsalos para generar las ideas):\n${lineasFormatos.join('\n')}\n` : "";
+
+            let lineasFormatos = [];
+            for(let i=1; i<=3; i++) {
+                const fn = localStorage.getItem(`starFormat${i}_name`);
+                const fd = localStorage.getItem(`starFormat${i}_desc`);
+                if(fn) lineasFormatos.push(`- Formato "${fn}": ${fd}`);
+            }
+            const seccionFormatos = lineasFormatos.length > 0 ? `\nMIS FORMATOS ESTRELLA (Úsalos para generar las ideas):\n${lineasFormatos.join('\n')}\n` : "";
             
-            // ATENCIÓN AQUÍ: Solo recaba del LocalStorage original "contentTasks", excluyendo al "blocNotasTasks"
             const notasActuales = JSON.parse(localStorage.getItem('contentTasks')) || { ideas: [], audios: [], tendencias: [], proximos: [] };
             
             let lineasInsumos = [];
@@ -1089,23 +1179,21 @@ TAREA:
    "Yo soy ${creador}, con mi tema principal ${tema} y mis ejes transversales ${ejes.join(', ')}. Por ello, mi narrativa de contenido es: [Aquí define para cada eje cómo se cruza con tu tema de autoridad de forma única, rápida y accionable, que sea lógico y coherente con narrativas de contenido contemporáneas.
 
 REGLAS CRÍTICAS:
-1. PRIORIDAD TÉCNICA: ${lineasInsumos.length > 0 ? "Debes integrar de forma prioritaria las ideas y tendencias listadas arriba." : "Genera ideas creativas e innovadoras basadas en mi nicho y ejes transversales."} pero NO mezcles temas transversales a la fuerza, no intentes incluir varios a menos que exista un mecanismo causal directo. Si hay intersección de temas debe ser orgánica, no forzada.
+1. PRIORIDAD TÉCNICA: ${lineasInsumos.length > 0 ? "Debes integrar de forma prioritaria las ideas y tendencias listadas arriba." : "Genera ideas creativas e innovadoras basadas en mi nicho y ejes transversales."} pero NO mezcles temas transversales a la fuerza. Si hay intersección de temas debe ser orgánica, no forzada.
 2. FORMATOS ESTRELLA: Si utilizas un formato estrella listado arriba, asegúrate de que la descripción y el contenido del día sigan estrictamente la estructura de ese formato estrella específico.
-3. HOOK & ENGAGEMENT: Los ganchos deben respetar la estructura del nombre del formato estrella (si es que se basa en un formato estrella) y deben llamar la atención de mi público en los primeros 3-5 segundos del video (incluyen la promesa del video). Como sugerencia, es adecuado que el hook esté optimizados para SEO, es decir que el gancho sea justo lo que mi público busca en el buscador para ver un video con contenido similar al que realizaremos.
-4. El contenido debe resolver algún problema o dar un tema de interés para mi público objetivo. Además debe ser lógico, preciso y entretenido.
+3. HOOK & ENGAGEMENT: Los ganchos deben respetar la estructura del nombre del formato estrella y llamar la atención en los primeros 3-5 segundos del video. Optimiza el hook para SEO.
+4. El contenido debe resolver algún problema o dar un tema de interés para mi público objetivo. Debe ser lógico, preciso y entretenido.
 5. DURACIÓN: Contenido diseñado para videos de 45-60 segundos.
-6. El contenido total debe distribuirse en 70% de contenido de valor, 20% de contenido de marca y 10% de contenido de presencia. Y del total de contenidos, un 70% deben derivar del formato estrella y el resto es formaot libre. Además, el 50% de los contenidos deben ser enfocados en el tema central puro, mientras que el 50% restante se destinará a los ejes transversales, los cuales deberán abordarse de manera individual por cada pieza y estar estrictamente fundamentados en su intersección con el tema central.
-7. El guión base debe entregar información de valor, precisa, confiable, útil y oficial. El guión debe explicar el tema para que todos entiendan pero evitar lo superficial. Debe ser relevante, específico y completo. Prioriza la densidad de información. Cada frase debe aportar valor técnico o avanzar la narrativa.
-8. TONO: Coherente con los arquetipos ${arq.join(' y ')}. Aplica estrictamente este tono y estilo particular del creador: ${tono}.`;
+6. Distribución: 70% de valor, 20% de marca, 10% de presencia. 70% formato estrella, 30% libre. 50% tema central puro, 50% ejes transversales cruzados con tema central.
+7. El guión base debe entregar información oficial, precisa y útil. Prioriza la densidad de información.
+8. TONO: Coherente con los arquetipos ${arq.join(' y ')}. Aplica estrictamente este tono y estilo: ${tono}.`;
             if (promptArea) promptArea.value = prompt;
         }
 
-        // ACTUALIZAR PROMPT DE GUIÓN EN VIVO
         function updateLivePrompt() {
             const area = document.getElementById('aiScriptPromptArea');
             if (!area) return;
             
-            // Variables de Formulario (Locales)
             const formato = document.getElementById('ideaFormato').value;
             const tipo = document.getElementById('ideaTipo').value;
             const obj = document.getElementById('ideaObjetivo').value;
@@ -1117,14 +1205,9 @@ REGLAS CRÍTICAS:
             const enlaces = document.getElementById('ideaEnlaces').value.trim();
             const guionBase = document.getElementById('ideaGuionBase').value.trim();
 
-            // Construcción dinámica de especificaciones adicionales para evitar ruido en la IA
             let especificacionesOpcionales = "";
-            if (enlaces) {
-                especificacionesOpcionales += `\n- ENLACES CON INFORMACIÓN RELEVANTE DE SOPORTE:\n${enlaces}`;
-            }
-            if (guionBase) {
-                especificacionesOpcionales += `\n- IDEA INICIAL / ESTRUCTURA BASE DESEADA:\n${guionBase}`;
-            }
+            if (enlaces) especificacionesOpcionales += `\n- ENLACES CON INFORMACIÓN RELEVANTE DE SOPORTE:\n${enlaces}`;
+            if (guionBase) especificacionesOpcionales += `\n- IDEA INICIAL / ESTRUCTURA BASE DESEADA:\n${guionBase}`;
             if (starFormatSelect) {
                 for (let i = 1; i <= 3; i++) {
                     const name = localStorage.getItem(`starFormat${i}_name`);
@@ -1136,7 +1219,6 @@ REGLAS CRÍTICAS:
                 }
             }
             
-            // Variables de Estrategia (Globales / LocalStorage)
             const tema = localStorage.getItem('temaCentral') || "mi pilar de autoridad";
             const creador = localStorage.getItem('descCreador') || "No definido";
             const nicho = localStorage.getItem('nichoContenido') || "No definido";
@@ -1168,21 +1250,22 @@ ESPECIFICACIONES TÉCNICAS DEL VIDEO:
 
 INSTRUCCIONES DE REDACCIÓN:
 1. TONO: Debe estar escrito obligatoriamente bajo esta directriz: ${tono}. DEBE SER MEMORABLE, EMOCIONAL Y ENTRETENIDO.
-2. CALIDAD: Entrega información de valor, precisa, confiable, útil y oficial. El guión debe explicar el tema para que todos entiendan el tema pero evitar lo superficial. Debe ser relevante, específico y completo.
-3. ESTRUCTURA: Diseña el guion en UN SOLO PÁRRAFO. Debe incluir: Hook verbal interesante que atrape a la audiencia desde el principio con una frase o pregunta llamativa (incluye promesa del video, es decir lo que verá el público) + Frase breve de refuerzo + Desarrollo (debe ser dinámico, incluir hooks anidados o preguntas interesantes durante el desarrollo para mantener la atención del público) + Llamado a la acción (CTA).
-4. RESTRICCIONES: No especifiques las partes en el video. Evita figuras retóricas. PROHIBIDO PRESENTARSE (Ej: "Hola soy...", "En este video hablaremos de..."). Evita saludos o temarios.
+2. CALIDAD: Entrega información de valor, precisa, confiable, útil y oficial. Evita lo superficial.
+3. ESTRUCTURA: Diseña el guion en UN SOLO PÁRRAFO. Debe incluir: Hook verbal interesante (incluye promesa del video) + Frase breve de refuerzo + Desarrollo dinámico + Llamado a la acción (CTA).
+4. RESTRICCIONES: No especifiques las partes en el video. Evita figuras retóricas. PROHIBIDO PRESENTARSE.
 5. ELEMENTOS ADICIONALES: Incluye un CTA potente. Duración: 45-60 segundos.
-6. Aunque el tema principal sea muy formal, ignora la preferencia por el tono estrictamente formal y profesional (al menos que esa sea la personalidad del creador). Aplica 100% el estilo coloquial, rápido y conversacional de un creador de contenido.
-7. Prohibido usar jerga, términos específicos o complejos, o lenguaje del tema central o de algún eje transversal a menos que el tema del video trate específicamente de eso. Mantén las analogías enfocadas en la vida cotidiana para que el guión sea orgánico y el contenido no se vea forzado.
-8. Si se incluye un hook propuesto, este se debe respetar al 100%  en el guión generado.
+6. Aplica 100% el estilo coloquial, rápido y conversacional de un creador de contenido.
+7. Prohibido usar jerga, términos específicos o complejos, a menos que el video trate específicamente de eso. Usa analogías de la vida cotidiana.
+8. Si se incluye un hook propuesto, este se debe respetar al 100% en el guión generado.
 
 ENTREGABLES ADICIONALES (Debajo del guion):
-- COPYWRITING: Breve resumen del guión generado, que incluya información relevante, repita palabras clave del guión, sea atrapante e incluya un dato adicional relevante y un CTA claro.
-- TÍTULO: Un título corto y potente para la portada del TikTok.
-- SEO: Palabras clave para el algoritmo.
-- HASHTAGS (5): #1 Formato (ej. #tutorial), #2 y #3 Tema del video, #4 y #5 Nicho/Audiencia específica del video.
-- FUENTES: Lista de 4 enlaces con las fuentes oficiales/teóricas de donde obtuviste la información.`;
+- COPYWRITING: Breve resumen del guión, dato adicional relevante, palabras clave SEO, CTA claro. Máx 4 líneas.
+- TÍTULO: Título corto y potente para portada.
+- SEO: Palabras clave.
+- HASHTAGS (5): #1 Formato, #2 y #3 Tema, #4 y #5 Nicho.
+- FUENTES: 4 enlaces con fuentes oficiales/teóricas.`;
         }
+
         function copyPrompt() {
             copyToClipboardElement('aiPromptArea');
             alert('Prompt estratégico copiado con éxito.');
@@ -1194,7 +1277,6 @@ ENTREGABLES ADICIONALES (Debajo del guion):
             document.execCommand('copy');
         }
 
-        // MODAL Y COPIADO
         function openModal(id) {
             const idea = ideas.find(i => i.id === id);
             if(!idea) return;
@@ -1217,7 +1299,7 @@ ENTREGABLES ADICIONALES (Debajo del guion):
                     </div>
                     ${idea.hook ? `<div class="mt-4 p-3 bg-indigo-50 border-l-4 border-indigo-500 text-xs italic"><b>Gancho:</b> "${idea.hook}"</div>` : ''}
                     ${idea.enlaces ? `<div class="mt-2 p-3 bg-slate-50 border border-gray-200 rounded-lg text-xs font-mono text-gray-600"><b>Enlaces de Referencia:</b><br>${idea.enlaces.replace(/\n/g, '<br>')}</div>` : ''}
-${idea.guionBase ? `<div class="mt-2 p-3 bg-indigo-50/30 border border-indigo-100 rounded-lg text-xs text-gray-700"><b>Idea Inicial / Guion Base:</b><br>${idea.guionBase}</div>` : ''}
+                    ${idea.guionBase ? `<div class="mt-2 p-3 bg-indigo-50/30 border border-indigo-100 rounded-lg text-xs text-gray-700"><b>Idea Inicial / Guion Base:</b><br>${idea.guionBase}</div>` : ''}
                 </div>
                 <div class="space-y-6">
                     <div>
@@ -1229,11 +1311,11 @@ ${idea.guionBase ? `<div class="mt-2 p-3 bg-indigo-50/30 border border-indigo-10
                         <div class="p-4 bg-indigo-50/50 rounded-lg text-sm whitespace-pre-wrap border border-indigo-100 leading-relaxed italic text-gray-700">"${idea.copy}"</div>
                     </div>
                 </div>
-                <div class="flex gap-3 mt-8">
+                <div class="flex flex-col sm:flex-row gap-3 mt-8">
                     <button onclick="copyToClipboardData(${idea.id})" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 transition font-bold text-sm shadow-lg shadow-indigo-100">
                         Copiar Información Completa
                     </button>
-                    <button onclick="closeModal(null)" class="bg-gray-100 text-gray-500 px-6 rounded-xl hover:bg-gray-200 transition font-bold text-sm">Cerrar</button>
+                    <button onclick="closeModal(null)" class="bg-gray-100 text-gray-500 py-3 px-6 rounded-xl hover:bg-gray-200 transition font-bold text-sm">Cerrar</button>
                 </div>
             `;
             overlay.style.display = 'flex';
@@ -1246,43 +1328,30 @@ ${idea.guionBase ? `<div class="mt-2 p-3 bg-indigo-50/30 border border-indigo-10
             const text = `ESTRATEGIA: ${idea.titulo}\nGANCHO: ${idea.hook}\nGUIÓN:\n${idea.guion}\n\nCOPY:\n${idea.copy}`;
             navigator.clipboard.writeText(text).then(() => alert('Copiado!'));
         }
-function allowDrop(ev) {
-            ev.preventDefault();
-        }
 
-        // AISLAMIENTO DE EVENTOS DRAG AND DROP
-        // Modificación a dragTask para agregar identificador tipo "idea"
+        function allowDrop(ev) { ev.preventDefault(); }
+
         function dragTask(ev, cat, index) {
             ev.dataTransfer.setData("text/plain", JSON.stringify({ block: 'tarea_idea', sourceCat: cat, taskIndex: index }));
         }
 
-        // Modificación a dropTask para asegurar que no acepte tarjetas del "Blog de Notas"
         function dropTask(ev, destCat) {
             ev.preventDefault();
             const dataStr = ev.dataTransfer.getData("text/plain");
             if (!dataStr) return;
-            
             try {
                 const parsed = JSON.parse(dataStr);
-                if (parsed.block !== 'tarea_idea') return; // Bloquea tarjetas de otras pestañas
-                
+                if (parsed.block !== 'tarea_idea') return;
                 const { sourceCat, taskIndex } = parsed;
                 if (sourceCat === destCat) return;
-                
-                // Mueve el objeto de una columna a otra en los arrays de memoria
                 const [taskMoved] = tasks[sourceCat].splice(taskIndex, 1);
                 tasks[destCat].push(taskMoved);
-                
-                // Guarda de forma persistente en LocalStorage y refresca la vista
                 localStorage.setItem('contentTasks', JSON.stringify(tasks));
                 renderTasks();
                 if (typeof renderEstrategiaResumen === "function") renderEstrategiaResumen();
-            } catch (err) {
-                console.error("Error al mover la tarjeta de ideas:", err);
-            }
+            } catch (err) { console.error("Error al mover la tarjeta de ideas:", err); }
         }
 
-        // Nuevos eventos Drag And Drop exclusivos para el Blog de Notas
         function dragNota(ev, cat, index) {
             ev.dataTransfer.setData("text/plain", JSON.stringify({ block: 'nota_bloc', sourceCat: cat, taskIndex: index }));
         }
@@ -1291,29 +1360,21 @@ function allowDrop(ev) {
             ev.preventDefault();
             const dataStr = ev.dataTransfer.getData("text/plain");
             if (!dataStr) return;
-            
             try {
                 const parsed = JSON.parse(dataStr);
-                if (parsed.block !== 'nota_bloc') return; // Bloquea tarjetas que vengan de la pestaña 2
-                
+                if (parsed.block !== 'nota_bloc') return;
                 const { sourceCat, taskIndex } = parsed;
                 if (sourceCat === destCat) return;
-                
                 const [taskMoved] = blocNotas[sourceCat].splice(taskIndex, 1);
                 blocNotas[destCat].push(taskMoved);
-                
                 localStorage.setItem('blocNotasTasks', JSON.stringify(blocNotas));
                 renderNotas();
-            } catch (err) {
-                console.error("Error al mover la tarjeta del blog:", err);
-            }
+            } catch (err) { console.error("Error al mover la tarjeta del blog:", err); }
         }
 
         function editTask(cat, index) {
             const tareaActual = tasks[cat][index].text;
             const nuevoTexto = prompt("Editar nota:", tareaActual);
-            
-            // Si el usuario escribe algo y no cancela el prompt, actualizamos
             if (nuevoTexto !== null && nuevoTexto.trim() !== "") {
                 tasks[cat][index].text = nuevoTexto.trim();
                 localStorage.setItem('contentTasks', JSON.stringify(tasks));
@@ -1321,27 +1382,18 @@ function allowDrop(ev) {
                 if (typeof renderEstrategiaResumen === "function") renderEstrategiaResumen();
             }
         }
+
         function copyTaskText(cat, index) {
-            const textoNota = tasks[cat][index].text;
-            navigator.clipboard.writeText(textoNota).then(() => {
-                // Alerta nativa consistente con la función copyToClipboardData
+            navigator.clipboard.writeText(tasks[cat][index].text).then(() => {
                 alert('¡Nota copiada al portapapeles!');
-            }).catch(err => {
-                console.error('Error al intentar copiar el texto: ', err);
-            });
+            }).catch(err => console.error('Error al intentar copiar:', err));
         }
-// --- NUEVO MÓDULO LÓGICO: PROCESAMIENTO DE TABLAS IA ---
-        let tablaIAParsed = [];
 
         function guardarYProcesarTabla() {
             const textarea = document.getElementById('tablaIAPaste');
             const content = textarea.value.trim();
             const container = document.getElementById('calendarioTablaContainer');
-            
-            if (!content) {
-                alert("Por favor, ingresa los datos de la tabla antes de continuar.");
-                return;
-            }
+            if (!content) { alert("Por favor, ingresa los datos de la tabla."); return; }
 
             const rows = content.split(/\r?\n/);
             tablaIAParsed = [];
@@ -1349,8 +1401,6 @@ function allowDrop(ev) {
             rows.forEach((row) => {
                 let columns = [];
                 let raw = row.trim();
-                
-                // Análisis multidimensional de datos (Markdown, Tabulaciones o CSV)
                 if (raw.includes('|')) {
                     if (raw.startsWith('|')) raw = raw.substring(1);
                     if (raw.endsWith('|')) raw = raw.substring(0, raw.length - 1);
@@ -1367,159 +1417,142 @@ function allowDrop(ev) {
 
                 if (columns.length >= 7 && !columns[0].includes('---')) {
                     if (columns[0].toLowerCase().includes('día') || columns[0].toLowerCase().includes('dia')) return;
-
                     tablaIAParsed.push({
-                        dia: columns[0] || '',
-                        tipo: columns[1] || '',
-                        tema: columns[2] || '',
-                        formato: columns[3] || '',
-                        hook: columns[4] || '',
-                        contenido: columns[5] || '',
-                        guionBase: columns[6] || '',
-                        cta: columns[7] || ''
+                        dia: columns[0] || '', tipo: columns[1] || '', tema: columns[2] || '',
+                        formato: columns[3] || '', hook: columns[4] || '', contenido: columns[5] || '',
+                        guionBase: columns[6] || '', cta: columns[7] || ''
                     });
                 }
             });
 
-            // Guardado persistente
             localStorage.setItem('tablaIAGuardada', JSON.stringify(tablaIAParsed));
-            textarea.value = ''; // Limpiar el área de ingreso
+            textarea.value = '';
             renderTablaCalendario();
             alert("✅ Tabla procesada y guardada con éxito.");
         }
 
- function renderTablaCalendario() {
-    const container = document.getElementById('calendarioTablaContainer');
-    const tbody = document.getElementById('calendarioTablaBody');
-    tbody.innerHTML = '';
+        function renderTablaCalendario() {
+            const container = document.getElementById('calendarioTablaContainer');
+            const tbody = document.getElementById('calendarioTablaBody');
+            tbody.innerHTML = '';
+            if (tablaIAParsed.length === 0) { container.classList.add('hidden'); return; }
 
-    if (tablaIAParsed.length === 0) {
-        container.classList.add('hidden');
-        return;
-    }
-
-    tablaIAParsed.forEach((item, index) => {
-        const tr = document.createElement('tr');
-        tr.className = "border-b hover:bg-slate-50 transition";
-        // Anchos porcentuales y alineación superior (align-top) para estética impecable
-        tr.innerHTML = `
-            <td class="p-3 font-bold text-slate-700 w-[4%] align-top">${item.dia}</td>
-            <td class="p-3 text-slate-600 w-[6%] align-top break-words">${item.tipo}</td>
-            <td class="p-3 font-medium text-indigo-700 w-[12%] align-top break-words">${item.tema}</td>
-            <td class="p-3 text-slate-600 text-[10px] uppercase font-bold w-[8%] align-top break-words">${item.formato}</td>
-            <td class="p-3 text-gray-800 w-[15%] align-top whitespace-normal break-words italic">${item.hook}</td>
-            <td class="p-3 text-gray-600 w-[15%] align-top whitespace-normal break-words">${item.contenido}</td>
-            <td class="p-3 text-gray-700 w-[25%] align-top whitespace-normal break-words leading-relaxed">${item.guionBase}</td>
-            <td class="p-3 text-indigo-600 w-[10%] align-top whitespace-normal break-words font-semibold">${item.cta}</td>
-            <td class="p-3 text-center align-middle sticky right-0 bg-white border-l border-gray-100 shadow-[-5px_0_10px_-5px_rgba(0,0,0,0.1)] z-10 w-[100px]">
-                <button onclick="enviarARepositorio(${index})" class="bg-indigo-600 text-white px-3 py-1.5 rounded text-[10px] font-bold hover:bg-indigo-700 shadow-sm transition whitespace-nowrap">
-                    Producir 🚀
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-
-    container.classList.remove('hidden');
-}
+            tablaIAParsed.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-700 w-[4%] align-top">${item.dia}</td>
+                    <td class="p-3 text-slate-600 w-[6%] align-top break-words">${item.tipo}</td>
+                    <td class="p-3 font-medium text-indigo-700 w-[12%] align-top break-words">${item.tema}</td>
+                    <td class="p-3 text-slate-600 text-[10px] uppercase font-bold w-[8%] align-top break-words">${item.formato}</td>
+                    <td class="p-3 text-gray-800 w-[15%] align-top whitespace-normal break-words italic">${item.hook}</td>
+                    <td class="p-3 text-gray-600 w-[15%] align-top whitespace-normal break-words">${item.contenido}</td>
+                    <td class="p-3 text-gray-700 w-[25%] align-top whitespace-normal break-words leading-relaxed">${item.guionBase}</td>
+                    <td class="p-3 text-indigo-600 w-[10%] align-top whitespace-normal break-words font-semibold">${item.cta}</td>
+                    <td class="p-3 text-center align-middle sticky right-0 bg-white border-l border-gray-100 shadow-[-5px_0_10px_-5px_rgba(0,0,0,0.1)] z-10 w-[100px]">
+                        <button onclick="enviarARepositorio(${index})" class="bg-indigo-600 text-white px-3 py-1.5 rounded text-[10px] font-bold hover:bg-indigo-700 shadow-sm transition whitespace-nowrap">Producir 🚀</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            container.classList.remove('hidden');
+        }
 
         function enviarARepositorio(index) {
             const idea = tablaIAParsed[index];
             if (!idea) return;
-
-            // Mapeo riguroso de variables según especificaciones técnicas
             document.getElementById('ideaTitulo').value = idea.hook;
             document.getElementById('ideaHook').value = idea.hook;
-            
-            // Concatenación estructurada: Propuesta + CTA + Tipo de Formato
             document.getElementById('ideaGuionBase').value = `${idea.guionBase}\n\nCTA: ${idea.cta}\n(Tipo de Formato: ${idea.formato})`;
-
-            // Redirección y actualización del entorno
             switchTab('ideas');
             updateLivePrompt();
             document.getElementById('ideaTitulo').scrollIntoView({ behavior: 'smooth' });
         }
-        // --- LÓGICA DE HISTORIAL DE TAREAS (Tab 2) ---
-function archiveTask(cat, index) {
-    const item = tasks[cat].splice(index, 1)[0];
-    historyTasks.push({ cat: cat, text: item.text });
-    localStorage.setItem('contentTasks', JSON.stringify(tasks));
-    localStorage.setItem('historyTasks', JSON.stringify(historyTasks));
-    renderTasks();
-    renderHistoryTasks();
-    renderHistoryNotas();
-}
 
-function restoreTask(index) {
-    const item = historyTasks.splice(index, 1)[0];
-    tasks[item.cat].push({ text: item.text, done: false });
-    localStorage.setItem('contentTasks', JSON.stringify(tasks));
-    localStorage.setItem('historyTasks', JSON.stringify(historyTasks));
-    renderTasks();
-    renderHistoryTasks();
-    renderHistoryNotas();
-}
+        function archiveTask(cat, index) {
+            const item = tasks[cat].splice(index, 1)[0];
+            historyTasks.push({ cat: cat, text: item.text });
+            localStorage.setItem('contentTasks', JSON.stringify(tasks));
+            localStorage.setItem('historyTasks', JSON.stringify(historyTasks));
+            renderTasks(); renderHistoryTasks(); renderHistoryNotas();
+        }
 
-function renderHistoryTasks() {
-    const container = document.getElementById('history-list-tasks');
-    if(!container) return;
-    container.innerHTML = historyTasks.map((item, i) => `
-        <div class="flex justify-between items-center bg-gray-50 p-2 text-xs rounded border mb-1">
-            <span class="flex-1 pr-2">${item.text} <span class="text-[9px] text-gray-400">(${item.cat})</span></span>
-            <div class="flex gap-3 shrink-0 items-center">
-                <button onclick="restoreTask(${i})" class="text-indigo-600 font-bold hover:underline">↺ Restaurar</button>
-                <button onclick="deleteHistoryTask(${i})" class="text-red-500 font-bold hover:text-red-700 text-sm" title="Eliminar definitivamente">❌</button>
-            </div>
-        </div>
-    `).join('');
-}
-function deleteHistoryTask(index) {
+        function restoreTask(index) {
+            const item = historyTasks.splice(index, 1)[0];
+            tasks[item.cat].push({ text: item.text, done: false });
+            localStorage.setItem('contentTasks', JSON.stringify(tasks));
+            localStorage.setItem('historyTasks', JSON.stringify(historyTasks));
+            renderTasks(); renderHistoryTasks(); renderHistoryNotas();
+        }
+
+        function renderHistoryTasks() {
+            const container = document.getElementById('history-list-tasks');
+            if(!container) return;
+            container.innerHTML = historyTasks.map((item, i) => `
+                <div class="flex justify-between items-center bg-gray-50 p-2 text-xs rounded border mb-1">
+                    <span class="flex-1 pr-2">${item.text} <span class="text-[9px] text-gray-400">(${item.cat})</span></span>
+                    <div class="flex gap-3 shrink-0 items-center">
+                        <button onclick="restoreTask(${i})" class="text-indigo-600 font-bold hover:underline">↺ Restaurar</button>
+                        <button onclick="deleteHistoryTask(${i})" class="text-red-500 font-bold hover:text-red-700 text-sm" title="Eliminar">❌</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function deleteHistoryTask(index) {
             if(!confirm("¿Seguro que quieres eliminar esta tarea del historial para siempre?")) return;
             historyTasks.splice(index, 1);
             localStorage.setItem('historyTasks', JSON.stringify(historyTasks));
             renderHistoryTasks();
         }
         
-// --- LÓGICA DE HISTORIAL DE NOTAS (Tab 6) ---
-function archiveNota(cat, index) {
-    const item = blocNotas[cat].splice(index, 1)[0];
-    historyNotas.push({ cat: cat, text: item.text });
-    localStorage.setItem('blocNotasTasks', JSON.stringify(blocNotas));
-    localStorage.setItem('historyNotas', JSON.stringify(historyNotas));
-    renderNotas();
-    renderHistoryNotas();
-}
+        function archiveNota(cat, index) {
+            const item = blocNotas[cat].splice(index, 1)[0];
+            historyNotas.push({ cat: cat, text: item.text });
+            localStorage.setItem('blocNotasTasks', JSON.stringify(blocNotas));
+            localStorage.setItem('historyNotas', JSON.stringify(historyNotas));
+            renderNotas(); renderHistoryNotas();
+        }
 
-function restoreNota(index) {
-    const item = historyNotas.splice(index, 1)[0];
-    blocNotas[item.cat].push({ text: item.text, done: false });
-    localStorage.setItem('blocNotasTasks', JSON.stringify(blocNotas));
-    localStorage.setItem('historyNotas', JSON.stringify(historyNotas));
-    renderNotas();
-    renderHistoryNotas();
-}
+        function restoreNota(index) {
+            const item = historyNotas.splice(index, 1)[0];
+            blocNotas[item.cat].push({ text: item.text, done: false });
+            localStorage.setItem('blocNotasTasks', JSON.stringify(blocNotas));
+            localStorage.setItem('historyNotas', JSON.stringify(historyNotas));
+            renderNotas(); renderHistoryNotas();
+        }
 
-function renderHistoryNotas() {
-    const container = document.getElementById('history-list-notas');
-    if(!container) return;
-    container.innerHTML = historyNotas.map((item, i) => `
-        <div class="flex justify-between items-center bg-gray-50 p-2 text-xs rounded border mb-1">
-            <span class="flex-1 pr-2">${item.text} <span class="text-[9px] text-gray-400">(${item.cat})</span></span>
-            <div class="flex gap-3 shrink-0 items-center">
-                <button onclick="restoreNota(${i})" class="text-emerald-600 font-bold hover:underline">↺ Restaurar</button>
-                <button onclick="deleteHistoryNota(${i})" class="text-red-500 font-bold hover:text-red-700 text-sm" title="Eliminar definitivamente">❌</button>
-            </div>
-        </div>
-    `).join('');
-}
+        function renderHistoryNotas() {
+            const container = document.getElementById('history-list-notas');
+            if(!container) return;
+            container.innerHTML = historyNotas.map((item, i) => `
+                <div class="flex justify-between items-center bg-gray-50 p-2 text-xs rounded border mb-1">
+                    <span class="flex-1 pr-2">${item.text} <span class="text-[9px] text-gray-400">(${item.cat})</span></span>
+                    <div class="flex gap-3 shrink-0 items-center">
+                        <button onclick="restoreNota(${i})" class="text-emerald-600 font-bold hover:underline">↺ Restaurar</button>
+                        <button onclick="deleteHistoryNota(${i})" class="text-red-500 font-bold hover:text-red-700 text-sm" title="Eliminar">❌</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
         function deleteHistoryNota(index) {
             if(!confirm("¿Seguro que quieres eliminar esta nota del historial para siempre?")) return;
             historyNotas.splice(index, 1);
             localStorage.setItem('historyNotas', JSON.stringify(historyNotas));
             renderHistoryNotas();
         }
-        // --- FIN NUEVO MÓDULO LÓGICO ---
-        window.onload = () => {
+
+        // --- MOTOR DE INICIALIZACIÓN (Reemplaza a window.onload) ---
+        window.initAppState = () => {
+            ideas = JSON.parse(localStorage.getItem('contentIdeas')) || [];
+            ejesTags = JSON.parse(localStorage.getItem('ejesTags')) || [];
+            tasks = JSON.parse(localStorage.getItem('contentTasks')) || { ideas: [], audios: [], tendencias: [], proximos: [] };
+            blocNotas = JSON.parse(localStorage.getItem('blocNotasTasks')) || { rapidas: [], borradores: [], recursos: [], personales: [] };
+            historyTasks = JSON.parse(localStorage.getItem('historyTasks')) || [];
+            historyNotas = JSON.parse(localStorage.getItem('historyNotas')) || [];
+            tablaIAParsed = JSON.parse(localStorage.getItem('tablaIAGuardada')) || [];
+
             initArquetipos();
             document.getElementById('temaCentral').value = localStorage.getItem('temaCentral') || '';
             document.getElementById('descCreador').value = localStorage.getItem('descCreador') || '';
@@ -1530,53 +1563,42 @@ function renderHistoryNotas() {
             document.getElementById('strat_consideracion').value = localStorage.getItem('strat_consideracion') || '';
             document.getElementById('strat_conversion').value = localStorage.getItem('strat_conversion') || '';
             document.getElementById('strat_fidelizacion').value = localStorage.getItem('strat_fidelizacion') || '';
+            
             for(let i=1; i<=3; i++) {
                 document.getElementById(`starFormat${i}_name`).value = localStorage.getItem(`starFormat${i}_name`) || '';
                 document.getElementById(`starFormat${i}_desc`).value = localStorage.getItem(`starFormat${i}_desc`) || '';
             }
+            
             renderTags('listaEjes', ejesTags, 'ejesTags');
             setupTagsInput('inputEjes', 'listaEjes', ejesTags, 'ejesTags');
             
-            // Carga de Paneles Kanban
             renderTasks();
-            renderNotas(); // Renderizado inicial del nuevo Blog
+            renderNotas();
             renderHistoryTasks();
             renderHistoryNotas();
             renderIdeas();
             actualizarSelectFormatosEstrella();
             updateLivePrompt();
-               // Recuperar tabla IA generada previamente
-            const tablaGuardadaStr = localStorage.getItem('tablaIAGuardada');
-            if (tablaGuardadaStr) {
-                tablaIAParsed = JSON.parse(tablaGuardadaStr);
-                renderTablaCalendario();
-            }
+            
+            if (tablaIAParsed.length > 0) renderTablaCalendario();
+            autoResizeTextareas();
         };
-        // PEGUE EL NUEVO CÓDIGO AQUÍ:
-        
-      // 1. Esta función es la que se encarga de re-calcular los tamaños
-function resizeHandler() {
-    this.style.height = 'auto';
-    this.style.height = (this.scrollHeight + 10) + 'px';
-}
 
-// 2. Esta función inicializa todos los textareas
-function autoResizeTextareas() {
-    const textareas = document.querySelectorAll('textarea:not(#aiPromptArea):not(#aiScriptPromptArea):not(#tablaIAPaste)');
-    textareas.forEach(textarea => {
-        // Ejecuta el ajuste inicial
-        textarea.style.height = 'auto';
-        textarea.style.height = (textarea.scrollHeight + 10) + 'px';
-        
-        // Limpia cualquier evento previo para no duplicarlos
-        textarea.removeEventListener('input', resizeHandler);
-        // Agrega el evento de redimensionamiento
-        textarea.addEventListener('input', resizeHandler);
-    });
-}
+        function resizeHandler() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight + 10) + 'px';
+        }
 
-// 3. Ejecución al cargar la página
-window.addEventListener('load', autoResizeTextareas);
+        function autoResizeTextareas() {
+            const textareas = document.querySelectorAll('textarea:not(#aiPromptArea):not(#aiScriptPromptArea):not(#tablaIAPaste)');
+            textareas.forEach(textarea => {
+                textarea.style.height = 'auto';
+                textarea.style.height = (textarea.scrollHeight + 10) + 'px';
+                textarea.removeEventListener('input', resizeHandler);
+                textarea.addEventListener('input', resizeHandler);
+            });
+        }
+        window.addEventListener('load', autoResizeTextareas);
     </script>
 </body>
 </html>
