@@ -71,13 +71,19 @@
 
         #modalOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
         .modal-card { background: white; width: 90%; max-width: 650px; border-radius: 12px; padding: 2rem; position: relative; max-height: 90vh; overflow-y: auto; }
+        .highlight-diff {
+            background-color: #d1fae5;
+            font-weight: bold;
+            color: #065f46;
+            padding: 0 2px;
+            border-radius: 4px;
+        }
     </style>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        // Añadido onSnapshot y serverTimestamp para edición en vivo
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyA_YEgXM8EsXTwHHjzPd2-hJnUC8WgFTVk",
@@ -94,130 +100,15 @@
         const provider = new GoogleAuthProvider();
 
         window.currentUserUID = null;
-        window.db = db; // Expuesto para funciones globales
+        window.db = db;
         window.serverTimestamp = serverTimestamp;
+        window.tempSyncData = { guion: '', copy: '', tags: '' };
 
-        // VERIFICACIÓN DE URL PARA MODO EDICIÓN EN VIVO
-        const urlParams = new URLSearchParams(window.location.search);
-        const sharedId = urlParams.get('shared');
-
-        if (sharedId) {
-            // Si hay un enlace compartido, ocultamos la app principal e iniciamos el modo en vivo
-            document.addEventListener("DOMContentLoaded", () => {
-                document.getElementById('mainAppContainer').style.display = 'none';
-                document.getElementById('loginScreen').style.display = 'none';
-                initSharedMode(sharedId);
-            });
-        } else {
-            // Flujo normal de la app
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    window.currentUserUID = user.uid;
-                    document.getElementById('loginScreen').style.display = 'none';
-                    
-                    const pics = document.querySelectorAll('.user-pic');
-                    pics.forEach(p => { p.src = user.photoURL; p.classList.remove('hidden'); });
-                    const name = document.getElementById('userNameDesktop');
-                    if(name) name.innerText = user.displayName;
-
-                    const docSnap = await getDoc(doc(db, "videoka_planner", user.uid));
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        localStorage.clear(); 
-                        for (const [key, value] of Object.entries(data)) {
-                            if (value !== null && value !== undefined) {
-                                originalSetItem.call(localStorage, key, value);
-                            }
-                        }
-                    } else {
-                        window.syncToCloud(); 
-                    }
-                    
-                    if(typeof window.initAppState === 'function') window.initAppState();
-                } else {
-                    document.getElementById('loginScreen').style.display = 'flex';
-                    window.currentUserUID = null;
-                }
-            });
-        }
-// Lógica del Editor Compartido en Vivo
-        function initSharedMode(id) {
-            const sharedScreen = document.getElementById('sharedEditorScreen');
-            const txtGuion = document.getElementById('sharedGuionTextarea');
-            const txtCopy = document.getElementById('sharedCopyTextarea');
-            const txtTags = document.getElementById('sharedHashtagsTextarea');
-            const status = document.getElementById('syncStatus');
-            const btnGuardar = document.getElementById('btnSharedGuardar');
-
-            sharedScreen.classList.remove('hidden');
-            sharedScreen.classList.add('flex');
-
-            // --- ESTO ES LO QUE NECESITABAS: AUTO-RESIZE ---
-            const autoResize = (el) => { el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px'; };
-            [txtGuion, txtCopy, txtTags].forEach(ta => ta.addEventListener('input', function() { autoResize(this); }));
-
-            const docRef = doc(db, "shared_guiones", id);
-
-        // Escuchar cambios de la nube en tiempo real
-            onSnapshot(docRef, (snap) => {
-                if (snap.exists()) {
-                    const data = snap.data();
-                    // --- AQUÍ ESTÁ EL MAPEO DE LOS 10 CAMPOS QUE QUERÍAS ---
-                    document.getElementById('sharedCtxTitulo').innerText = data.titulo || 'Sin título';
-                    document.getElementById('sharedCtxFormato').innerText = `${data.formato || 'N/A'} / ${data.tipo || 'N/A'}`;
-                    document.getElementById('sharedCtxTipo').innerText = data.tipo || 'N/A';
-                    document.getElementById('sharedCtxObjetivo').innerText = data.objetivo || 'N/A';
-                    document.getElementById('sharedCtxEstrategico').innerText = data.tipoEstrategico || 'N/A';
-                    document.getElementById('sharedCtxColab').innerText = data.colaboracion || 'N/A';
-                    document.getElementById('sharedCtxPub').innerText = data.publicacion || 'N/A';
-                    document.getElementById('sharedCtxFecha').innerText = data.fecha || 'N/A';
-                    document.getElementById('sharedCtxHora').innerText = data.hora || 'N/A';
-                    document.getElementById('sharedCtxStar').innerText = data.starFormat || 'Ninguno / Formato Libre';
-
-                    if (document.activeElement !== txtGuion) txtGuion.value = data.guion || '';
-                    if (document.activeElement !== txtCopy) txtCopy.value = data.copy || '';
-                    if (document.activeElement !== txtTags) txtTags.value = data.hashtags || '';
-                    
-                    // Ajustamos el tamaño tras recibir datos de la nube
-                    [txtGuion, txtCopy, txtTags].forEach(ta => autoResize(ta));
-                } else {
-                    status.innerText = "Guion no encontrado";
-                    status.classList.replace('text-emerald-600', 'text-red-600');
-                    status.classList.replace('bg-emerald-50', 'bg-red-50');
-                }
-            });
-
-            btnGuardar.addEventListener('click', () => {
-                status.innerText = "Guardando...";
-                btnGuardar.disabled = true;
-                btnGuardar.innerHTML = "⏳ Guardando...";
-
-                setDoc(docRef, { 
-                    guion: txtGuion.value,
-                    copy: txtCopy.value,
-                    hashtags: txtTags.value,
-                    lastUpdate: serverTimestamp() 
-                }, { merge: true })
-                .then(() => {
-                    status.innerText = "Sincronizado";
-                    btnGuardar.innerHTML = "✅ Cambios Guardados";
-                    setTimeout(() => {
-                        btnGuardar.disabled = false;
-                        btnGuardar.innerHTML = "💾 Guardar Cambios";
-                    }, 2500);
-                })
-                .catch(err => {
-                    console.error("Error guardando:", err);
-                    alert("Error al guardar en la nube.");
-                    btnGuardar.disabled = false;
-                    btnGuardar.innerHTML = "⚠️ Reintentar";
-                });
-            });
-        }
-
+        // --- FUNCIONES DE AUTENTICACIÓN Y SINCRONIZACIÓN AUTOMÁTICA ---
         window.iniciarSesionGoogle = () => {
             signInWithPopup(auth, provider).catch(error => console.error("Error Auth:", error));
         };
+        
         window.cerrarSesion = () => signOut(auth).then(() => window.location.reload());
 
         let syncTimeout = null;
@@ -257,12 +148,225 @@
             if (syncTimeout) clearTimeout(syncTimeout);
             syncTimeout = setTimeout(window.syncToCloud, 1000); 
         };
+
+        // --- LÓGICA DE AUDITORÍA Y COMPARACIÓN AMPLIADA ---
+        window.highlightChanges = (local, cloud) => {
+            if (!local || !cloud) return cloud;
+            const localWords = local.split(' ');
+            const cloudWords = cloud.split(' ');
+            return cloudWords.map(word => 
+                localWords.includes(word) ? word : `<span class="highlight-diff">${word}</span>`
+            ).join(' ');
+        };
+
+        window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT) => {
+            const modal = document.getElementById('modalOverlay');
+            const content = document.getElementById('modalContent');
+            
+            const highlightedGuion = window.highlightChanges(lG, nG);
+            const highlightedCopy = window.highlightChanges(lC, nC);
+            const highlightedTags = window.highlightChanges(lT, nT);
+            
+            content.innerHTML = `
+                <div class="max-w-6xl w-full">
+                    <h3 class="font-bold text-2xl mb-2 text-indigo-900 border-b pb-2">Auditoría de Cambios</h3>
+                    <p class="text-xs text-gray-500 mb-6 italic">Visualizando diferencias. Las palabras marcadas en <b>verde</b> son las que están en la nube pero no en tu versión local.</p>
+                    
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Versión Local (Tu editor)</label>
+                            <div class="p-4 bg-gray-50 rounded-lg border h-96 overflow-y-auto custom-scroll text-sm text-gray-700 whitespace-pre-wrap">${lG}</div>
+                            <div class="p-4 bg-gray-50 rounded-lg border h-32 overflow-y-auto custom-scroll text-sm text-gray-700 whitespace-pre-wrap">${lC}</div>
+                            <div class="p-4 bg-gray-50 rounded-lg border text-sm text-gray-700">${lT}</div>
+                        </div>
+                        <div class="space-y-4">
+                            <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest">Versión Nube (Cambios detectados)</label>
+                            <div class="p-4 bg-emerald-50 rounded-lg border h-96 overflow-y-auto custom-scroll text-sm text-emerald-900 whitespace-pre-wrap">${highlightedGuion}</div>
+                            <div class="p-4 bg-emerald-50 rounded-lg border h-32 overflow-y-auto custom-scroll text-sm text-emerald-900 whitespace-pre-wrap">${highlightedCopy}</div>
+                            <div class="p-4 bg-emerald-50 rounded-lg border text-sm text-emerald-900">${highlightedTags}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 flex justify-end gap-3 border-t pt-4">
+                        <button onclick="closeModal(null)" class="px-6 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg">Rechazar / Cancelar</button>
+                        <button onclick="aplicarAuditoria()" class="bg-indigo-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-lg">Aceptar Cambios y Sincronizar</button>
+                    </div>
+                </div>
+            `;
+            modal.style.display = 'flex';
+        };
+
+        window.aplicarAuditoria = () => {
+            document.getElementById('ideaGuion').value = window.tempSyncData.guion;
+            document.getElementById('ideaCopy').value = window.tempSyncData.copy;
+            document.getElementById('ideaHashtags').value = window.tempSyncData.tags;
+            
+            if (typeof editandoId !== 'undefined' && editandoId) {
+                if (typeof guardarIdea === 'function') guardarIdea(); 
+            } else {
+                console.warn("No se detectó un ID de edición activo. Los cambios se aplicaron visualmente.");
+            }
+
+            if (typeof closeModal === 'function') closeModal(null);
+            alert("✅ Datos importados y sincronizados correctamente.");
+        }; 
+
+        // --- FUNCIONES DE SINCRONIZACIÓN COMPARTIDA ---
+        window.sincronizarDesdeEnlace = async () => {
+            if (typeof editandoId === 'undefined' || !editandoId) return;
+            // Requiere que la variable ideas esté disponible globalmente desde el script base
+            if (typeof ideas === 'undefined') return;
+            
+            const idea = ideas.find(i => i.id === editandoId);
+            if (!idea || !idea.sharedId) return alert("No hay un enlace activo.");
+            
+            const btnSync = document.getElementById('btnSyncEnlace');
+            btnSync.innerText = "⏳ Consultando...";
+            
+            try {
+                const docSnap = await getDoc(doc(window.db, "shared_guiones", idea.sharedId));
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    window.tempSyncData = { guion: data.guion || '', copy: data.copy || '', tags: data.hashtags || '' };   
+                    
+                    window.mostrarAuditoriaCambios(
+                        document.getElementById('ideaGuion').value, data.guion,
+                        document.getElementById('ideaCopy').value, data.copy,
+                        document.getElementById('ideaHashtags').value, data.hashtags
+                    );
+                } else {
+                    alert("El guion compartido ya no existe en la nube.");
+                }
+            } catch(e) {
+                console.error("Error al sincronizar:", e);
+                alert("Fallo al conectar con la nube.");
+            }
+            btnSync.innerText = "⬇️ Sincronizar cambios de la nube";
+        };
+
+        window.generarEnlaceColaborativo = async () => {
+            if(!window.db) return alert("Debes iniciar sesión para generar un enlace en vivo.");
+            
+            const payload = {
+                titulo: document.getElementById('ideaTitulo').value || 'Sin título',
+                formato: document.getElementById('ideaFormato').value,
+                tipo: document.getElementById('ideaTipo').value,
+                objetivo: document.getElementById('ideaObjetivo').value,
+                tipoEstrategico: document.getElementById('ideaTipoEstrategico').value,
+                colaboracion: document.getElementById('ideaColaboracion').value,
+                publicacion: document.getElementById('ideaPublicacion').value,
+                fecha: document.getElementById('ideaFecha').value,
+                hora: document.getElementById('ideaHora').value,
+                starFormat: document.getElementById('ideaStarFormat').value,
+                hook: document.getElementById('ideaHook').value,
+                guionBase: document.getElementById('ideaGuionBase').value,
+                guion: document.getElementById('ideaGuion').value,
+                copy: document.getElementById('ideaCopy').value,
+                hashtags: document.getElementById('ideaHashtags').value,
+                createdAt: window.serverTimestamp()
+            };
+
+            const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+            
+            try {
+                const docRef = doc(window.db, "shared_guiones", uniqueId);
+                await setDoc(docRef, payload);
+
+                if (typeof editandoId !== 'undefined' && editandoId && typeof ideas !== 'undefined') {
+                    const index = ideas.findIndex(i => i.id === editandoId);
+                    if (index > -1) {
+                        ideas[index].sharedId = uniqueId;
+                        localStorage.setItem('contentIdeas', JSON.stringify(ideas));
+                        document.getElementById('btnSyncEnlace').classList.remove('hidden');
+                    }
+                }
+
+                const shareUrl = window.location.origin + window.location.pathname + "?shared=" + uniqueId;
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    alert(`¡Enlace generado y copiado!`);
+                });
+            } catch (error) {
+                console.error("Error al exportar sesión:", error);
+                alert("Error al conectar con la nube.");
+            }
+        };
+
+        window.initSharedMode = function(id) {
+            const sharedScreen = document.getElementById('sharedEditorScreen');
+            const txtGuion = document.getElementById('sharedGuionTextarea');
+            const txtCopy = document.getElementById('sharedCopyTextarea');
+            const txtTags = document.getElementById('sharedHashtagsTextarea');
+            const status = document.getElementById('syncStatus');
+            const btnGuardar = document.getElementById('btnSharedGuardar');
+
+            sharedScreen.classList.remove('hidden');
+            sharedScreen.classList.add('flex');
+
+            const autoResize = (el) => { el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px'; };
+            [txtGuion, txtCopy, txtTags].forEach(ta => ta.addEventListener('input', function() { autoResize(this); }));
+
+            const docRef = doc(db, "shared_guiones", id);
+
+            onSnapshot(docRef, (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    document.getElementById('sharedCtxTitulo').innerText = data.titulo || 'Sin título';
+                    document.getElementById('sharedCtxFormato').innerText = `${data.formato || 'N/A'} / ${data.tipo || 'N/A'}`;
+                    document.getElementById('sharedCtxTipo').innerText = data.tipo || 'N/A';
+                    document.getElementById('sharedCtxObjetivo').innerText = data.objetivo || 'N/A';
+                    document.getElementById('sharedCtxEstrategico').innerText = data.tipoEstrategico || 'N/A';
+                    document.getElementById('sharedCtxColab').innerText = data.colaboracion || 'N/A';
+                    document.getElementById('sharedCtxPub').innerText = data.publicacion || 'N/A';
+                    document.getElementById('sharedCtxFecha').innerText = data.fecha || 'N/A';
+                    document.getElementById('sharedCtxHora').innerText = data.hora || 'N/A';
+                    document.getElementById('sharedCtxStar').innerText = data.starFormat || 'Ninguno / Formato Libre';
+
+                    if (document.activeElement !== txtGuion) txtGuion.value = data.guion || '';
+                    if (document.activeElement !== txtCopy) txtCopy.value = data.copy || '';
+                    if (document.activeElement !== txtTags) txtTags.value = data.hashtags || '';
+                    
+                    [txtGuion, txtCopy, txtTags].forEach(ta => autoResize(ta));
+                } else {
+                    status.innerText = "Guion no encontrado";
+                    status.classList.replace('text-emerald-600', 'text-red-600');
+                    status.classList.replace('bg-emerald-50', 'bg-red-50');
+                }
+            });
+
+            btnGuardar.addEventListener('click', () => {
+                status.innerText = "Guardando...";
+                btnGuardar.disabled = true;
+                btnGuardar.innerHTML = "⏳ Guardando...";
+
+                setDoc(docRef, { 
+                    guion: txtGuion.value,
+                    copy: txtCopy.value,
+                    hashtags: txtTags.value,
+                    lastUpdate: serverTimestamp() 
+                }, { merge: true })
+                .then(() => {
+                    status.innerText = "Sincronizado";
+                    btnGuardar.innerHTML = "✅ Cambios Guardados";
+                    setTimeout(() => {
+                        btnGuardar.disabled = false;
+                        btnGuardar.innerHTML = "💾 Guardar Cambios";
+                    }, 2500);
+                })
+                .catch(err => {
+                    console.error("Error guardando:", err);
+                    alert("Error al guardar en la nube.");
+                    btnGuardar.disabled = false;
+                    btnGuardar.innerHTML = "⚠️ Reintentar";
+                });
+            });
+        };
+
     </script>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased">
 
-<div id="sharedEditorScreen" class="fixed inset-0 bg-slate-900 z-[3000] hidden flex-col overflow-y-auto">
-        <!-- Barra Superior -->
+    <div id="sharedEditorScreen" class="fixed inset-0 bg-slate-900 z-[3000] hidden flex-col overflow-y-auto">
         <div class="p-4 bg-slate-800 text-white flex justify-between items-center shadow-md sticky top-0 z-20">
             <h1 class="text-xl font-bold text-indigo-400 flex items-center gap-2">🟢 Videoka - Edición Colaborativa</h1>
             <div class="flex flex-col md:flex-row gap-3">
@@ -273,7 +377,6 @@
 
         <div class="flex-1 p-4 md:p-8 flex flex-col gap-6 bg-slate-50 max-w-5xl mx-auto w-full">
             
-            <!-- Zona de Contexto EXACTA a la captura -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <div class="flex justify-between items-center mb-4 border-b pb-2">
                     <h2 class="text-lg font-bold text-indigo-900">Contexto del Guion</h2>
@@ -327,7 +430,6 @@
                 </div>
             </div>
 
-            <!-- Zona de Edición (3 Cajas auto-ajustables con misma fuente) -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-indigo-100 flex flex-col gap-6">
                 <div>
                     <label class="block text-sm font-bold text-indigo-900 mb-2">1. Guion Estructurado</label>
@@ -406,13 +508,13 @@
                             <input type="text" id="temaCentral" onblur="guardarTemaCentralAuto()" placeholder="Ej. Emprendimiento STEAM y Ciencia" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                         </div>
                         
-                                <div class="mb-6 border-t pt-6">
+                        <div class="mb-6 border-t pt-6">
                             <label class="block text-sm font-semibold text-gray-600 mb-1">Ejes Transversales (Pilares Secundarios)</label>
                             <p class="text-xs text-gray-500 mb-2">Temáticas complementarias que cruzan tu contenido principal para humanizar la marca, generar afinidad o alcanzar a una audiencia más amplia. <br><span class="font-medium">Ejemplo:</span> <em>Productividad para académicos, Salud mental en el laboratorio, Análisis de herramientas digitales.</em></p>
                             <input type="text" id="inputEjes" placeholder="Escribe un eje secundario y presiona Enter..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mb-2">
                             <div id="listaEjes" class="flex flex-wrap"></div>
                         </div>
-                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-600 mb-2">Nicho de Contenido</label>
                                 <select id="nichoContenido" onchange="saveStrategyExtras()" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
@@ -445,18 +547,18 @@
                             <textarea id="descCreador" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Soy @Belucaa Gamer y me encanta tocar la guitarra, soy fan de la ciencia ficción, y disfruto el diseño digital..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll"></textarea>
                         </div>
 
-                            <div>
+                        <div>
                             <label class="block text-sm font-semibold text-gray-600 mb-2">Personalidad basada en Arquetipos (Selecciona máximo 2 para evitar dilución de mensaje)</label>
                             <div id="arquetiposContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-4 border rounded-lg bg-gray-50 max-h-64 overflow-y-auto custom-scroll"></div>
                             <div id="arquetipoDescripcion" class="mt-4 p-5 bg-indigo-50 border-l-4 border-indigo-500 text-sm text-indigo-900 hidden"></div>
                         </div>
                     </div>
 
-                        <div class="border-t pt-4 mt-4">
-                            <label class="block text-sm font-semibold text-gray-600 mb-1">Identidad y Tono de Comunicación</label>
-                            <p class="text-xs text-gray-500 mb-2">Define la identidad de tu marca, tu tono de voz, y el estilo de tu comunicación. <br><span class="font-medium">Ejemplo:</span> <em>Mi personalidad mezcla los arquetipos de “El Sabio” y “El Bufón”. Tono académico pero accesible, uso lenguaje científico intercalado con referencias de la cultura pop, ritmo rápido y directo.</em></p>
-                            <textarea id="identidadTono" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Mi tono es inspirador, riguroso y disruptivo..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll"></textarea>
-                        </div>
+                    <div class="border-t pt-4 mt-4">
+                        <label class="block text-sm font-semibold text-gray-600 mb-1">Identidad y Tono de Comunicación</label>
+                        <p class="text-xs text-gray-500 mb-2">Define la identidad de tu marca, tu tono de voz, y el estilo de tu comunicación. <br><span class="font-medium">Ejemplo:</span> <em>Mi personalidad mezcla los arquetipos de “El Sabio” y “El Bufón”. Tono académico pero accesible, uso lenguaje científico intercalado con referencias de la cultura pop, ritmo rápido y directo.</em></p>
+                        <textarea id="identidadTono" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Mi tono es inspirador, riguroso y disruptivo..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll"></textarea>
+                    </div>
                         
                     <div class="mb-6 border-t pt-6">
                         <label class="block text-sm font-semibold text-gray-800 mb-4 bg-slate-100 p-2 rounded">Objetivos del Contenido (Redacción obligatoria)</label>
@@ -489,83 +591,84 @@
                 </section>
                 
                 <section id="notas" class="tab-content w-full">
-        <h2 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Panel de Ideas y Tendencias</h2>
-        
-        <div class="mb-6 p-4 bg-indigo-50 border-l-4 border-indigo-600 rounded-r-lg shadow-sm">
-            <p class="text-xs text-indigo-800 leading-relaxed text-justify">
-                <strong>Instrucciones:</strong> Registre los datos correspondientes en cada columna para organizar la ideación.
-            </p>
-        </div>
-
-        <div class="overflow-x-auto pb-4 custom-scroll">
-            <div class="flex gap-6 min-w-[1200px]">
-                
-                <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropTask(event, 'ideas')">
-                    <h3 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Ideas Crudas</h3>
-                    <div class="flex gap-2 mb-4">
-                        <input type="text" id="inputTarea_ideas" class="flex-1 p-2 border rounded text-sm" placeholder="Nueva idea..." onkeypress="if(event.key === 'Enter') addTask('ideas')">
-                        <button onclick="addTask('ideas')" class="bg-indigo-500 text-white px-3 rounded hover:bg-indigo-600 transition font-bold">+</button>
+                    <h2 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Panel de Ideas y Tendencias</h2>
+                    
+                    <div class="mb-6 p-4 bg-indigo-50 border-l-4 border-indigo-600 rounded-r-lg shadow-sm">
+                        <p class="text-xs text-indigo-800 leading-relaxed text-justify">
+                            <strong>Instrucciones:</strong> Registre los datos correspondientes en cada columna para organizar la ideación.
+                        </p>
                     </div>
-                    <ul id="lista_ideas" class="space-y-2 text-sm"></ul>
-                </div>
 
-                <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropTask(event, 'audios')">
-                    <h3 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Audios y Referencias</h3>
-                    <div class="flex gap-2 mb-4">
-                        <input type="text" id="inputTarea_audios" class="flex-1 p-2 border rounded text-sm" placeholder="Link..." onkeypress="if(event.key === 'Enter') addTask('audios')">
-                        <button onclick="addTask('audios')" class="bg-indigo-500 text-white px-3 rounded hover:bg-indigo-600 transition font-bold">+</button>
+                    <div class="overflow-x-auto pb-4 custom-scroll">
+                        <div class="flex gap-6 min-w-[1200px]">
+                            
+                            <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropTask(event, 'ideas')">
+                                <h3 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Ideas Crudas</h3>
+                                <div class="flex gap-2 mb-4">
+                                    <input type="text" id="inputTarea_ideas" class="flex-1 p-2 border rounded text-sm" placeholder="Nueva idea..." onkeypress="if(event.key === 'Enter') addTask('ideas')">
+                                    <button onclick="addTask('ideas')" class="bg-indigo-500 text-white px-3 rounded hover:bg-indigo-600 transition font-bold">+</button>
+                                </div>
+                                <ul id="lista_ideas" class="space-y-2 text-sm"></ul>
+                            </div>
+
+                            <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropTask(event, 'audios')">
+                                <h3 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Audios y Referencias</h3>
+                                <div class="flex gap-2 mb-4">
+                                    <input type="text" id="inputTarea_audios" class="flex-1 p-2 border rounded text-sm" placeholder="Link..." onkeypress="if(event.key === 'Enter') addTask('audios')">
+                                    <button onclick="addTask('audios')" class="bg-indigo-500 text-white px-3 rounded hover:bg-indigo-600 transition font-bold">+</button>
+                                </div>
+                                <ul id="lista_audios" class="space-y-2 text-sm"></ul>
+                            </div>
+
+                            <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropTask(event, 'tendencias')">
+                                <h3 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Tendencias</h3>
+                                <div class="flex gap-2 mb-4">
+                                    <input type="text" id="inputTarea_tendencias" class="flex-1 p-2 border rounded text-sm" placeholder="Tendencia..." onkeypress="if(event.key === 'Enter') addTask('tendencias')">
+                                    <button onclick="addTask('tendencias')" class="bg-indigo-500 text-white px-3 rounded hover:bg-indigo-600 transition font-bold">+</button>
+                                </div>
+                                <ul id="lista_tendencias" class="space-y-2 text-sm"></ul>
+                            </div>
+
+                            <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropTask(event, 'proximos')">
+                                <h3 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Próximos Videos</h3>
+                                <div class="flex gap-2 mb-4">
+                                    <input type="text" id="inputTarea_proximos" class="flex-1 p-2 border rounded text-sm" placeholder="Video..." onkeypress="if(event.key === 'Enter') addTask('proximos')">
+                                    <button onclick="addTask('proximos')" class="bg-indigo-500 text-white px-3 rounded hover:bg-indigo-600 transition font-bold">+</button>
+                                </div>
+                                <ul id="lista_proximos" class="space-y-2 text-sm"></ul>
+                            </div>
+
+                        </div> 
+                    </div> 
+                    <div class="mt-12 pt-6 border-t border-gray-200 w-full">
+                        <h4 class="font-bold text-gray-700 text-sm mb-2">Historial de Tareas Completadas</h4>
+                        <div id="history-list-tasks" class="max-h-40 overflow-y-auto bg-white p-2 rounded border border-gray-200"></div>
                     </div>
-                    <ul id="lista_audios" class="space-y-2 text-sm"></ul>
-                </div>
-
-                <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropTask(event, 'tendencias')">
-                    <h3 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Tendencias</h3>
-                    <div class="flex gap-2 mb-4">
-                        <input type="text" id="inputTarea_tendencias" class="flex-1 p-2 border rounded text-sm" placeholder="Tendencia..." onkeypress="if(event.key === 'Enter') addTask('tendencias')">
-                        <button onclick="addTask('tendencias')" class="bg-indigo-500 text-white px-3 rounded hover:bg-indigo-600 transition font-bold">+</button>
-                    </div>
-                    <ul id="lista_tendencias" class="space-y-2 text-sm"></ul>
-                </div>
-
-                <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropTask(event, 'proximos')">
-                    <h3 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Próximos Videos</h3>
-                    <div class="flex gap-2 mb-4">
-                        <input type="text" id="inputTarea_proximos" class="flex-1 p-2 border rounded text-sm" placeholder="Video..." onkeypress="if(event.key === 'Enter') addTask('proximos')">
-                        <button onclick="addTask('proximos')" class="bg-indigo-500 text-white px-3 rounded hover:bg-indigo-600 transition font-bold">+</button>
-                    </div>
-                    <ul id="lista_proximos" class="space-y-2 text-sm"></ul>
-                </div>
-
-            </div> </div> <div class="mt-12 pt-6 border-t border-gray-200 w-full">
-            <h4 class="font-bold text-gray-700 text-sm mb-2">Historial de Tareas Completadas</h4>
-            <div id="history-list-tasks" class="max-h-40 overflow-y-auto bg-white p-2 rounded border border-gray-200"></div>
-        </div>
-    </section>
+                </section>
 
                 <section id="estrategia_resumen" class="tab-content max-w-4xl mx-auto bg-white p-4 md:p-8 rounded-xl shadow-sm border border-gray-100">
                     <h2 class="text-3xl font-bold mb-6 text-indigo-900 border-b pb-2">Estrategia de Contenido Resumida</h2>
                     
-                    <div id="resumenContent" class="space-y-6">
+                    <div id="resumenContent" class="space-y-6"></div>
+                    <div class="mt-8 border-t pt-6 bg-indigo-50/30 p-6 rounded-xl border border-indigo-100">
+                        <h3 class="text-xl font-bold mb-2 text-indigo-800 flex items-center gap-2">⭐ Formatos Estrella</h3>
+                        <p class="text-xs text-gray-500 mb-4 italic">Define hasta 3 formatos ganadores para que la IA los considere en el calendario.</p>
+                        
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <textarea id="starFormat1_name" onblur="saveStarFormats()" placeholder="Nombre Formato Estrella 1 (Ej: Qué tan probable es...?)" class="w-full p-3 border rounded-lg text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
+                                <textarea id="starFormat1_desc" onblur="saveStarFormats()" placeholder="Descripción del formato estrella 1..." class="w-full p-3 border rounded-lg text-xs md:col-span-2 shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <textarea id="starFormat2_name" onblur="saveStarFormats()" placeholder="Nombre Formato Estrella 2 (Ej: ¿Sabías qué...?)" class="w-full p-3 border rounded-lg text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
+                                <textarea id="starFormat2_desc" onblur="saveStarFormats()" placeholder="Descripción del formato estrella 2..." class="w-full p-3 border rounded-lg text-xs md:col-span-2 shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <textarea id="starFormat3_name" onblur="saveStarFormats()" placeholder="Nombre Formato Estrella 3 (Ej: Esto es lo que tienes que hacer para que tú...)" class="w-full p-3 border rounded-lg text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
+                                <textarea id="starFormat3_desc" onblur="saveStarFormats()" placeholder="Descripción del formato estrella 3..." class="w-full p-3 border rounded-lg text-xs md:col-span-2 shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
+                            </div>
                         </div>
-    <div class="mt-8 border-t pt-6 bg-indigo-50/30 p-6 rounded-xl border border-indigo-100">
-        <h3 class="text-xl font-bold mb-2 text-indigo-800 flex items-center gap-2">⭐ Formatos Estrella</h3>
-        <p class="text-xs text-gray-500 mb-4 italic">Define hasta 3 formatos ganadores para que la IA los considere en el calendario.</p>
-        
-    <div class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <textarea id="starFormat1_name" onblur="saveStarFormats()" placeholder="Nombre Formato Estrella 1 (Ej: Qué tan probable es...?)" class="w-full p-3 border rounded-lg text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
-                <textarea id="starFormat1_desc" onblur="saveStarFormats()" placeholder="Descripción del formato estrella 1..." class="w-full p-3 border rounded-lg text-xs md:col-span-2 shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <textarea id="starFormat2_name" onblur="saveStarFormats()" placeholder="Nombre Formato Estrella 2 (Ej: ¿Sabías qué...?)" class="w-full p-3 border rounded-lg text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
-                <textarea id="starFormat2_desc" onblur="saveStarFormats()" placeholder="Descripción del formato estrella 2..." class="w-full p-3 border rounded-lg text-xs md:col-span-2 shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <textarea id="starFormat3_name" onblur="saveStarFormats()" placeholder="Nombre Formato Estrella 3 (Ej: Esto es lo que tienes que hacer para que tú...)" class="w-full p-3 border rounded-lg text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
-                <textarea id="starFormat3_desc" onblur="saveStarFormats()" placeholder="Descripción del formato estrella 3..." class="w-full p-3 border rounded-lg text-xs md:col-span-2 shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
-            </div>
-        </div>
-    </div>
+                    </div>
                     <div class="mt-8 border-t pt-6">
                         <h3 class="text-xl font-bold mb-4 text-gray-800">AI Prompt Generator</h3>
                         <p class="text-sm text-gray-500 mb-4">Copia este prompt para usarlo en ChatGPT, Claude o Gemini y generar tu calendario de 30 días.</p>
@@ -579,12 +682,12 @@
                         <p class="text-sm text-gray-500 mb-4">Pega en este cuadro la tabla generada por tu IA. Luego haz clic en "Generar y Guardar Tabla" para procesarla y almacenarla de forma persistente.</p>
                         <textarea id="tablaIAPaste" rows="4" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 text-xs custom-scroll bg-indigo-50/20" placeholder="Pega tu tabla aquí (Asegúrate de copiar los datos desde la fila de encabezados)..."></textarea>
                         
-                    <button onclick="guardarYProcesarTabla()" class="mt-3 w-full md:w-auto bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-md transition">
-        Generar y Guardar Tabla
-    </button>
+                        <button onclick="guardarYProcesarTabla()" class="mt-3 w-full md:w-auto bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-md transition">
+                            Generar y Guardar Tabla
+                        </button>
                         <div id="calendarioTablaContainer" class="mt-6 hidden">
                             <div class="overflow-x-auto custom-scroll border rounded-lg shadow-sm relative">
-                            <table class="w-full text-left text-xs border-collapse min-w-[1200px]">
+                                <table class="w-full text-left text-xs border-collapse min-w-[1200px]">
                                     <thead>
                                         <tr class="bg-indigo-100 text-indigo-900 border-b-2 border-indigo-200">
                                             <th class="p-3">Día</th>
@@ -599,7 +702,7 @@
                                         </tr>
                                     </thead>
                                     <tbody id="calendarioTablaBody" class="bg-white">
-                                        </tbody>
+                                    </tbody>
                                 </table>
                             </div>
                         </div>
@@ -706,26 +809,26 @@
                                 <input type="time" id="ideaHora" class="w-full p-3 border rounded-lg outline-none">
                             </div>
                             <div>
-        <label class="block text-sm font-semibold text-purple-600 mb-2">⭐ Formato Estrella <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
-        <select id="ideaStarFormat" onchange="updateLivePrompt()" class="w-full p-3 border border-purple-200 rounded-lg outline-none bg-purple-50/20 font-medium text-purple-900">
-            <option value="">Ninguno / Formato Libre</option>
-        </select>
-    </div>
+                                <label class="block text-sm font-semibold text-purple-600 mb-2">⭐ Formato Estrella <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
+                                <select id="ideaStarFormat" onchange="updateLivePrompt()" class="w-full p-3 border border-purple-200 rounded-lg outline-none bg-purple-50/20 font-medium text-purple-900">
+                                    <option value="">Ninguno / Formato Libre</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div class="mb-6">
                             <label class="block text-sm font-semibold text-indigo-600 mb-2">Idea de Gancho (HOOK)</label>
                             <textarea id="ideaHook" oninput="updateLivePrompt()" placeholder="Ej: ¿Sabías que...?" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50/30 custom-scroll" rows="3"></textarea>
                         </div>
-    <div class="mb-6">
-        <label class="block text-sm font-semibold text-indigo-600 mb-2">Enlaces de Referencia <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
-        <textarea id="ideaEnlaces" oninput="updateLivePrompt()" placeholder="Ej: https://ejemplo.com (Deja vacío si no aplica)" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50/30 custom-scroll" rows="3"></textarea>
-    </div>
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-indigo-600 mb-2">Enlaces de Referencia <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
+                            <textarea id="ideaEnlaces" oninput="updateLivePrompt()" placeholder="Ej: https://ejemplo.com (Deja vacío si no aplica)" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50/30 custom-scroll" rows="3"></textarea>
+                        </div>
 
-    <div class="mb-6">
-        <label class="block text-sm font-semibold text-indigo-600 mb-2">Idea Inicial o Guion Base <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
-        <textarea id="ideaGuionBase" oninput="updateLivePrompt()" placeholder="Ej: Deseo explicar los 3 pilares... (Deja vacío si no aplica)" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50/30 custom-scroll" rows="3"></textarea>
-    </div>
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-indigo-600 mb-2">Idea Inicial o Guion Base <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
+                            <textarea id="ideaGuionBase" oninput="updateLivePrompt()" placeholder="Ej: Deseo explicar los 3 pilares... (Deja vacío si no aplica)" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50/30 custom-scroll" rows="3"></textarea>
+                        </div>
                         <div class="mb-8 border-t-2 border-dashed pt-6 bg-slate-50 p-6 rounded-xl">
                             <h3 class="text-sm font-bold text-indigo-900 mb-3 uppercase tracking-wider flex items-center gap-2">
                                 ✨ AI SCRIPT PROMPT (Basado en tu selección)
@@ -739,15 +842,15 @@
 
                         <div class="mb-4 relative">
                             <div class="flex justify-between items-end mb-1">
-    <div>
-        <label class="block text-sm font-semibold text-gray-600 mb-1">Guion, Copy y Hashtags</label>
-        <p class="text-[10px] text-gray-400">💡 Estructura: [HOOK] -> [FRASE] -> [CUERPO] -> [CTA]</p>
-    </div>
-    <div class="flex flex-col sm:flex-row gap-2">
-        <button type="button" id="btnSyncEnlace" onclick="sincronizarDesdeEnlace()" class="text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 py-1 rounded font-bold transition shadow-sm items-center gap-1 border border-blue-300 hidden flex">⬇️ Sincronizar cambios de la nube</button>
-        <button type="button" onclick="generarEnlaceColaborativo()" class="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1 rounded font-bold transition shadow-sm flex items-center gap-1 border border-emerald-300">🔗 Generar Enlace Vivo</button>
-    </div>
-</div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-600 mb-1">Guion, Copy y Hashtags</label>
+                                    <p class="text-[10px] text-gray-400">💡 Estructura: [HOOK] -> [FRASE] -> [CUERPO] -> [CTA]</p>
+                                </div>
+                                <div class="flex flex-col sm:flex-row gap-2">
+                                    <button type="button" id="btnSyncEnlace" onclick="sincronizarDesdeEnlace()" class="text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 py-1 rounded font-bold transition shadow-sm items-center gap-1 border border-blue-300 hidden flex">⬇️ Sincronizar cambios de la nube</button>
+                                    <button type="button" onclick="generarEnlaceColaborativo()" class="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1 rounded font-bold transition shadow-sm flex items-center gap-1 border border-emerald-300">🔗 Generar Enlace Vivo</button>
+                                </div>
+                            </div>
                             <textarea id="ideaGuion" rows="5" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" placeholder="Escribe aquí la estructura de tu guion..."></textarea>
                         </div>
 
@@ -788,7 +891,7 @@
                     </div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div id="plannerContainer" class="overflow-auto max-h-[70vh] custom-scroll">
-                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -833,15 +936,17 @@
                             </div>
                         </div>
                     </div>
-                  <div class="mt-12 pt-6 border-t border-gray-200 w-full" style="clear: both;">
-            <h4 class="font-bold text-gray-700 text-sm mb-2">Historial de Notas Completadas</h4>
-            <div id="history-list-notas" class="max-h-40 overflow-y-auto bg-white p-2 rounded border border-gray-200"></div>
-        </div>
-    </section>
+                    <div class="mt-12 pt-6 border-t border-gray-200 w-full" style="clear: both;">
+                        <h4 class="font-bold text-gray-700 text-sm mb-2">Historial de Notas Completadas</h4>
+                        <div id="history-list-notas" class="max-h-40 overflow-y-auto bg-white p-2 rounded border border-gray-200"></div>
+                    </div>
+                </section>
 
             </main>
         </div>
-    </div> <script>
+    </div> 
+    
+    <script>
         const arquetiposInfo = {
             "El Sabio": "Busca la verdad y el conocimiento. Su estrategia se basa en el rigor científico, el análisis y la pedagogía. Formatos: Data-storytelling, análisis de papers.",
             "El Bufón": "Vive el momento con alegría e irreverencia. Su estrategia es la viralidad emocional y romper la tensión con humor. Formatos: Memes educativos, POV.",
@@ -1096,171 +1201,18 @@
             }
             select.value = valorActual;
         }
-// --- NUEVA FUNCIÓN: GENERAR ENLACE DE COLABORACIÓN ---
-        window.generarEnlaceColaborativo = async () => {
-    if(!window.db) return alert("Debes iniciar sesión para generar un enlace en vivo.");
-    
-    // Captura exhaustiva de todos los campos del contexto y contenido
-    const payload = {
-        titulo: document.getElementById('ideaTitulo').value || 'Sin título',
-        formato: document.getElementById('ideaFormato').value,
-        tipo: document.getElementById('ideaTipo').value,
-        objetivo: document.getElementById('ideaObjetivo').value,
-        tipoEstrategico: document.getElementById('ideaTipoEstrategico').value,
-        colaboracion: document.getElementById('ideaColaboracion').value,
-        publicacion: document.getElementById('ideaPublicacion').value,
-        fecha: document.getElementById('ideaFecha').value,
-        hora: document.getElementById('ideaHora').value,
-        starFormat: document.getElementById('ideaStarFormat').value,
-        hook: document.getElementById('ideaHook').value,
-        guionBase: document.getElementById('ideaGuionBase').value,
-        guion: document.getElementById('ideaGuion').value,
-        copy: document.getElementById('ideaCopy').value,
-        hashtags: document.getElementById('ideaHashtags').value,
-        createdAt: window.serverTimestamp()
-    };
 
-    const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-    
-    try {
-        const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js");
-        const docRef = doc(window.db, "shared_guiones", uniqueId);
-        
-        await setDoc(docRef, payload);
+        function guardarIdea() {
+            const titulo = document.getElementById('ideaTitulo').value;
+            if (!titulo) return alert('Título requerido');
 
-        // ... (resto de tu lógica de actualización de estado y enlace)
-        const shareUrl = window.location.origin + window.location.pathname + "?shared=" + uniqueId;
-        navigator.clipboard.writeText(shareUrl).then(() => {
-            alert(`¡Enlace generado y copiado!`);
-        });
-    } catch (error) {
-        console.error("Error al exportar sesión:", error);
-        alert("Error al conectar con la nube.");
-    }
-};
-// --- VARIABLE GLOBAL PARA RETENER DATOS ---
-window.tempSyncData = { guion: '', copy: '', tags: '' };
+            const ideaActual = ideas.find(i => i.id === editandoId);
+            const sharedId = ideaActual ? (ideaActual.sharedId || null) : null;
 
-// --- FUNCIÓN DE SINCRONIZACIÓN ---
-window.sincronizarDesdeEnlace = async () => {
-    if (!editandoId) return;
-    const idea = ideas.find(i => i.id === editandoId);
-    if (!idea || !idea.sharedId) return alert("No hay un enlace activo vinculado a este guion.");
-
-    const btnSync = document.getElementById('btnSyncEnlace');
-    btnSync.innerText = "⏳ Consultando Nube...";
-    
-    try {
-        const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js");
-        const docSnap = await getDoc(doc(window.db, "shared_guiones", idea.sharedId));
-        
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            window.tempSyncData = { guion: data.guion || '', copy: data.copy || '', tags: data.hashtags || '' };   
-        // --- FUNCIÓN AUXILIAR DE RESALTADO ---
-window.highlightChanges = (local, cloud) => {
-    if (!local || !cloud) return cloud;
-    const localWords = local.split(' ');
-    const cloudWords = cloud.split(' ');
-    
-    return cloudWords.map(word => {
-        // Marca en verde y negrita solo si la palabra NO existe en tu versión local
-        return localWords.includes(word) ? word : `<span class="font-bold text-emerald-900 bg-emerald-100 px-1 rounded">${word}</span>`;
-    }).join(' ');
-};
-            // Auditoría visual antes de aplicar cambios
-            mostrarAuditoriaCambios(
-                document.getElementById('ideaGuion').value, data.guion,
-                document.getElementById('ideaCopy').value, data.copy,
-                document.getElementById('ideaHashtags').value, data.hashtags
-            );
-        } else {
-            alert("El guion compartido ya no existe en la nube.");
-        }
-    } catch(e) {
-        console.error("Error al sincronizar:", e);
-        alert("Fallo al conectar con la nube.");
-    }
-    btnSync.innerText = "⬇️ Sincronizar cambios de la nube";
-};
-
-// --- MÓDULO DE AUDITORÍA Y COMPARACIÓN AMPLIADO ---
-window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT) => {
-    const modal = document.getElementById('modalOverlay');
-    const content = document.getElementById('modalContent');
-    
-    // Aquí es donde usamos la función anterior
-    const highlightedGuion = window.highlightChanges(lG, nG);
-    const highlightedCopy = window.highlightChanges(lC, nC);
-    const highlightedTags = window.highlightChanges(lT, nT);
-    
-    content.innerHTML = `
-        <div class="max-w-6xl w-full">
-            <h3 class="font-bold text-2xl mb-2 text-indigo-900 border-b pb-2">Auditoría de Cambios</h3>
-            <p class="text-xs text-gray-500 mb-6 italic">Visualizando diferencias. Las palabras marcadas en <b>verde</b> son las que están en la nube pero no en tu versión local.</p>
-            
-            <div class="grid grid-cols-2 gap-6">
-                <!-- Columna Local -->
-                <div class="space-y-4">
-                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Versión Local (Tu editor)</label>
-                    <div class="p-4 bg-gray-50 rounded-lg border h-96 overflow-y-auto custom-scroll text-sm text-gray-700 whitespace-pre-wrap">${lG}</div>
-                    <div class="p-4 bg-gray-50 rounded-lg border h-32 overflow-y-auto custom-scroll text-sm text-gray-700 whitespace-pre-wrap">${lC}</div>
-                    <div class="p-4 bg-gray-50 rounded-lg border text-sm text-gray-700">${lT}</div>
-                </div>
-
-                <!-- Columna Nube -->
-                <div class="space-y-4">
-                    <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest">Versión Nube (Cambios detectados)</label>
-                    <div class="p-4 bg-emerald-50 rounded-lg border h-96 overflow-y-auto custom-scroll text-sm text-emerald-900 whitespace-pre-wrap">${highlightedGuion}</div>
-                    <div class="p-4 bg-emerald-50 rounded-lg border h-32 overflow-y-auto custom-scroll text-sm text-emerald-900 whitespace-pre-wrap">${highlightedCopy}</div>
-                    <div class="p-4 bg-emerald-50 rounded-lg border text-sm text-emerald-900">${highlightedTags}</div>
-                </div>
-            </div>
-            
-            <div class="mt-8 flex justify-end gap-3 border-t pt-4">
-                <button onclick="closeModal(null)" class="px-6 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg">Rechazar / Cancelar</button>
-                <button onclick="aplicarAuditoria()" class="bg-indigo-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-lg">Aceptar Cambios y Sincronizar</button>
-            </div>
-        </div>
-    `;
-    modal.style.display = 'flex';
-};
-
-// --- APLICACIÓN FINAL DE DATOS ---
-window.aplicarAuditoria = () => {
-    document.getElementById('ideaGuion').value = window.tempSyncData.guion;
-    document.getElementById('ideaCopy').value = window.tempSyncData.copy;
-    document.getElementById('ideaHashtags').value = window.tempSyncData.tags;
-   // 2. Ejecutar la lógica de guardado lógico y persistencia
-    // Esto actualizará el array 'ideas', localStorage y enviará a Firebase
-    if (editandoId) {
-        guardarIdea(); 
-    } else {
-        console.warn("No se detectó un ID de edición activo. Los cambios se aplicaron visualmente pero no se persistieron.");
-    }
-
-    closeModal(null);
-    alert("✅ Datos importados y sincronizados correctamente.");
-}; 
-
-// --- MANTENEMOS LAS FUNCIONES DE APOYO Y PERSISTENCIA ---
-window.iniciarSesionGoogle = () => { signInWithPopup(auth, provider).catch(console.error); };
-window.cerrarSesion = () => signOut(auth).then(() => window.location.reload());
-        
-      function guardarIdea() {
-    const titulo = document.getElementById('ideaTitulo').value;
-    if (!titulo) return alert('Título requerido');
-
-    // Recuperamos la idea actual si existe para preservar el sharedId
-    const ideaActual = ideas.find(i => i.id === editandoId);
-    
-    // Si la idea existe, conservamos su sharedId; si es nueva, será null
-    const sharedId = ideaActual ? (ideaActual.sharedId || null) : null;
-
-    const datos = {
-        id: editandoId || Date.now(),
-        sharedId: sharedId, 
-        titulo, // Propiedad abreviada: equivale a titulo: titulo
+            const datos = {
+                id: editandoId || Date.now(),
+                sharedId: sharedId, 
+                titulo, 
                 formato: document.getElementById('ideaFormato').value,
                 tipo: document.getElementById('ideaTipo').value,
                 objetivo: document.getElementById('ideaObjetivo').value,
@@ -1277,6 +1229,7 @@ window.cerrarSesion = () => signOut(auth).then(() => window.location.reload());
                 copy: document.getElementById('ideaCopy').value,
                 hashtags: document.getElementById('ideaHashtags').value
             };
+            
             if (editandoId) {
                 const index = ideas.findIndex(i => i.id === editandoId);
                 ideas[index] = datos;
@@ -1313,6 +1266,7 @@ window.cerrarSesion = () => signOut(auth).then(() => window.location.reload());
             document.getElementById('ideaGuion').value = idea.guion || '';
             document.getElementById('ideaCopy').value = idea.copy || '';
             document.getElementById('ideaHashtags').value = idea.hashtags || '';
+            
             if (idea.sharedId) {
                 document.getElementById('btnSyncEnlace').classList.remove('hidden');
             } else {
@@ -1936,9 +1890,11 @@ ENTREGABLES ADICIONALES (Debajo del guion):
                 textarea.addEventListener('input', resizeHandler);
             });
         }
-        window.addEventListener('load', autoResizeTextareas);
+        
+        window.addEventListener('load', () => {
+            initAppState();
+            autoResizeTextareas();
+        });
     </script>
 </body>
 </html>
-
-```
