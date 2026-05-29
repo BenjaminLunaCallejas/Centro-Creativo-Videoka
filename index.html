@@ -140,81 +140,100 @@
                 }
             });
         }
-// Lógica del Editor Compartido en Vivo
-        function initSharedMode(id) {
-            const sharedScreen = document.getElementById('sharedEditorScreen');
-            const txtGuion = document.getElementById('sharedGuionTextarea');
-            const txtCopy = document.getElementById('sharedCopyTextarea');
-            const txtTags = document.getElementById('sharedHashtagsTextarea');
-            const status = document.getElementById('syncStatus');
-            const btnGuardar = document.getElementById('btnSharedGuardar');
-
-            sharedScreen.classList.remove('hidden');
-            sharedScreen.classList.add('flex');
-
-            // --- ESTO ES LO QUE NECESITABAS: AUTO-RESIZE ---
-            const autoResize = (el) => { el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px'; };
-            [txtGuion, txtCopy, txtTags].forEach(ta => ta.addEventListener('input', function() { autoResize(this); }));
-
-            const docRef = doc(db, "shared_guiones", id);
-
-        // Escuchar cambios de la nube en tiempo real
-            onSnapshot(docRef, (snap) => {
-                if (snap.exists()) {
-                    const data = snap.data();
-                    // --- AQUÍ ESTÁ EL MAPEO DE LOS 10 CAMPOS QUE QUERÍAS ---
-                    document.getElementById('sharedCtxTitulo').innerText = data.titulo || 'Sin título';
-                    document.getElementById('sharedCtxFormato').innerText = `${data.formato || 'N/A'} / ${data.tipo || 'N/A'}`;
-                    document.getElementById('sharedCtxTipo').innerText = data.tipo || 'N/A';
-                    document.getElementById('sharedCtxObjetivo').innerText = data.objetivo || 'N/A';
-                    document.getElementById('sharedCtxEstrategico').innerText = data.tipoEstrategico || 'N/A';
-                    document.getElementById('sharedCtxColab').innerText = data.colaboracion || 'N/A';
-                    document.getElementById('sharedCtxPub').innerText = data.publicacion || 'N/A';
-                    document.getElementById('sharedCtxFecha').innerText = data.fecha || 'N/A';
-                    document.getElementById('sharedCtxHora').innerText = data.hora || 'N/A';
-                    document.getElementById('sharedCtxStar').innerText = data.starFormat || 'Ninguno / Formato Libre';
-
-                    if (document.activeElement !== txtGuion) txtGuion.value = data.guion || '';
-                    if (document.activeElement !== txtCopy) txtCopy.value = data.copy || '';
-                    if (document.activeElement !== txtTags) txtTags.value = data.hashtags || '';
-                    
-                    // Ajustamos el tamaño tras recibir datos de la nube
-                    [txtGuion, txtCopy, txtTags].forEach(ta => autoResize(ta));
-                } else {
-                    status.innerText = "Guion no encontrado";
-                    status.classList.replace('text-emerald-600', 'text-red-600');
-                    status.classList.replace('bg-emerald-50', 'bg-red-50');
-                }
-            });
-
-            btnGuardar.addEventListener('click', () => {
-                status.innerText = "Guardando...";
-                btnGuardar.disabled = true;
-                btnGuardar.innerHTML = "⏳ Guardando...";
-
-                setDoc(docRef, { 
-                    guion: txtGuion.value,
-                    copy: txtCopy.value,
-                    hashtags: txtTags.value,
-                    lastUpdate: serverTimestamp() 
-                }, { merge: true })
-                .then(() => {
-                    status.innerText = "Sincronizado";
-                    btnGuardar.innerHTML = "✅ Cambios Guardados";
-                    setTimeout(() => {
-                        btnGuardar.disabled = false;
-                        btnGuardar.innerHTML = "💾 Guardar Cambios";
-                    }, 2500);
-                })
-                .catch(err => {
-                    console.error("Error guardando:", err);
-                    alert("Error al guardar en la nube.");
-                    btnGuardar.disabled = false;
-                    btnGuardar.innerHTML = "⚠️ Reintentar";
-                });
-            });
+async function initSharedMode(id) {
+    console.log("Iniciando modo compartido para:", id);
+    
+    // 1. Esperar a que el DOM esté completamente cargado y los elementos existan
+    const checkElements = setInterval(() => {
+        const txtGuion = document.getElementById('sharedGuionTextarea');
+        const txtCopy = document.getElementById('sharedCopyTextarea');
+        const txtTags = document.getElementById('sharedHashtagsTextarea');
+        const sharedScreen = document.getElementById('sharedEditorScreen');
+        const btnGuardar = document.getElementById('btnSharedGuardar');
+        const status = document.getElementById('syncStatus');
+        
+        if (txtGuion && txtCopy && txtTags && sharedScreen && btnGuardar && status) {
+            clearInterval(checkElements);
+            proceedWithSharedMode(id, txtGuion, txtCopy, txtTags, sharedScreen, btnGuardar, status);
         }
+    }, 100);
+}
 
+function proceedWithSharedMode(id, txtGuion, txtCopy, txtTags, sharedScreen, btnGuardar, status) {
+    sharedScreen.classList.remove('hidden');
+    sharedScreen.classList.add('flex');
+
+    // Auto-resize
+    const autoResize = (el) => { 
+        if(!el) return;
+        el.style.height = 'auto'; 
+        el.style.height = (el.scrollHeight) + 'px'; 
+    };
+    [txtGuion, txtCopy, txtTags].forEach(ta => ta.addEventListener('input', function() { autoResize(this); }));
+
+    const docRef = doc(db, "shared_guiones", id);
+
+    // Escuchar cambios de la nube en tiempo real
+    onSnapshot(docRef, (snap) => {
+        if (snap.exists()) {
+            const data = snap.data();
+            
+            // Mapeo de contexto
+            const setCtx = (elId, val) => {
+                const el = document.getElementById(elId);
+                if(el) el.innerText = val || 'N/A';
+            };
+
+            setCtx('sharedCtxTitulo', data.titulo);
+            setCtx('sharedCtxFormato', `${data.formato || 'N/A'} / ${data.tipo || 'N/A'}`);
+            setCtx('sharedCtxTipo', data.tipo);
+            setCtx('sharedCtxObjetivo', data.objetivo);
+            setCtx('sharedCtxEstrategico', data.tipoEstrategico);
+            setCtx('sharedCtxColab', data.colaboracion);
+            setCtx('sharedCtxPub', data.publicacion);
+            setCtx('sharedCtxFecha', data.fecha);
+            setCtx('sharedCtxHora', data.hora);
+            setCtx('sharedCtxStar', data.starFormat);
+
+            if (document.activeElement !== txtGuion) txtGuion.value = data.guion || '';
+            if (document.activeElement !== txtCopy) txtCopy.value = data.copy || '';
+            if (document.activeElement !== txtTags) txtTags.value = data.hashtags || '';
+            
+            [txtGuion, txtCopy, txtTags].forEach(ta => autoResize(ta));
+        } else {
+            status.innerText = "Guion no encontrado";
+            status.classList.replace('text-emerald-600', 'text-red-600');
+        }
+    }, (err) => console.error("Error en Snapshot:", err));
+
+    // Lógica de guardado original
+    btnGuardar.addEventListener('click', () => {
+        status.innerText = "Guardando...";
+        btnGuardar.disabled = true;
+        btnGuardar.innerHTML = "⏳ Guardando...";
+
+        setDoc(docRef, { 
+            guion: txtGuion.value,
+            copy: txtCopy.value,
+            hashtags: txtTags.value,
+            lastUpdate: serverTimestamp() 
+        }, { merge: true })
+        .then(() => {
+            status.innerText = "Sincronizado";
+            btnGuardar.innerHTML = "✅ Cambios Guardados";
+            setTimeout(() => {
+                btnGuardar.disabled = false;
+                btnGuardar.innerHTML = "💾 Guardar Cambios";
+            }, 2500);
+        })
+        .catch(err => {
+            console.error("Error guardando:", err);
+            alert("Error al guardar en la nube.");
+            btnGuardar.disabled = false;
+            btnGuardar.innerHTML = "⚠️ Reintentar";
+        });
+    });
+}
         window.iniciarSesionGoogle = () => {
             signInWithPopup(auth, provider).catch(error => console.error("Error Auth:", error));
         };
