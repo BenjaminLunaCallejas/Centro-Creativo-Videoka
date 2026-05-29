@@ -95,11 +95,22 @@
     line-height: 1.5;
     height: 100%;
 }
-        /* Resaltado de auditoría para identificar cambios en la nube */
+    /* Resaltado de auditoría para identificar cambios en la nube */
 .highlight-diff {
     font-weight: bold !important;
     color: #047857 !important; /* Verde esmeralda oscuro */
     background-color: #d1fae5; /* Verde esmeralda claro */
+    padding: 0.15rem 0.3rem;
+    border-radius: 0.25rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* NUEVO: Resaltado para el texto eliminado (tachado y rojo) */
+.highlight-deleted {
+    font-weight: bold !important;
+    color: #b91c1c !important; /* Rojo oscuro */
+    background-color: #fee2e2; /* Rojo claro */
+    text-decoration: line-through; /* Tachado */
     padding: 0.15rem 0.3rem;
     border-radius: 0.25rem;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
@@ -212,9 +223,11 @@ onAuthStateChanged(auth, (user) => {
             syncTimeout = setTimeout(window.syncToCloud, 1000); 
         };
 
-        // --- LÓGICA DE AUDITORÍA Y COMPARACIÓN AMPLIADA ---
-        window.highlightChanges = (local, cloud) => {
-            if (!local || !cloud) return cloud;
+       // --- LÓGICA DE AUDITORÍA Y COMPARACIÓN AMPLIADA ---
+        
+        // 1. Encuentra lo que se AGREGÓ en la nube (Verde)
+        window.highlightAdditions = (local, cloud) => {
+            if (!local || !cloud) return cloud || '';
             const localWords = local.split(' ');
             const cloudWords = cloud.split(' ');
             return cloudWords.map(word => 
@@ -222,77 +235,93 @@ onAuthStateChanged(auth, (user) => {
             ).join(' ');
         };
 
-window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT) => {
-    const modal = document.getElementById('modalOverlay');
-    const content = document.getElementById('modalContent');
-    
-    const highlightedGuion = window.highlightChanges(lG, nG);
-    const highlightedCopy = window.highlightChanges(lC, nC);
-    const highlightedTags = window.highlightChanges(lT, nT);
-    
-    content.innerHTML = `
-        <div class="w-full">
-            <h3 class="font-bold text-2xl mb-2 text-indigo-900 border-b pb-2">Auditoría de Cambios</h3>
-            <p class="text-xs text-gray-500 mb-6 italic">Las palabras marcadas en <b class="text-emerald-600">verde</b> son las que están en la nube pero no en tu versión local.</p>
-            
-            <div class="flex flex-col gap-8">
-                <div>
-                    <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2">
-                        <span>📝</span> Guión Estructurado
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="flex flex-col">
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label>
-                            <div class="audit-text-container">${lG}</div>
-                        </div>
-                        <div class="flex flex-col">
-                            <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube</label>
-                            <div class="audit-text-container border-emerald-200 bg-emerald-50">${highlightedGuion}</div>
-                        </div>
-                    </div>
-                </div>
+        // 2. Encuentra lo que se ELIMINÓ en la nube (Rojo Tachado)
+        window.highlightDeletions = (local, cloud) => {
+            if (!local || !cloud) return local || '';
+            const localWords = local.split(' ');
+            const cloudWords = cloud.split(' ');
+            return localWords.map(word => 
+                cloudWords.includes(word) ? word : `<span class="highlight-deleted">${word}</span>`
+            ).join(' ');
+        };
 
-                <div>
-                    <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2">
-                        <span>✍️</span> Copywriting
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="flex flex-col">
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label>
-                            <div class="audit-text-container">${lC}</div>
-                        </div>
-                        <div class="flex flex-col">
-                            <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube</label>
-                            <div class="audit-text-container border-emerald-200 bg-emerald-50">${highlightedCopy}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2">
-                        <span>🏷️</span> Hashtags
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="flex flex-col">
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label>
-                            <div class="audit-text-container">${lT}</div>
-                        </div>
-                        <div class="flex flex-col">
-                            <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube</label>
-                            <div class="audit-text-container border-emerald-200 bg-emerald-50">${highlightedTags}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT) => {
+            const modal = document.getElementById('modalOverlay');
+            const content = document.getElementById('modalContent');
             
-            <div class="mt-8 flex justify-end gap-3 border-t pt-4 sticky bottom-0 bg-white bg-opacity-95 z-10 pb-2">
-                <button onclick="closeModal(null)" class="px-6 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg transition-colors">Cancelar</button>
-                <button onclick="aplicarAuditoria()" class="bg-indigo-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-lg transition-colors">Aceptar Cambios</button>
-            </div>
-        </div>
-    `;
-    modal.style.display = 'flex';
-};
+            // Procesamos ambas direcciones
+            const addedGuion = window.highlightAdditions(lG, nG);
+            const deletedGuion = window.highlightDeletions(lG, nG);
+            
+            const addedCopy = window.highlightAdditions(lC, nC);
+            const deletedCopy = window.highlightDeletions(lC, nC);
+            
+            const addedTags = window.highlightAdditions(lT, nT);
+            const deletedTags = window.highlightDeletions(lT, nT);
+            
+            content.innerHTML = `
+                <div class="w-full">
+                    <h3 class="font-bold text-2xl mb-2 text-indigo-900 border-b pb-2">Auditoría de Cambios</h3>
+                    <p class="text-xs text-gray-500 mb-6 italic">Las palabras en <b class="text-emerald-600 bg-emerald-50 px-1 rounded">verde</b> se agregaron en la nube. Las palabras en <b class="text-red-600 bg-red-50 px-1 rounded line-through">rojo tachado</b> fueron eliminadas en la nube.</p>
+                    
+                    <div class="flex flex-col gap-8">
+                        <div>
+                            <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2">
+                                <span>📝</span> Guión Estructurado
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="flex flex-col">
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label>
+                                    <div class="audit-text-container">${deletedGuion}</div>
+                                </div>
+                                <div class="flex flex-col">
+                                    <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube</label>
+                                    <div class="audit-text-container border-emerald-200 bg-emerald-50">${addedGuion}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2">
+                                <span>✍️</span> Copywriting
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="flex flex-col">
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label>
+                                    <div class="audit-text-container">${deletedCopy}</div>
+                                </div>
+                                <div class="flex flex-col">
+                                    <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube</label>
+                                    <div class="audit-text-container border-emerald-200 bg-emerald-50">${addedCopy}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2">
+                                <span>🏷️</span> Hashtags
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="flex flex-col">
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label>
+                                    <div class="audit-text-container">${deletedTags}</div>
+                                </div>
+                                <div class="flex flex-col">
+                                    <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube</label>
+                                    <div class="audit-text-container border-emerald-200 bg-emerald-50">${addedTags}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 flex justify-end gap-3 border-t pt-4 sticky bottom-0 bg-white bg-opacity-95 z-10 pb-2">
+                        <button onclick="closeModal(null)" class="px-6 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg transition-colors">Cancelar</button>
+                        <button onclick="aplicarAuditoria()" class="bg-indigo-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-lg transition-colors">Aceptar Cambios</button>
+                    </div>
+                </div>
+            `;
+            modal.style.display = 'flex';
+        };
        window.aplicarAuditoria = () => {
             // 1. Insertamos los datos de la nube en los campos actuales
             document.getElementById('ideaGuion').value = window.tempSyncData.guion;
