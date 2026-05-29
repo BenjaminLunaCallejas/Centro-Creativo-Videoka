@@ -245,7 +245,7 @@ onAuthStateChanged(auth, (user) => {
             ).join(' ');
         };
 
-        window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT) => {
+window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT) => {
             const modal = document.getElementById('modalOverlay');
             const content = document.getElementById('modalContent');
             
@@ -262,7 +262,15 @@ onAuthStateChanged(auth, (user) => {
             content.innerHTML = `
                 <div class="w-full">
                     <h3 class="font-bold text-2xl mb-2 text-indigo-900 border-b pb-2">Auditoría de Cambios</h3>
-                    <p class="text-xs text-gray-500 mb-6 italic">Las palabras en <b class="text-emerald-600 bg-emerald-50 px-1 rounded">verde</b> se agregaron en la nube. Las palabras en <b class="text-red-600 bg-red-50 px-1 rounded line-through">rojo tachado</b> fueron eliminadas en la nube.</p>
+                    
+                    <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 mb-6 rounded-r shadow-sm">
+                        <p class="text-sm text-indigo-900 font-bold mb-2">💡 ¿Cómo revisar y aprobar los cambios?</p>
+                        <ul class="text-xs text-indigo-800 list-disc ml-5 space-y-1">
+                            <li>Las palabras en <b class="text-emerald-700 bg-emerald-100 px-1 rounded">verde</b> se agregaron en la nube.</li>
+                            <li>Las palabras en <b class="text-red-700 bg-red-100 px-1 rounded line-through">rojo tachado</b> se eliminaron en la nube.</li>
+                            <li><b>¡MODO INTERACTIVO! ✏️:</b> Haz clic dentro de los recuadros de la <b>"Versión Nube"</b> para editar el texto directamente. Borra lo que no te sirva y deja el texto exactamente como deseas conservarlo antes de presionar "Aceptar Cambios".</li>
+                        </ul>
+                    </div>
                     
                     <div class="flex flex-col gap-8">
                         <div>
@@ -275,8 +283,8 @@ onAuthStateChanged(auth, (user) => {
                                     <div class="audit-text-container">${deletedGuion}</div>
                                 </div>
                                 <div class="flex flex-col">
-                                    <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube</label>
-                                    <div class="audit-text-container border-emerald-200 bg-emerald-50">${addedGuion}</div>
+                                    <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube (Editable ✏️)</label>
+                                    <div id="auditGuionFinal" class="audit-text-container border-emerald-200 bg-emerald-50 cursor-text focus:ring-2 focus:ring-emerald-400 outline-none transition-all" contenteditable="true" title="Edita este texto para dejar la versión final">${addedGuion}</div>
                                 </div>
                             </div>
                         </div>
@@ -291,8 +299,8 @@ onAuthStateChanged(auth, (user) => {
                                     <div class="audit-text-container">${deletedCopy}</div>
                                 </div>
                                 <div class="flex flex-col">
-                                    <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube</label>
-                                    <div class="audit-text-container border-emerald-200 bg-emerald-50">${addedCopy}</div>
+                                    <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube (Editable ✏️)</label>
+                                    <div id="auditCopyFinal" class="audit-text-container border-emerald-200 bg-emerald-50 cursor-text focus:ring-2 focus:ring-emerald-400 outline-none transition-all" contenteditable="true" title="Edita este texto para dejar la versión final">${addedCopy}</div>
                                 </div>
                             </div>
                         </div>
@@ -307,8 +315,8 @@ onAuthStateChanged(auth, (user) => {
                                     <div class="audit-text-container">${deletedTags}</div>
                                 </div>
                                 <div class="flex flex-col">
-                                    <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube</label>
-                                    <div class="audit-text-container border-emerald-200 bg-emerald-50">${addedTags}</div>
+                                    <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube (Editable ✏️)</label>
+                                    <div id="auditTagsFinal" class="audit-text-container border-emerald-200 bg-emerald-50 cursor-text focus:ring-2 focus:ring-emerald-400 outline-none transition-all" contenteditable="true" title="Edita este texto para dejar la versión final">${addedTags}</div>
                                 </div>
                             </div>
                         </div>
@@ -322,26 +330,32 @@ onAuthStateChanged(auth, (user) => {
             `;
             modal.style.display = 'flex';
         };
-       window.aplicarAuditoria = () => {
-            // 1. Insertamos los datos de la nube en los campos actuales
-            document.getElementById('ideaGuion').value = window.tempSyncData.guion;
-            document.getElementById('ideaCopy').value = window.tempSyncData.copy;
-            document.getElementById('ideaHashtags').value = window.tempSyncData.tags;
+        
+window.aplicarAuditoria = () => {
+            // 1. Extraemos el texto limpio de los cuadros editables (ignorando los colores HTML)
+            const guionFinal = document.getElementById('auditGuionFinal').innerText;
+            const copyFinal = document.getElementById('auditCopyFinal').innerText;
+            const tagsFinal = document.getElementById('auditTagsFinal').innerText;
+
+            // 2. Insertamos los datos aprobados en los campos actuales
+            document.getElementById('ideaGuion').value = guionFinal;
+            document.getElementById('ideaCopy').value = copyFinal;
+            document.getElementById('ideaHashtags').value = tagsFinal;
             
-            // 2. Guardamos los cambios en segundo plano sin cerrar el formulario
+            // 3. Guardamos los cambios en segundo plano sin cerrar el formulario
             if (typeof editandoId !== 'undefined' && editandoId && typeof ideas !== 'undefined') {
                 const index = ideas.findIndex(i => i.id === editandoId);
                 if (index > -1) {
-                    ideas[index].guion = window.tempSyncData.guion;
-                    ideas[index].copy = window.tempSyncData.copy;
-                    ideas[index].hashtags = window.tempSyncData.tags;
+                    ideas[index].guion = guionFinal;
+                    ideas[index].copy = copyFinal;
+                    ideas[index].hashtags = tagsFinal;
                     localStorage.setItem('contentIdeas', JSON.stringify(ideas));
                 }
             } else {
                 console.warn("No se detectó un ID de edición activo. Los cambios se aplicaron visualmente.");
             }
 
-            // 3. Ajustamos automáticamente la altura de las cajas de texto al nuevo contenido
+            // 4. Ajustamos automáticamente la altura de las cajas de texto al nuevo contenido
             ['ideaGuion', 'ideaCopy', 'ideaHashtags'].forEach(id => {
                 const el = document.getElementById(id);
                 if(el) {
@@ -350,10 +364,10 @@ onAuthStateChanged(auth, (user) => {
                 }
             });
 
-            // 4. Cerramos el modal
+            // 5. Cerramos el modal
             if (typeof closeModal === 'function') closeModal(null);
             
-            alert("✅ Datos importados y sincronizados. Puedes continuar editando el guion.");
+            alert("✅ Cambios auditados y aplicados correctamente.");
         };
         
 // --- FUNCIONES DE SINCRONIZACIÓN COMPARTIDA ---
