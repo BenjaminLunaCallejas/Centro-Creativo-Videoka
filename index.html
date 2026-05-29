@@ -118,8 +118,18 @@ window.iniciarSesionGoogle = () => {
         .catch(error => console.error("Error Auth:", error));
 };
 
-// 2. Observador global para mantener la sesión activa al recargar la página
+// 2. Observador global con validación para Modo Compartido
 onAuthStateChanged(auth, (user) => {
+    // Verificamos si la URL trae un parámetro de edición compartida
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedId = urlParams.get('shared');
+
+    // Si estamos en modo compartido, saltamos la validación de login
+    if (sharedId) {
+        window.initSharedMode(sharedId);
+        return; 
+    }
+
     const loginScreen = document.getElementById('loginScreen');
     if (user) {
         window.currentUserUID = user.uid;
