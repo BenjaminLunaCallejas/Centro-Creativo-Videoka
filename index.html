@@ -1097,48 +1097,46 @@
         }
 // --- NUEVA FUNCIÓN: GENERAR ENLACE DE COLABORACIÓN ---
         window.generarEnlaceColaborativo = async () => {
-            if(!window.db) return alert("Debes iniciar sesión para generar un enlace en vivo.");
-            
-            const payload = {
-                titulo: document.getElementById('ideaTitulo').value || 'Sin título',
-                formato: document.getElementById('ideaFormato').value,
-                tipo: document.getElementById('ideaTipo').value,
-                objetivo: document.getElementById('ideaObjetivo').value,
-                hook: document.getElementById('ideaHook').value,
-                guionBase: document.getElementById('ideaGuionBase').value,
-                guion: document.getElementById('ideaGuion').value,
-                copy: document.getElementById('ideaCopy').value,
-                hashtags: document.getElementById('ideaHashtags').value,
-                createdAt: window.serverTimestamp()
-            };
+    if(!window.db) return alert("Debes iniciar sesión para generar un enlace en vivo.");
+    
+    // Captura exhaustiva de todos los campos del contexto y contenido
+    const payload = {
+        titulo: document.getElementById('ideaTitulo').value || 'Sin título',
+        formato: document.getElementById('ideaFormato').value,
+        tipo: document.getElementById('ideaTipo').value,
+        objetivo: document.getElementById('ideaObjetivo').value,
+        tipoEstrategico: document.getElementById('ideaTipoEstrategico').value,
+        colaboracion: document.getElementById('ideaColaboracion').value,
+        publicacion: document.getElementById('ideaPublicacion').value,
+        fecha: document.getElementById('ideaFecha').value,
+        hora: document.getElementById('ideaHora').value,
+        starFormat: document.getElementById('ideaStarFormat').value,
+        hook: document.getElementById('ideaHook').value,
+        guionBase: document.getElementById('ideaGuionBase').value,
+        guion: document.getElementById('ideaGuion').value,
+        copy: document.getElementById('ideaCopy').value,
+        hashtags: document.getElementById('ideaHashtags').value,
+        createdAt: window.serverTimestamp()
+    };
 
-            const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-            
-            try {
-                const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js");
-                const docRef = doc(window.db, "shared_guiones", uniqueId);
-                
-                await setDoc(docRef, payload);
+    const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    
+    try {
+        const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js");
+        const docRef = doc(window.db, "shared_guiones", uniqueId);
+        
+        await setDoc(docRef, payload);
 
-                if (typeof editandoId !== 'undefined' && editandoId) {
-                    const index = ideas.findIndex(i => i.id === editandoId);
-                    if (index !== -1) {
-                        ideas[index].sharedId = uniqueId;
-                        localStorage.setItem('contentIdeas', JSON.stringify(ideas));
-                        document.getElementById('btnSyncEnlace').classList.remove('hidden');
-                    }
-                }
-
-                const shareUrl = window.location.origin + window.location.pathname + "?shared=" + uniqueId;
-                navigator.clipboard.writeText(shareUrl).then(() => {
-                    alert(`¡Enlace de Colaboración copiado!\n\nEnlace: ${shareUrl}`);
-                });
-            } catch (error) {
-                console.error("Error al crear sesión:", error);
-                alert("Hubo un error al exportar la sesión.");
-            }
-        };
-
+        // ... (resto de tu lógica de actualización de estado y enlace)
+        const shareUrl = window.location.origin + window.location.pathname + "?shared=" + uniqueId;
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            alert(`¡Enlace generado y copiado!`);
+        });
+    } catch (error) {
+        console.error("Error al exportar sesión:", error);
+        alert("Error al conectar con la nube.");
+    }
+};
 // --- VARIABLE GLOBAL PARA RETENER DATOS ---
 window.tempSyncData = { guion: '', copy: '', tags: '' };
 
@@ -1180,22 +1178,48 @@ window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT) => {
     const modal = document.getElementById('modalOverlay');
     const content = document.getElementById('modalContent');
     
+    // Estructura de auditoría extendida
     content.innerHTML = `
-        <h3 class="font-bold text-xl mb-4 text-indigo-900 border-b pb-2">Auditoría de Cambios</h3>
-        <p class="text-xs text-gray-500 mb-4">A la izquierda: versión actual local. A la derecha: versión en Nube.</p>
-        <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-2">
-                <p class="text-xs font-bold text-gray-400">LOCAL (Actual)</p>
-                <textarea disabled class="w-full text-xs bg-gray-100 p-2 h-32 border rounded">${lG}</textarea>
+        <div class="max-w-4xl">
+            <h3 class="font-bold text-2xl mb-4 text-indigo-900 border-b pb-2">Auditoría de Cambios</h3>
+            <p class="text-sm text-gray-500 mb-6 italic">A la izquierda: Versión Local. A la derecha: <b>Propuesta de Nube (Nuevos cambios en negrita)</b>.</p>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2 md:col-span-1 space-y-4">
+                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Guion Local</label>
+                        <p class="text-sm text-gray-700 whitespace-pre-wrap">${lG}</p>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Copy Local</label>
+                        <p class="text-sm text-gray-700 whitespace-pre-wrap">${lC}</p>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Hashtags Locales</label>
+                        <p class="text-sm text-gray-700">${lT}</p>
+                    </div>
+                </div>
+
+                <div class="col-span-2 md:col-span-1 space-y-4">
+                    <div class="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                        <label class="text-[10px] font-bold text-emerald-700 uppercase">Guion Propuesto (Nube)</label>
+                        <p class="text-sm font-bold text-emerald-900 whitespace-pre-wrap">${nG}</p>
+                    </div>
+                    <div class="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                        <label class="text-[10px] font-bold text-emerald-700 uppercase">Copy Propuesto (Nube)</label>
+                        <p class="text-sm font-bold text-emerald-900 whitespace-pre-wrap">${nC}</p>
+                    </div>
+                    <div class="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                        <label class="text-[10px] font-bold text-emerald-700 uppercase">Hashtags Propuestos (Nube)</label>
+                        <p class="text-sm font-bold text-emerald-900">${nT}</p>
+                    </div>
+                </div>
             </div>
-            <div class="space-y-2">
-                <p class="text-xs font-bold text-emerald-600">NUBE (Propuesta)</p>
-                <textarea disabled class="w-full text-xs bg-emerald-50 p-2 h-32 border border-emerald-200 rounded">${nG}</textarea>
+            
+            <div class="mt-8 flex justify-end gap-3 border-t pt-4">
+                <button onclick="closeModal(null)" class="px-6 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg">Cancelar</button>
+                <button onclick="aplicarAuditoria()" class="bg-indigo-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-lg">Aceptar Cambios y Sincronizar</button>
             </div>
-        </div>
-        <div class="mt-6 flex justify-end gap-3">
-            <button onclick="closeModal(null)" class="px-4 py-2 text-gray-600 font-bold">Cancelar</button>
-            <button onclick="aplicarAuditoria()" class="bg-indigo-600 text-white px-6 py-2 rounded font-bold hover:bg-indigo-700">Aceptar Nube e Importar</button>
         </div>
     `;
     modal.style.display = 'flex';
