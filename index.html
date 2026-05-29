@@ -1144,29 +1144,43 @@ window.tempSyncData = { guion: '', copy: '', tags: '' };
 // --- FUNCIÓN DE SINCRONIZACIÓN ---
 window.sincronizarDesdeEnlace = async () => {
     if (!editandoId) return;
-    const idea = ideas.find(i => i.id === editandoId);
-    if (!idea || !idea.sharedId) return alert("No hay un enlace activo vinculado a este guion.");
+
+    // 1. Recuperar el estado lógico actual (fuente de verdad)
+    const ideaLocal = ideas.find(i => i.id === editandoId);
+    if (!ideaLocal || !ideaLocal.sharedId) {
+        return alert("Error: No se encontró un ID de sincronización vinculado a este guion.");
+    }
 
     const btnSync = document.getElementById('btnSyncEnlace');
-    btnSync.innerText = "⏳ Consultando Nube...";
+    const originalText = btnSync.innerText;
+    btnSync.innerText = "⏳ Sincronizando...";
+    btnSync.disabled = true;
     
     try {
+        // 2. Obtener estado actual de la nube
         const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js");
-        const docSnap = await getDoc(doc(window.db, "shared_guiones", idea.sharedId));
+        const docSnap = await getDoc(doc(window.db, "shared_guiones", ideaLocal.sharedId));
         
         if (docSnap.exists()) {
-            const data = docSnap.data();
-            window.tempSyncData = { guion: data.guion || '', copy: data.copy || '', tags: data.hashtags || '' };   
-        // --- FUNCIÓN AUXILIAR DE RESALTADO ---
-window.highlightChanges = (local, cloud) => {
-    if (!local || !cloud) return cloud;
-    const localWords = local.split(' ');
-    const cloudWords = cloud.split(' ');
-    
-    return cloudWords.map(word => {
-        // Marca en verde y negrita solo si la palabra NO existe en tu versión local
-        return localWords.includes(word) ? word : `<span class="font-bold text-emerald-900 bg-emerald-100 px-1 rounded">${word}</span>`;
-    }).join(' ');
+            const dataCloud = docSnap.data();
+            
+            // 3. Ejecutar auditoría comparando Estado Local vs Estado Nube
+            // Accedemos a los campos directamente del objeto ideaLocal para asegurar la integridad
+            mostrarAuditoriaCambios(
+                ideaLocal.guion || '', dataCloud.guion || '',
+                ideaLocal.copy || '', dataCloud.copy || '',
+                ideaLocal.hashtags || '', dataCloud.hashtags || ''
+            );
+        } else {
+            alert("El guion compartido ya no existe en la nube.");
+        }
+    } catch(e) {
+        console.error("Error crítico de sincronización:", e);
+        alert("Fallo al conectar con el servidor.");
+    } finally {
+        btnSync.innerText = originalText;
+        btnSync.disabled = false;
+    }
 };
             // Auditoría visual antes de aplicar cambios
             mostrarAuditoriaCambios(
