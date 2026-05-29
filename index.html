@@ -163,25 +163,23 @@ onAuthStateChanged(auth, (user) => {
         if (loginScreen) {
             loginScreen.style.display = 'none';
             loginScreen.classList.add('hidden');
-        }
-    } else {
-        window.currentUserUID = null;
-        if (loginScreen) {
-            loginScreen.classList.remove('hidden');
-            loginScreen.style.display = 'flex';
-            // <-- NUEVO: Extraer y mostrar la foto de Google
+            // Mostrar foto de perfil
         if (fotoPerfil && user.photoURL) {
             fotoPerfil.src = user.photoURL;
             fotoPerfil.classList.remove('hidden');
         }
-
     } else {
         window.currentUserUID = null;
+            // Mostrar pantalla de login
         if (loginScreen) {
             loginScreen.classList.remove('hidden');
             loginScreen.style.display = 'flex';
         }
-        
+        // Ocultar foto de perfil
+        if (fotoPerfil) {
+            fotoPerfil.src = '';
+            fotoPerfil.classList.add('hidden');
+
         // <-- NUEVO: Ocultar la foto si cierra sesión
         if (fotoPerfil) {
             fotoPerfil.src = '';
