@@ -140,61 +140,65 @@
                 }
             });
         }
-
-        // Lógica del Editor Compartido en Vivo
+// Lógica del Editor Compartido en Vivo
         function initSharedMode(id) {
             const sharedScreen = document.getElementById('sharedEditorScreen');
-            const textarea = document.getElementById('sharedGuionTextarea');
+            const txtGuion = document.getElementById('sharedGuionTextarea');
+            const txtCopy = document.getElementById('sharedCopyTextarea');
+            const txtTags = document.getElementById('sharedHashtagsTextarea');
             const status = document.getElementById('syncStatus');
+            const btnGuardar = document.getElementById('btnSharedGuardar');
+
             sharedScreen.classList.remove('hidden');
             sharedScreen.classList.add('flex');
 
             const docRef = doc(db, "shared_guiones", id);
-            let isLocalChange = false;
 
             // Escuchar cambios de la nube en tiempo real
             onSnapshot(docRef, (snap) => {
                 if (snap.exists()) {
                     const data = snap.data();
-                    if (!isLocalChange) {
-                        // Preservar la posición del cursor para evitar saltos bruscos
-                        const start = textarea.selectionStart;
-                        const end = textarea.selectionEnd;
-                        textarea.value = data.text || '';
-                        
-                        // Si el usuario estaba enfocado, devolvemos el cursor a donde estaba
-                        if (document.activeElement === textarea) {
-                            textarea.setSelectionRange(start, end);
-                        }
-                    }
+                    document.getElementById('sharedCtxTitulo').innerText = data.titulo || 'Sin título';
+                    document.getElementById('sharedCtxFormato').innerText = `${data.formato || 'N/A'} / ${data.tipo || 'N/A'}`;
+                    document.getElementById('sharedCtxObjetivo').innerText = data.objetivo || 'N/A';
+                    document.getElementById('sharedCtxHook').innerText = data.hook || 'No definido';
+                    document.getElementById('sharedCtxBase').innerText = data.guionBase || 'Sin guion base';
+
+                    if (document.activeElement !== txtGuion) txtGuion.value = data.guion || '';
+                    if (document.activeElement !== txtCopy) txtCopy.value = data.copy || '';
+                    if (document.activeElement !== txtTags) txtTags.value = data.hashtags || '';
                 } else {
-                    status.innerText = "Guion no encontrado.";
-                    status.classList.replace('text-emerald-400', 'text-red-400');
-                    textarea.disabled = true;
+                    status.innerText = "Guion no encontrado";
+                    status.classList.replace('text-emerald-600', 'text-red-600');
+                    status.classList.replace('bg-emerald-50', 'bg-red-50');
                 }
-            }, (error) => {
-                console.error("Error de permisos. Revisa tus reglas de Firestore.", error);
-                status.innerText = "Error de conexión (Reglas Firestore)";
-                status.classList.replace('text-emerald-400', 'text-red-400');
             });
 
-            // Enviar cambios a la nube
-            textarea.addEventListener('input', (e) => {
-                isLocalChange = true;
+            btnGuardar.addEventListener('click', () => {
                 status.innerText = "Guardando...";
-                status.classList.replace('text-emerald-400', 'text-amber-400');
-                
-                setDoc(docRef, { text: textarea.value, lastUpdate: serverTimestamp() }, { merge: true })
-                    .then(() => {
-                        status.innerText = "Sincronizado";
-                        status.classList.replace('text-amber-400', 'text-emerald-400');
-                        isLocalChange = false;
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        status.innerText = "Error al guardar";
-                        status.classList.replace('text-amber-400', 'text-red-400');
-                    });
+                btnGuardar.disabled = true;
+                btnGuardar.innerHTML = "⏳ Guardando...";
+
+                setDoc(docRef, { 
+                    guion: txtGuion.value,
+                    copy: txtCopy.value,
+                    hashtags: txtTags.value,
+                    lastUpdate: serverTimestamp() 
+                }, { merge: true })
+                .then(() => {
+                    status.innerText = "Sincronizado";
+                    btnGuardar.innerHTML = "✅ Cambios Guardados";
+                    setTimeout(() => {
+                        btnGuardar.disabled = false;
+                        btnGuardar.innerHTML = "💾 Guardar Cambios";
+                    }, 2500);
+                })
+                .catch(err => {
+                    console.error("Error guardando:", err);
+                    alert("Error al guardar en la nube.");
+                    btnGuardar.disabled = false;
+                    btnGuardar.innerHTML = "⚠️ Reintentar";
+                });
             });
         }
 
@@ -244,17 +248,45 @@
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased">
 
-    <div id="sharedEditorScreen" class="fixed inset-0 bg-slate-900 z-[3000] hidden flex-col">
-        <div class="p-4 bg-slate-800 text-white flex justify-between items-center shadow-md">
-            <h1 class="text-xl font-bold text-indigo-400 flex items-center gap-2">🟢 Videoka - Edición en Vivo</h1>
-            <button onclick="window.location.href=window.location.pathname" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-sm font-bold transition shadow-lg">Ir a mi Panel Videoka</button>
-        </div>
-        <div class="flex-1 p-4 md:p-8 flex flex-col bg-slate-50">
-            <div class="bg-indigo-900 text-indigo-100 p-3 rounded-t-xl text-sm font-bold flex justify-between items-center shadow-md">
-                <span class="flex items-center gap-2">✍️ Cualquiera con el enlace puede editar.</span>
-                <span id="syncStatus" class="text-emerald-400 text-xs tracking-wider uppercase font-black bg-black/20 px-3 py-1 rounded-full">Sincronizado</span>
+ <div id="sharedEditorScreen" class="fixed inset-0 bg-slate-900 z-[3000] hidden flex-col overflow-y-auto">
+        <div class="p-4 bg-slate-800 text-white flex justify-between items-center shadow-md sticky top-0 z-20">
+            <h1 class="text-xl font-bold text-indigo-400 flex items-center gap-2">🟢 Videoka - Edición Colaborativa</h1>
+            <div class="flex flex-col md:flex-row gap-3">
+                <button id="btnSharedGuardar" class="bg-emerald-600 hover:bg-emerald-700 px-6 py-2 rounded text-sm font-bold transition shadow-lg flex items-center justify-center gap-2">💾 Guardar Cambios</button>
+                <button onclick="window.location.href=window.location.pathname" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-sm font-bold transition shadow-lg">Salir al Panel Principal</button>
             </div>
-            <textarea id="sharedGuionTextarea" class="flex-1 w-full p-6 md:p-10 border-x border-b border-gray-300 rounded-b-xl outline-none focus:ring-0 text-gray-800 text-lg md:text-xl leading-relaxed custom-scroll shadow-inner font-serif" placeholder="Comienza a escribir el guion colaborativo aquí..."></textarea>
+        </div>
+
+        <div class="flex-1 p-4 md:p-8 flex flex-col gap-6 bg-slate-50 max-w-5xl mx-auto w-full">
+            
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex justify-between items-center mb-4 border-b pb-2">
+                    <h2 class="text-lg font-bold text-indigo-900">Contexto del Guion</h2>
+                    <span id="syncStatus" class="text-emerald-600 text-xs tracking-wider uppercase font-black bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">Sincronizado</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div><span class="font-bold text-gray-500">Título:</span> <span id="sharedCtxTitulo" class="text-gray-800 font-medium ml-1">Cargando...</span></div>
+                    <div><span class="font-bold text-gray-500">Formato / Tipo:</span> <span id="sharedCtxFormato" class="text-gray-800 ml-1">Cargando...</span></div>
+                    <div><span class="font-bold text-gray-500">Objetivo:</span> <span id="sharedCtxObjetivo" class="text-gray-800 ml-1">Cargando...</span></div>
+                    <div class="md:col-span-2"><span class="font-bold text-indigo-500">Hook Propuesto:</span> <span id="sharedCtxHook" class="text-gray-800 italic ml-1 font-medium">Cargando...</span></div>
+                    <div class="md:col-span-2"><span class="font-bold text-gray-500 block mb-1">Guion Base / Idea Inicial:</span> <div id="sharedCtxBase" class="text-gray-700 bg-gray-50 p-3 rounded border whitespace-pre-wrap">Cargando...</div></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-indigo-100 flex flex-col gap-6">
+                <div>
+                    <label class="block text-sm font-bold text-indigo-900 mb-2">1. Guion Estructurado</label>
+                    <textarea id="sharedGuionTextarea" class="w-full p-4 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 text-gray-800 text-base leading-relaxed custom-scroll shadow-inner min-h-[250px]"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-indigo-900 mb-2">2. Copywriting (Descripción para redes)</label>
+                    <textarea id="sharedCopyTextarea" class="w-full p-4 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 text-gray-800 text-sm leading-relaxed custom-scroll shadow-inner min-h-[120px]"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-indigo-900 mb-2">3. Hashtags</label>
+                    <textarea id="sharedHashtagsTextarea" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 text-gray-800 text-sm leading-relaxed custom-scroll shadow-inner min-h-[60px]"></textarea>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -652,12 +684,15 @@
 
                         <div class="mb-4 relative">
                             <div class="flex justify-between items-end mb-1">
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-600 mb-1">Guion</label>
-                                    <p class="text-[10px] text-gray-400">💡 Estructura: [HOOK] -> [FRASE DE REFUERZO] -> [CUERPO] -> [CIERRE]</p>
-                                </div>
-                                <button type="button" onclick="generarEnlaceColaborativo()" class="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1 rounded font-bold transition shadow-sm flex items-center gap-1 border border-emerald-300">🔗 Generar Enlace de Edición en Vivo</button>
-                            </div>
+    <div>
+        <label class="block text-sm font-semibold text-gray-600 mb-1">Guion, Copy y Hashtags</label>
+        <p class="text-[10px] text-gray-400">💡 Estructura: [HOOK] -> [FRASE] -> [CUERPO] -> [CTA]</p>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-2">
+        <button type="button" id="btnSyncEnlace" onclick="sincronizarDesdeEnlace()" class="text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 py-1 rounded font-bold transition shadow-sm items-center gap-1 border border-blue-300 hidden flex">⬇️ Sincronizar cambios de la nube</button>
+        <button type="button" onclick="generarEnlaceColaborativo()" class="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1 rounded font-bold transition shadow-sm flex items-center gap-1 border border-emerald-300">🔗 Generar Enlace Vivo</button>
+    </div>
+</div>
                             <textarea id="ideaGuion" rows="5" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" placeholder="Escribe aquí la estructura de tu guion..."></textarea>
                         </div>
 
@@ -1006,43 +1041,76 @@
             }
             select.value = valorActual;
         }
-
-        // --- NUEVA FUNCIÓN: GENERAR ENLACE DE COLABORACIÓN ---
-        async function generarEnlaceColaborativo() {
-            if(!window.db) {
-                alert("Debes iniciar sesión para generar un enlace en vivo.");
-                return;
-            }
-            const guionActual = document.getElementById('ideaGuion').value;
+// --- NUEVA FUNCIÓN: GENERAR ENLACE DE COLABORACIÓN ---
+        window.generarEnlaceColaborativo = async () => {
+            if(!window.db) return alert("Debes iniciar sesión para generar un enlace en vivo.");
             
-            // Generamos un ID único y seguro
+            const payload = {
+                titulo: document.getElementById('ideaTitulo').value || 'Sin título',
+                formato: document.getElementById('ideaFormato').value,
+                tipo: document.getElementById('ideaTipo').value,
+                objetivo: document.getElementById('ideaObjetivo').value,
+                hook: document.getElementById('ideaHook').value,
+                guionBase: document.getElementById('ideaGuionBase').value,
+                guion: document.getElementById('ideaGuion').value,
+                copy: document.getElementById('ideaCopy').value,
+                hashtags: document.getElementById('ideaHashtags').value,
+                createdAt: window.serverTimestamp()
+            };
+
             const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
             
             try {
-                // Importamos dinámicamente doc y setDoc del window.db
                 const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js");
                 const docRef = doc(window.db, "shared_guiones", uniqueId);
                 
-                await setDoc(docRef, {
-                    text: guionActual,
-                    createdAt: window.serverTimestamp()
-                });
+                await setDoc(docRef, payload);
 
-                // Crear URL
+                if (typeof editandoId !== 'undefined' && editandoId) {
+                    const index = ideas.findIndex(i => i.id === editandoId);
+                    if (index !== -1) {
+                        ideas[index].sharedId = uniqueId;
+                        localStorage.setItem('contentIdeas', JSON.stringify(ideas));
+                        document.getElementById('btnSyncEnlace').classList.remove('hidden');
+                    }
+                }
+
                 const shareUrl = window.location.origin + window.location.pathname + "?shared=" + uniqueId;
-                
-                // Copiar al portapapeles
                 navigator.clipboard.writeText(shareUrl).then(() => {
-                    alert(`¡Enlace generado y copiado!\n\nPégalo en el navegador o envíalo a tu equipo. Todos verán los cambios en tiempo real.\n\nEnlace: ${shareUrl}`);
+                    alert(`¡Enlace de Colaboración copiado!\n\nEnlace: ${shareUrl}`);
                 });
-                
             } catch (error) {
-                console.error("Error al crear sesión compartida:", error);
-                alert("Hubo un error al crear la sesión en vivo. ¿Actualizaste las reglas de Firestore como te indiqué?");
+                console.error("Error al crear sesión:", error);
+                alert("Hubo un error al exportar la sesión.");
             }
-        }
-        // --------------------------------------------------------
+        };
 
+        window.sincronizarDesdeEnlace = async () => {
+            if (!editandoId) return;
+            const idea = ideas.find(i => i.id === editandoId);
+            if (!idea || !idea.sharedId) return alert("No hay un enlace activo vinculado a este guion.");
+
+            document.getElementById('btnSyncEnlace').innerHTML = "⏳ Descargando...";
+            try {
+                const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js");
+                const docSnap = await getDoc(doc(window.db, "shared_guiones", idea.sharedId));
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.guion !== undefined) document.getElementById('ideaGuion').value = data.guion;
+                    if (data.copy !== undefined) document.getElementById('ideaCopy').value = data.copy;
+                    if (data.hashtags !== undefined) document.getElementById('ideaHashtags').value = data.hashtags;
+                    alert("✅ ¡Datos actualizados! Da clic en 'Actualizar Guion Existente' para guardarlos.");
+                } else {
+                    alert("El documento en la nube no existe.");
+                }
+            } catch(e) {
+                console.error("Error al sincronizar:", e);
+                alert("Fallo al conectar con la nube.");
+            }
+            document.getElementById('btnSyncEnlace').innerHTML = "⬇️ Sincronizar cambios de la nube";
+        };
+        // --------------------------------------------------------
         function guardarIdea() {
             const titulo = document.getElementById('ideaTitulo').value;
             if(!titulo) return alert('Título requerido');
@@ -1102,6 +1170,11 @@
             document.getElementById('ideaGuion').value = idea.guion || '';
             document.getElementById('ideaCopy').value = idea.copy || '';
             document.getElementById('ideaHashtags').value = idea.hashtags || '';
+            if (idea.sharedId) {
+                document.getElementById('btnSyncEnlace').classList.remove('hidden');
+            } else {
+                document.getElementById('btnSyncEnlace').classList.add('hidden');
+            }
 
             document.getElementById('btnGuardarGuion').innerText = "Actualizar Guion Existente";
             document.getElementById('btnCancelarEdicion').classList.remove('hidden');
@@ -1117,6 +1190,7 @@
             document.getElementById('btnCancelarEdicion').classList.add('hidden');
             ['ideaTitulo','ideaGuion','ideaCopy','ideaHashtags','ideaFecha','ideaHora', 'ideaHook', 'ideaEnlaces', 'ideaGuionBase', 'ideaStarFormat'].forEach(id => document.getElementById(id).value = '');
             updateLivePrompt();
+            document.getElementById('btnSyncEnlace').classList.add('hidden');
         }
 
         function renderIdeas() {
