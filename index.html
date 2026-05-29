@@ -104,10 +104,37 @@
         window.serverTimestamp = serverTimestamp;
         window.tempSyncData = { guion: '', copy: '', tags: '' };
 
-        // --- FUNCIONES DE AUTENTICACIÓN Y SINCRONIZACIÓN AUTOMÁTICA ---
-        window.iniciarSesionGoogle = () => {
-            signInWithPopup(auth, provider).catch(error => console.error("Error Auth:", error));
-        };
+    // 1. Función de inicio de sesión con resolución para ocultar la pantalla
+window.iniciarSesionGoogle = () => {
+    signInWithPopup(auth, provider)
+        .then((result) => {
+            window.currentUserUID = result.user.uid;
+            const loginScreen = document.getElementById('loginScreen');
+            if (loginScreen) {
+                loginScreen.style.display = 'none';
+                loginScreen.classList.add('hidden');
+            }
+        })
+        .catch(error => console.error("Error Auth:", error));
+};
+
+// 2. Observador global para mantener la sesión activa al recargar la página
+onAuthStateChanged(auth, (user) => {
+    const loginScreen = document.getElementById('loginScreen');
+    if (user) {
+        window.currentUserUID = user.uid;
+        if (loginScreen) {
+            loginScreen.style.display = 'none';
+            loginScreen.classList.add('hidden');
+        }
+    } else {
+        window.currentUserUID = null;
+        if (loginScreen) {
+            loginScreen.classList.remove('hidden');
+            loginScreen.style.display = 'flex';
+        }
+    }
+});
         
         window.cerrarSesion = () => signOut(auth).then(() => window.location.reload());
 
