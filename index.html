@@ -1203,37 +1203,30 @@ window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT) => {
     const modal = document.getElementById('modalOverlay');
     const content = document.getElementById('modalContent');
     
-    // Aquí es donde usamos la función anterior
-    const highlightedGuion = window.highlightChanges(lG, nG);
-    const highlightedCopy = window.highlightChanges(lC, nC);
-    const highlightedTags = window.highlightChanges(lT, nT);
-    
+    // Función de resaltado para cambios detectados
+    const getDiff = (local, cloud) => {
+        if (local === cloud) return cloud;
+        return `<span class="text-emerald-700 font-bold bg-emerald-100">${cloud}</span>`;
+    };
+
     content.innerHTML = `
         <div class="max-w-6xl w-full">
-            <h3 class="font-bold text-2xl mb-2 text-indigo-900 border-b pb-2">Auditoría de Cambios</h3>
-            <p class="text-xs text-gray-500 mb-6 italic">Visualizando diferencias. Las palabras marcadas en <b>verde</b> son las que están en la nube pero no en tu versión local.</p>
-            
+            <h3 class="font-bold text-2xl mb-4 text-indigo-900 border-b pb-2">Auditoría de Datos en Tiempo Real</h3>
             <div class="grid grid-cols-2 gap-6">
                 <!-- Columna Local -->
                 <div class="space-y-4">
-                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Versión Local (Tu editor)</label>
-                    <div class="p-4 bg-gray-50 rounded-lg border h-96 overflow-y-auto custom-scroll text-sm text-gray-700 whitespace-pre-wrap">${lG}</div>
-                    <div class="p-4 bg-gray-50 rounded-lg border h-32 overflow-y-auto custom-scroll text-sm text-gray-700 whitespace-pre-wrap">${lC}</div>
-                    <div class="p-4 bg-gray-50 rounded-lg border text-sm text-gray-700">${lT}</div>
+                    <label class="text-[10px] font-black text-gray-400 uppercase">Versión Local (Almacenada)</label>
+                    <div class="p-4 bg-gray-50 rounded-lg border h-96 overflow-y-auto whitespace-pre-wrap text-sm">${lG}</div>
                 </div>
-
                 <!-- Columna Nube -->
                 <div class="space-y-4">
-                    <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest">Versión Nube (Cambios detectados)</label>
-                    <div class="p-4 bg-emerald-50 rounded-lg border h-96 overflow-y-auto custom-scroll text-sm text-emerald-900 whitespace-pre-wrap">${highlightedGuion}</div>
-                    <div class="p-4 bg-emerald-50 rounded-lg border h-32 overflow-y-auto custom-scroll text-sm text-emerald-900 whitespace-pre-wrap">${highlightedCopy}</div>
-                    <div class="p-4 bg-emerald-50 rounded-lg border text-sm text-emerald-900">${highlightedTags}</div>
+                    <label class="text-[10px] font-black text-emerald-600 uppercase">Versión Nube (Detectada)</label>
+                    <div class="p-4 bg-emerald-50 rounded-lg border border-emerald-200 h-96 overflow-y-auto whitespace-pre-wrap text-sm">${getDiff(lG, nG)}</div>
                 </div>
             </div>
-            
             <div class="mt-8 flex justify-end gap-3 border-t pt-4">
-                <button onclick="closeModal(null)" class="px-6 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg">Rechazar / Cancelar</button>
-                <button onclick="aplicarAuditoria()" class="bg-indigo-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-lg">Aceptar Cambios y Sincronizar</button>
+                <button onclick="closeModal(null)" class="px-6 py-2 text-gray-600 font-bold">Rechazar</button>
+                <button onclick="aplicarAuditoria()" class="bg-indigo-600 text-white px-8 py-2 rounded-lg font-bold">Aceptar Cambios y Fusionar</button>
             </div>
         </div>
     `;
