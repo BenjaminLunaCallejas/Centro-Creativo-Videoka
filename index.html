@@ -85,68 +85,91 @@
         // Añadido onSnapshot y serverTimestamp para edición en vivo
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+const firebaseConfig = {
+    apiKey: "AIzaSyA_YEgXM8EsXTwHHjzPd2-hJnUC8WgFTVk",
+    authDomain: "centro-creativo-videoka.firebaseapp.com",
+    projectId: "centro-creativo-videoka",
+    storageBucket: "centro-creativo-videoka.firebasestorage.app",
+    messagingSenderId: "932471930746",
+    appId: "1:932471930746:web:36b89e4b41afe144e960c3"
+};
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyA_YEgXM8EsXTwHHjzPd2-hJnUC8WgFTVk",
-            authDomain: "centro-creativo-videoka.firebaseapp.com",
-            projectId: "centro-creativo-videoka",
-            storageBucket: "centro-creativo-videoka.firebasestorage.app",
-            messagingSenderId: "932471930746",
-            appId: "1:932471930746:web:36b89e4b41afe144e960c3"
-        };
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
+window.currentUserUID = null;
+window.db = db;
+window.serverTimestamp = serverTimestamp;
+window.tempSyncData = { guion: '', copy: '', tags: '' };
 
-        window.currentUserUID = null;
-        window.db = db; // Expuesto para funciones globales
-        window.serverTimestamp = serverTimestamp;
+// 1. LÓGICA DE AUDITORÍA Y COMPARACIÓN
+window.highlightChanges = (local, cloud) => {
+    if (!local || !cloud) return cloud;
+    const localWords = local.split(' ');
+    const cloudWords = cloud.split(' ');
+    return cloudWords.map(word => 
+        localWords.includes(word) ? word : `<span class="highlight-diff">${word}</span>`
+    ).join(' ');
+};
 
-        // VERIFICACIÓN DE URL PARA MODO EDICIÓN EN VIVO
-        const urlParams = new URLSearchParams(window.location.search);
-        const sharedId = urlParams.get('shared');
+window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT) => {
+    const modal = document.getElementById('modalOverlay');
+    const content = document.getElementById('modalContent');
+    content.innerHTML = `
+        <div class="max-w-6xl w-full">
+            <h3 class="font-bold text-2xl mb-2 text-indigo-900 border-b pb-2">Auditoría de Sincronización</h3>
+            <p class="text-xs text-gray-500 mb-6 italic">Las palabras en <b>verde</b> vienen de la nube y no existen en tu versión local.</p>
+            <div class="grid grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase">Tu Versión Local</label>
+                    <div class="p-4 bg-gray-50 rounded-lg border h-60 overflow-y-auto text-sm whitespace-pre-wrap">${lG}</div>
+                </div>
+                <div class="space-y-4">
+                    <label class="block text-[10px] font-black text-emerald-600 uppercase">Versión de la Nube</label>
+                    <div class="p-4 bg-emerald-50 rounded-lg border h-60 overflow-y-auto text-sm whitespace-pre-wrap">${window.highlightChanges(lG, nG)}</div>
+                </div>
+            </div>
+            <div class="mt-8 flex justify-end gap-3 border-t pt-4">
+                <button onclick="closeModal(null)" class="px-6 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg">Rechazar</button>
+                <button onclick="aplicarAuditoria()" class="bg-indigo-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-indigo-700">Aceptar y Sincronizar</button>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+};
 
-        if (sharedId) {
-            // Si hay un enlace compartido, ocultamos la app principal e iniciamos el modo en vivo
-            document.addEventListener("DOMContentLoaded", () => {
-                document.getElementById('mainAppContainer').style.display = 'none';
-                document.getElementById('loginScreen').style.display = 'none';
-                initSharedMode(sharedId);
-            });
-        } else {
-            // Flujo normal de la app
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    window.currentUserUID = user.uid;
-                    document.getElementById('loginScreen').style.display = 'none';
-                    
-                    const pics = document.querySelectorAll('.user-pic');
-                    pics.forEach(p => { p.src = user.photoURL; p.classList.remove('hidden'); });
-                    const name = document.getElementById('userNameDesktop');
-                    if(name) name.innerText = user.displayName;
+window.aplicarAuditoria = () => {
+    document.getElementById('ideaGuion').value = window.tempSyncData.guion;
+    document.getElementById('ideaCopy').value = window.tempSyncData.copy;
+    document.getElementById('ideaHashtags').value = window.tempSyncData.tags;
+    if (editandoId) guardarIdea();
+    closeModal(null);
+    alert("✅ Datos sincronizados.");
+};
 
-                    const docSnap = await getDoc(doc(db, "videoka_planner", user.uid));
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        localStorage.clear(); 
-                        for (const [key, value] of Object.entries(data)) {
-                            if (value !== null && value !== undefined) {
-                                originalSetItem.call(localStorage, key, value);
-                            }
-                        }
-                    } else {
-                        window.syncToCloud(); 
-                    }
-                    
-                    if(typeof window.initAppState === 'function') window.initAppState();
-                } else {
-                    document.getElementById('loginScreen').style.display = 'flex';
-                    window.currentUserUID = null;
-                }
-            });
-        }
+// 2. SINCRONIZACIÓN Y EDICIÓN
+window.sincronizarDesdeEnlace = async () => {
+    if (!editandoId) return;
+    const idea = ideas.find(i => i.id === editandoId);
+    if (!idea || !idea.sharedId) return alert("No hay un enlace activo.");
+    const btnSync = document.getElementById('btnSyncEnlace');
+    btnSync.innerText = "⏳ Consultando...";
+    try {
+        const docSnap = await getDoc(doc(window.db, "shared_guiones", idea.sharedId));
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            window.tempSyncData = { guion: data.guion || '', copy: data.copy || '', tags: data.hashtags || '' };
+            mostrarAuditoriaCambios(
+                document.getElementById('ideaGuion').value, data.guion,
+                document.getElementById('ideaCopy').value, data.copy,
+                document.getElementById('ideaHashtags').value, data.hashtags
+            );
+        } else { alert("El guion compartido ya no existe."); }
+    } catch(e) { console.error(e); alert("Fallo al conectar."); }
+    btnSync.innerText = "⬇️ Sincronizar cambios de la nube";
+};
 // Lógica del Editor Compartido en Vivo
         function initSharedMode(id) {
             const sharedScreen = document.getElementById('sharedEditorScreen');
