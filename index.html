@@ -84,17 +84,16 @@
 
 .audit-text-container {
     width: 100%;
-    min-height: 150px;
-    max-height: 400px;
-    overflow-y: auto;
-    white-space: pre-wrap; /* Mantiene saltos de línea */
-    word-break: break-word; /* Rompe palabras largas */
+    min-height: 80px;
+    white-space: pre-wrap; 
+    word-break: break-word; 
     padding: 1rem;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     font-size: 0.875rem;
     line-height: 1.5;
+    height: 100%;
 }
     </style>
 
@@ -225,34 +224,66 @@ window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT) => {
     content.innerHTML = `
         <div class="w-full">
             <h3 class="font-bold text-2xl mb-2 text-indigo-900 border-b pb-2">Auditoría de Cambios</h3>
-            <p class="text-xs text-gray-500 mb-6 italic">Las palabras marcadas en <b>verde</b> son las que están en la nube pero no en tu versión local.</p>
+            <p class="text-xs text-gray-500 mb-6 italic">Las palabras marcadas en <b class="text-emerald-600">verde</b> son las que están en la nube pero no en tu versión local.</p>
             
-            <div class="flex flex-col gap-6">
-                <div class="flex flex-col md:flex-row gap-6">
-                    <div class="flex-1 space-y-4">
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Versión Local</label>
-                        <div class="audit-text-container">${lG}</div>
-                        <div class="audit-text-container">${lC}</div>
-                        <div class="audit-text-container">${lT}</div>
+            <div class="flex flex-col gap-8">
+                <div>
+                    <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2">
+                        <span>📝</span> Guión Estructurado
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label>
+                            <div class="audit-text-container">${lG}</div>
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube</label>
+                            <div class="audit-text-container border-emerald-200 bg-emerald-50">${highlightedGuion}</div>
+                        </div>
                     </div>
-                    <div class="flex-1 space-y-4">
-                        <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest">Versión Nube</label>
-                        <div class="audit-text-container border-emerald-200 bg-emerald-50">${highlightedGuion}</div>
-                        <div class="audit-text-container border-emerald-200 bg-emerald-50">${highlightedCopy}</div>
-                        <div class="audit-text-container border-emerald-200 bg-emerald-50">${highlightedTags}</div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2">
+                        <span>✍️</span> Copywriting
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label>
+                            <div class="audit-text-container">${lC}</div>
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube</label>
+                            <div class="audit-text-container border-emerald-200 bg-emerald-50">${highlightedCopy}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2">
+                        <span>🏷️</span> Hashtags
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label>
+                            <div class="audit-text-container">${lT}</div>
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube</label>
+                            <div class="audit-text-container border-emerald-200 bg-emerald-50">${highlightedTags}</div>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <div class="mt-8 flex justify-end gap-3 border-t pt-4">
-                <button onclick="closeModal(null)" class="px-6 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg">Cancelar</button>
-                <button onclick="aplicarAuditoria()" class="bg-indigo-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-lg">Aceptar Cambios</button>
+            <div class="mt-8 flex justify-end gap-3 border-t pt-4 sticky bottom-0 bg-white bg-opacity-95 z-10 pb-2">
+                <button onclick="closeModal(null)" class="px-6 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="aplicarAuditoria()" class="bg-indigo-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-lg transition-colors">Aceptar Cambios</button>
             </div>
         </div>
     `;
     modal.style.display = 'flex';
 };
-
         window.aplicarAuditoria = () => {
             document.getElementById('ideaGuion').value = window.tempSyncData.guion;
             document.getElementById('ideaCopy').value = window.tempSyncData.copy;
