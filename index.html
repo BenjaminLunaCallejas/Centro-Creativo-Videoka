@@ -71,6 +71,13 @@
 
         #modalOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
         .modal-card { background: white; width: 90%; max-width: 650px; border-radius: 12px; padding: 2rem; position: relative; max-height: 90vh; overflow-y: auto; }
+.highlight-diff {
+    background-color: #d1fae5;
+    font-weight: bold;
+    color: #065f46;
+    padding: 0 2px;
+    border-radius: 4px;
+}
     </style>
 
     <script type="module">
@@ -1145,10 +1152,10 @@ window.tempSyncData = { guion: '', copy: '', tags: '' };
 window.sincronizarDesdeEnlace = async () => {
     if (!editandoId) return;
     const idea = ideas.find(i => i.id === editandoId);
-    if (!idea || !idea.sharedId) return alert("No hay un enlace activo vinculado a este guion.");
+    if (!idea || !idea.sharedId) return alert("No hay un enlace activo.");
 
     const btnSync = document.getElementById('btnSyncEnlace');
-    btnSync.innerText = "⏳ Consultando Nube...";
+    btnSync.innerText = "⏳ Consultando...";
     
     try {
         const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js");
@@ -1157,16 +1164,20 @@ window.sincronizarDesdeEnlace = async () => {
         if (docSnap.exists()) {
             const data = docSnap.data();
             window.tempSyncData = { guion: data.guion || '', copy: data.copy || '', tags: data.hashtags || '' };   
-        // --- FUNCIÓN AUXILIAR DE RESALTADO ---
-window.highlightChanges = (local, cloud) => {
-    if (!local || !cloud) return cloud;
-    const localWords = local.split(' ');
-    const cloudWords = cloud.split(' ');
-    
-    return cloudWords.map(word => {
-        // Marca en verde y negrita solo si la palabra NO existe en tu versión local
-        return localWords.includes(word) ? word : `<span class="font-bold text-emerald-900 bg-emerald-100 px-1 rounded">${word}</span>`;
-    }).join(' ');
+            
+            mostrarAuditoriaCambios(
+                document.getElementById('ideaGuion').value, data.guion,
+                document.getElementById('ideaCopy').value, data.copy,
+                document.getElementById('ideaHashtags').value, data.hashtags
+            );
+        } else {
+            alert("El guion compartido ya no existe en la nube.");
+        }
+    } catch(e) {
+        console.error(e);
+        alert("Fallo al conectar con la nube.");
+    }
+    btnSync.innerText = "⬇️ Sincronizar cambios de la nube";
 };
             // Auditoría visual antes de aplicar cambios
             mostrarAuditoriaCambios(
@@ -1807,6 +1818,51 @@ ENTREGABLES ADICIONALES (Debajo del guion):
             updateLivePrompt();
             document.getElementById('ideaTitulo').scrollIntoView({ behavior: 'smooth' });
         }
+        // --- LÓGICA DE AUDITORÍA Y COMPARACIÓN ---
+window.highlightChanges = (local, cloud) => {
+    if (!local || !cloud) return cloud;
+    const localWords = local.split(' ');
+    const cloudWords = cloud.split(' ');
+    return cloudWords.map(word => 
+        localWords.includes(word) ? word : `<span class="highlight-diff">${word}</span>`
+    ).join(' ');
+};
+
+window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT) => {
+    const modal = document.getElementById('modalOverlay');
+    const content = document.getElementById('modalContent');
+    
+    content.innerHTML = `
+        <div class="max-w-6xl w-full">
+            <h3 class="font-bold text-2xl mb-2 text-indigo-900 border-b pb-2">Auditoría de Sincronización</h3>
+            <p class="text-xs text-gray-500 mb-6 italic">Las palabras en <b>verde</b> vienen de la nube y no existen en tu versión local.</p>
+            <div class="grid grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase">Tu Versión Local</label>
+                    <div class="p-4 bg-gray-50 rounded-lg border h-60 overflow-y-auto text-sm whitespace-pre-wrap">${lG}</div>
+                </div>
+                <div class="space-y-4">
+                    <label class="block text-[10px] font-black text-emerald-600 uppercase">Versión de la Nube</label>
+                    <div class="p-4 bg-emerald-50 rounded-lg border h-60 overflow-y-auto text-sm whitespace-pre-wrap">${window.highlightChanges(lG, nG)}</div>
+                </div>
+            </div>
+            <div class="mt-8 flex justify-end gap-3 border-t pt-4">
+                <button onclick="closeModal(null)" class="px-6 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg">Rechazar</button>
+                <button onclick="aplicarAuditoria()" class="bg-indigo-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-indigo-700">Aceptar y Sincronizar</button>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+};
+
+window.aplicarAuditoria = () => {
+    document.getElementById('ideaGuion').value = window.tempSyncData.guion;
+    document.getElementById('ideaCopy').value = window.tempSyncData.copy;
+    document.getElementById('ideaHashtags').value = window.tempSyncData.tags;
+    if (editandoId) guardarIdea();
+    closeModal(null);
+    alert("✅ Datos sincronizados.");
+};
 
         function archiveTask(cat, index) {
             const item = tasks[cat].splice(index, 1)[0];
