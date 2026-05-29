@@ -293,53 +293,38 @@ window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT) => {
     `;
     modal.style.display = 'flex';
 };
-        window.aplicarAuditoria = () => {
+       window.aplicarAuditoria = () => {
+            // 1. Insertamos los datos de la nube en los campos actuales
             document.getElementById('ideaGuion').value = window.tempSyncData.guion;
             document.getElementById('ideaCopy').value = window.tempSyncData.copy;
             document.getElementById('ideaHashtags').value = window.tempSyncData.tags;
             
-            if (typeof editandoId !== 'undefined' && editandoId) {
-                if (typeof guardarIdea === 'function') guardarIdea(); 
+            // 2. Guardamos los cambios en segundo plano sin cerrar el formulario
+            if (typeof editandoId !== 'undefined' && editandoId && typeof ideas !== 'undefined') {
+                const index = ideas.findIndex(i => i.id === editandoId);
+                if (index > -1) {
+                    ideas[index].guion = window.tempSyncData.guion;
+                    ideas[index].copy = window.tempSyncData.copy;
+                    ideas[index].hashtags = window.tempSyncData.tags;
+                    localStorage.setItem('contentIdeas', JSON.stringify(ideas));
+                }
             } else {
                 console.warn("No se detectó un ID de edición activo. Los cambios se aplicaron visualmente.");
             }
 
-            if (typeof closeModal === 'function') closeModal(null);
-            alert("✅ Datos importados y sincronizados correctamente.");
-        }; 
-
-        // --- FUNCIONES DE SINCRONIZACIÓN COMPARTIDA ---
-        window.sincronizarDesdeEnlace = async () => {
-            if (typeof editandoId === 'undefined' || !editandoId) return;
-            // Requiere que la variable ideas esté disponible globalmente desde el script base
-            if (typeof ideas === 'undefined') return;
-            
-            const idea = ideas.find(i => i.id === editandoId);
-            if (!idea || !idea.sharedId) return alert("No hay un enlace activo.");
-            
-            const btnSync = document.getElementById('btnSyncEnlace');
-            btnSync.innerText = "⏳ Consultando...";
-            
-            try {
-                const docSnap = await getDoc(doc(window.db, "shared_guiones", idea.sharedId));
-                
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    window.tempSyncData = { guion: data.guion || '', copy: data.copy || '', tags: data.hashtags || '' };   
-                    
-                    window.mostrarAuditoriaCambios(
-                        document.getElementById('ideaGuion').value, data.guion,
-                        document.getElementById('ideaCopy').value, data.copy,
-                        document.getElementById('ideaHashtags').value, data.hashtags
-                    );
-                } else {
-                    alert("El guion compartido ya no existe en la nube.");
+            // 3. Ajustamos automáticamente la altura de las cajas de texto al nuevo contenido
+            ['ideaGuion', 'ideaCopy', 'ideaHashtags'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) {
+                    el.style.height = 'auto';
+                    el.style.height = (el.scrollHeight) + 'px';
                 }
-            } catch(e) {
-                console.error("Error al sincronizar:", e);
-                alert("Fallo al conectar con la nube.");
-            }
-            btnSync.innerText = "⬇️ Sincronizar cambios de la nube";
+            });
+
+            // 4. Cerramos el modal
+            if (typeof closeModal === 'function') closeModal(null);
+            
+            alert("✅ Datos importados y sincronizados. Puedes continuar editando el guion.");
         };
 
         window.generarEnlaceColaborativo = async () => {
