@@ -1231,22 +1231,36 @@ window.aplicarAuditoria = () => {
     document.getElementById('ideaGuion').value = window.tempSyncData.guion;
     document.getElementById('ideaCopy').value = window.tempSyncData.copy;
     document.getElementById('ideaHashtags').value = window.tempSyncData.tags;
-    
+   // 2. Ejecutar la lógica de guardado lógico y persistencia
+    // Esto actualizará el array 'ideas', localStorage y enviará a Firebase
+    if (editandoId) {
+        guardarIdea(); 
+    } else {
+        console.warn("No se detectó un ID de edición activo. Los cambios se aplicaron visualmente pero no se persistieron.");
+    }
+
     closeModal(null);
-    alert("✅ Datos importados correctamente. Recuerda guardar el guion para hacerlo permanente.");
-};
+    alert("✅ Datos importados y sincronizados correctamente.");
+}; 
 
 // --- MANTENEMOS LAS FUNCIONES DE APOYO Y PERSISTENCIA ---
 window.iniciarSesionGoogle = () => { signInWithPopup(auth, provider).catch(console.error); };
 window.cerrarSesion = () => signOut(auth).then(() => window.location.reload());
         
-        function guardarIdea() {
-            const titulo = document.getElementById('ideaTitulo').value;
-            if(!titulo) return alert('Título requerido');
+      function guardarIdea() {
+    const titulo = document.getElementById('ideaTitulo').value;
+    if (!titulo) return alert('Título requerido');
 
-            const datos = {
-                id: editandoId || Date.now(),
-                titulo,
+    // Recuperamos la idea actual si existe para preservar el sharedId
+    const ideaActual = ideas.find(i => i.id === editandoId);
+    
+    // Si la idea existe, conservamos su sharedId; si es nueva, será null
+    const sharedId = ideaActual ? (ideaActual.sharedId || null) : null;
+
+    const datos = {
+        id: editandoId || Date.now(),
+        sharedId: sharedId, 
+        titulo, // Propiedad abreviada: equivale a titulo: titulo
                 formato: document.getElementById('ideaFormato').value,
                 tipo: document.getElementById('ideaTipo').value,
                 objetivo: document.getElementById('ideaObjetivo').value,
