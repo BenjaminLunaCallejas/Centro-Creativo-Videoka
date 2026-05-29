@@ -1,3 +1,41 @@
+No estás soñando mucho, Benjamín, pero es fundamental ser brutalmente honestos sobre cómo funciona la tecnología detrás de esto para no entregarte algo "chafa".
+
+A nivel de ingeniería de software, un clon perfecto de Google Docs utiliza algoritmos matemáticos muy complejos llamados **Transformación Operacional (OT)** o **CRDTs**. Esto es lo que permite que tú veas el cursor de tu compañero con su nombre moviéndose en tiempo real sin que las letras choquen si escriben la misma palabra al mismo tiempo.
+
+Hacer eso desde cero requiere servidores de WebSockets y librerías pesadas. **Sin embargo**, como ya tienes Firebase implementado, podemos usar la función `onSnapshot` de Firestore. Esto abrirá un túnel de datos en tiempo real.
+
+### ¿Cómo lo estructuré para que sea profesional?
+
+1. **Aislamiento de la base de datos:** Tus estrategias privadas siguen protegidas bajo tu usuario. Pero cuando presiones el botón **"Generar Enlace de Edición en Vivo"**, el sistema copiará ese guion específico y lo pondrá en una nueva colección temporal en la nube.
+2. **Modo Focus Colaborativo:** Si alguien abre ese enlace, no verá tu panel ni tus estrategias (por seguridad). Verá una pantalla de edición completa ("distraction-free") donde el texto se sincroniza cada vez que alguien teclea.
+3. **Retención de Cursor:** Implementé una lógica matemática sencilla para que, cuando el texto se actualice desde la nube por lo que escribió tu colega, tu cursor no salte al final de la hoja (el error número 1 de los sistemas "chafas").
+
+### Importante: Actualiza tus Reglas de Firebase
+
+Para que esto funcione sin errores de permisos, debes ir a tu consola de Firebase > **Firestore Database** > **Rules** y añadir esta regla para que cualquiera con el enlace pueda leer y escribir en la colección de documentos compartidos:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Tus reglas actuales para videoka_planner se quedan igual
+    match /videoka_planner/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    // NUEVA REGLA PARA LOS GUIONES EN VIVO
+    match /shared_guiones/{guionId} {
+      allow read, write: if true;
+    }
+  }
+}
+
+```
+
+### Código Completo e Íntegro
+
+Reemplaza todo tu archivo con este. He inyectado el nuevo módulo de colaboración en vivo, el botón de generar enlace, y el interceptor de URL al inicio de la carga.
+
+```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -75,7 +113,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        // Añadido onSnapshot y serverTimestamp para edición en vivo
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -93,14 +132,115 @@
         const provider = new GoogleAuthProvider();
 
         window.currentUserUID = null;
+        window.db = db; // Expuesto para funciones globales
+        window.serverTimestamp = serverTimestamp;
 
-        // Autenticación
+        // VERIFICACIÓN DE URL PARA MODO EDICIÓN EN VIVO
+        const urlParams = new URLSearchParams(window.location.search);
+        const sharedId = urlParams.get('shared');
+
+        if (sharedId) {
+            // Si hay un enlace compartido, ocultamos la app principal e iniciamos el modo en vivo
+            document.addEventListener("DOMContentLoaded", () => {
+                document.getElementById('mainAppContainer').style.display = 'none';
+                document.getElementById('loginScreen').style.display = 'none';
+                initSharedMode(sharedId);
+            });
+        } else {
+            // Flujo normal de la app
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    window.currentUserUID = user.uid;
+                    document.getElementById('loginScreen').style.display = 'none';
+                    
+                    const pics = document.querySelectorAll('.user-pic');
+                    pics.forEach(p => { p.src = user.photoURL; p.classList.remove('hidden'); });
+                    const name = document.getElementById('userNameDesktop');
+                    if(name) name.innerText = user.displayName;
+
+                    const docSnap = await getDoc(doc(db, "videoka_planner", user.uid));
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        localStorage.clear(); 
+                        for (const [key, value] of Object.entries(data)) {
+                            if (value !== null && value !== undefined) {
+                                originalSetItem.call(localStorage, key, value);
+                            }
+                        }
+                    } else {
+                        window.syncToCloud(); 
+                    }
+                    
+                    if(typeof window.initAppState === 'function') window.initAppState();
+                } else {
+                    document.getElementById('loginScreen').style.display = 'flex';
+                    window.currentUserUID = null;
+                }
+            });
+        }
+
+        // Lógica del Editor Compartido en Vivo
+        function initSharedMode(id) {
+            const sharedScreen = document.getElementById('sharedEditorScreen');
+            const textarea = document.getElementById('sharedGuionTextarea');
+            const status = document.getElementById('syncStatus');
+            sharedScreen.classList.remove('hidden');
+            sharedScreen.classList.add('flex');
+
+            const docRef = doc(db, "shared_guiones", id);
+            let isLocalChange = false;
+
+            // Escuchar cambios de la nube en tiempo real
+            onSnapshot(docRef, (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    if (!isLocalChange) {
+                        // Preservar la posición del cursor para evitar saltos bruscos
+                        const start = textarea.selectionStart;
+                        const end = textarea.selectionEnd;
+                        textarea.value = data.text || '';
+                        
+                        // Si el usuario estaba enfocado, devolvemos el cursor a donde estaba
+                        if (document.activeElement === textarea) {
+                            textarea.setSelectionRange(start, end);
+                        }
+                    }
+                } else {
+                    status.innerText = "Guion no encontrado.";
+                    status.classList.replace('text-emerald-400', 'text-red-400');
+                    textarea.disabled = true;
+                }
+            }, (error) => {
+                console.error("Error de permisos. Revisa tus reglas de Firestore.", error);
+                status.innerText = "Error de conexión (Reglas Firestore)";
+                status.classList.replace('text-emerald-400', 'text-red-400');
+            });
+
+            // Enviar cambios a la nube
+            textarea.addEventListener('input', (e) => {
+                isLocalChange = true;
+                status.innerText = "Guardando...";
+                status.classList.replace('text-emerald-400', 'text-amber-400');
+                
+                setDoc(docRef, { text: textarea.value, lastUpdate: serverTimestamp() }, { merge: true })
+                    .then(() => {
+                        status.innerText = "Sincronizado";
+                        status.classList.replace('text-amber-400', 'text-emerald-400');
+                        isLocalChange = false;
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        status.innerText = "Error al guardar";
+                        status.classList.replace('text-amber-400', 'text-red-400');
+                    });
+            });
+        }
+
         window.iniciarSesionGoogle = () => {
             signInWithPopup(auth, provider).catch(error => console.error("Error Auth:", error));
         };
         window.cerrarSesion = () => signOut(auth).then(() => window.location.reload());
 
-        // Motor de Respaldo a Firestore
         let syncTimeout = null;
         window.syncToCloud = async () => {
             if (!window.currentUserUID) return;
@@ -132,540 +272,524 @@
             } catch (e) { console.error("Error guardando:", e); }
         };
 
-        // Interceptor: Captura cualquier guardado en localStorage y lo empuja a la nube
         const originalSetItem = localStorage.setItem;
         localStorage.setItem = function(key, value) {
             originalSetItem.apply(this, arguments);
             if (syncTimeout) clearTimeout(syncTimeout);
-            syncTimeout = setTimeout(window.syncToCloud, 1000); // Espera 1 seg antes de respaldar masivamente
+            syncTimeout = setTimeout(window.syncToCloud, 1000); 
         };
-
-        // Escucha de Estado de Sesión
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                window.currentUserUID = user.uid;
-                document.getElementById('loginScreen').style.display = 'none';
-                
-                // Actualiza Perfil UI
-                const pics = document.querySelectorAll('.user-pic');
-                pics.forEach(p => { p.src = user.photoURL; p.classList.remove('hidden'); });
-                const name = document.getElementById('userNameDesktop');
-                if(name) name.innerText = user.displayName;
-
-                // Hidratación de Datos
-                const docSnap = await getDoc(doc(db, "videoka_planner", user.uid));
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    localStorage.clear(); // Limpia datos de sesiones previas
-                    for (const [key, value] of Object.entries(data)) {
-                        if (value !== null && value !== undefined) {
-                            originalSetItem.call(localStorage, key, value);
-                        }
-                    }
-                } else {
-                    window.syncToCloud(); // Si es nuevo en la nube, sube su localStorage actual
-                }
-                
-                // Inicia la App
-                if(typeof window.initAppState === 'function') window.initAppState();
-            } else {
-                document.getElementById('loginScreen').style.display = 'flex';
-                window.currentUserUID = null;
-            }
-        });
     </script>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased">
 
-    <div id="loginScreen" class="fixed inset-0 bg-slate-900 z-[2000] flex flex-col items-center justify-center text-white">
-        <h1 class="text-4xl font-bold text-indigo-400 mb-6 text-center">Centro Creativo<br>Videoka</h1>
-        <p class="mb-8 text-slate-300 text-center max-w-md px-4">Inicia sesión para sincronizar tu planificador estratégico de contenido en la nube segura de Firebase.</p>
-        <button onclick="iniciarSesionGoogle()" class="bg-white text-slate-900 px-6 py-3 rounded-lg font-bold hover:bg-gray-200 transition shadow-lg flex items-center gap-3">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6" alt="Google">
-            Continuar con Google
-        </button>
-    </div>
-
-    <div id="modalOverlay" onclick="closeModal(event)">
-        <div class="modal-card shadow-2xl custom-scroll" onclick="event.stopPropagation()">
-            <button onclick="closeModal(null)" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
-            <div id="modalContent"></div>
+    <div id="sharedEditorScreen" class="fixed inset-0 bg-slate-900 z-[3000] hidden flex-col">
+        <div class="p-4 bg-slate-800 text-white flex justify-between items-center shadow-md">
+            <h1 class="text-xl font-bold text-indigo-400 flex items-center gap-2">🟢 Videoka - Edición en Vivo</h1>
+            <button onclick="window.location.href=window.location.pathname" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-sm font-bold transition shadow-lg">Ir a mi Panel Videoka</button>
+        </div>
+        <div class="flex-1 p-4 md:p-8 flex flex-col bg-slate-50">
+            <div class="bg-indigo-900 text-indigo-100 p-3 rounded-t-xl text-sm font-bold flex justify-between items-center shadow-md">
+                <span class="flex items-center gap-2">✍️ Cualquiera con el enlace puede editar.</span>
+                <span id="syncStatus" class="text-emerald-400 text-xs tracking-wider uppercase font-black bg-black/20 px-3 py-1 rounded-full">Sincronizado</span>
+            </div>
+            <textarea id="sharedGuionTextarea" class="flex-1 w-full p-6 md:p-10 border-x border-b border-gray-300 rounded-b-xl outline-none focus:ring-0 text-gray-800 text-lg md:text-xl leading-relaxed custom-scroll shadow-inner font-serif" placeholder="Comienza a escribir el guion colaborativo aquí..."></textarea>
         </div>
     </div>
 
-    <div class="flex flex-col md:flex-row h-screen overflow-hidden">
+    <div id="mainAppContainer">
+        <div id="loginScreen" class="fixed inset-0 bg-slate-900 z-[2000] flex flex-col items-center justify-center text-white">
+            <h1 class="text-4xl font-bold text-indigo-400 mb-6 text-center">Centro Creativo<br>Videoka</h1>
+            <p class="mb-8 text-slate-300 text-center max-w-md px-4">Inicia sesión para sincronizar tu planificador estratégico de contenido en la nube segura de Firebase.</p>
+            <button onclick="iniciarSesionGoogle()" class="bg-white text-slate-900 px-6 py-3 rounded-lg font-bold hover:bg-gray-200 transition shadow-lg flex items-center gap-3">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6" alt="Google">
+                Continuar con Google
+            </button>
+        </div>
+
+        <div id="modalOverlay" onclick="closeModal(event)">
+            <div class="modal-card shadow-2xl custom-scroll" onclick="event.stopPropagation()">
+                <button onclick="closeModal(null)" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                <div id="modalContent"></div>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row h-screen overflow-hidden">
+            
+            <aside class="w-full md:w-64 bg-slate-900 text-white flex flex-col shadow-lg flex-shrink-0 z-20">
+                <div class="p-4 md:p-6 flex justify-between items-center">
+                    <h1 class="text-xl md:text-2xl font-bold tracking-wider text-indigo-400">Centro Creativo<br class="hidden md:block">Videoka</h1>
+                    <div class="md:hidden flex items-center gap-2">
+                        <img class="user-pic w-8 h-8 rounded-full hidden" src="" alt="Perfil">
+                        <button onclick="cerrarSesion()" class="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded">Salir</button>
+                    </div>
+                </div>
+                
+                <nav class="flex md:flex-col overflow-x-auto md:overflow-visible px-4 pb-4 md:pb-0 space-x-2 md:space-x-0 md:space-y-2 custom-scroll flex-1">
+                    <button onclick="switchTab('estrategia')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition" id="btn-estrategia">1. Estrategia y Marca</button>
+                    <button onclick="switchTab('notas')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-notas">2. Ideas y Tendencias</button>
+                    <button onclick="switchTab('estrategia_resumen')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-estrategia_resumen">3. Estrategia de Contenido</button>
+                    <button onclick="switchTab('ideas')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-ideas">4. Repositorio y Guiones</button>
+                    <button onclick="switchTab('planificador')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-planificador">5. Planificador</button>
+                    <button onclick="switchTab('blog_notas')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-blog_notas">6. Blog de Notas</button>
+                </nav>
+
+                <div class="hidden md:flex p-4 border-t border-slate-700 items-center justify-between">
+                    <div class="flex items-center gap-2 overflow-hidden">
+                        <img class="user-pic w-8 h-8 rounded-full hidden" src="" alt="Perfil">
+                        <span id="userNameDesktop" class="text-xs truncate text-slate-300"></span>
+                    </div>
+                    <button onclick="cerrarSesion()" class="text-xs bg-red-500/20 text-red-400 hover:bg-red-500/40 px-3 py-2 rounded transition">Salir</button>
+                </div>
+            </aside>
+
+            <main class="flex-1 overflow-y-auto p-4 md:p-8 custom-scroll">
+                
+                <section id="estrategia" class="tab-content active max-w-4xl mx-auto bg-white p-4 md:p-8 rounded-xl shadow-sm border border-gray-100">
+                    <h2 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Identidad y Estrategia Central</h2>
+                    
+                    <div class="grid grid-cols-1 gap-6 mb-6">
+                        <div>
+                            <div class="flex justify-between items-end mb-1">
+                                <label class="block text-sm font-semibold text-gray-600">Tema Central (Pilar de Autoridad)</label>
+                                <span id="tema-guardado" class="text-xs text-green-600 font-bold opacity-0 transition-opacity duration-300">¡Guardado automáticamente!</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mb-2">Representa tu nicho principal y área de mayor rigor o <em>expertise</em>. Es el núcleo primario por el que tu audiencia te reconocerá como referente. <br><span class="font-medium">Ejemplo:</span> <em>Emprendimiento STEAM, Astrofísica Aplicada, Biotecnología.</em></p>
+                            <input type="text" id="temaCentral" onblur="guardarTemaCentralAuto()" placeholder="Ej. Emprendimiento STEAM y Ciencia" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        
+                                <div class="mb-6 border-t pt-6">
+                            <label class="block text-sm font-semibold text-gray-600 mb-1">Ejes Transversales (Pilares Secundarios)</label>
+                            <p class="text-xs text-gray-500 mb-2">Temáticas complementarias que cruzan tu contenido principal para humanizar la marca, generar afinidad o alcanzar a una audiencia más amplia. <br><span class="font-medium">Ejemplo:</span> <em>Productividad para académicos, Salud mental en el laboratorio, Análisis de herramientas digitales.</em></p>
+                            <input type="text" id="inputEjes" placeholder="Escribe un eje secundario y presiona Enter..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mb-2">
+                            <div id="listaEjes" class="flex flex-wrap"></div>
+                        </div>
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-2">Nicho de Contenido</label>
+                                <select id="nichoContenido" onchange="saveStrategyExtras()" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                                    <option value="">Selecciona tu nicho...</option>
+                                    <option value="Entretenimiento">Entretenimiento</option>
+                                    <option value="Educación">Educación / Formación</option>
+                                    <option value="Tecnología">Tecnología / Software</option>
+                                    <option value="Ciencia">Ciencia / Academia</option>
+                                    <option value="Negocios">Negocios / Emprendimiento</option>
+                                    <option value="Gaming">Gaming</option>
+                                    <option value="Salud">Salud / Bienestar</option>
+                                    <option value="Estilo de Vida">Estilo de Vida (Vlogs)</option>
+                                    <option value="Viajes">Viajes</option>
+                                    <option value="Moda">Moda / Belleza</option>
+                                    <option value="Gastronomía">Gastronomía / Cocina</option>
+                                    <option value="Finanzas">Finanzas Personales</option>
+                                    <option value="Humor">Humor / Comedia</option>
+                                    <option value="Arte">Arte / Cultura</option>
+                                    <option value="Misterio">Misterio / Storytelling</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-2">Público Objetivo</label>
+                                <input type="text" id="publicoObjetivo" onblur="saveStrategyExtras()" placeholder="¿A quién diriges tus videos?" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                        </div>
+                        <div class="border-t pt-4">
+                            <label class="block text-sm font-semibold text-gray-600 mb-1">Nombre y descripción del Creador de Contenido</label>
+                            <p class="text-xs text-gray-500 mb-2">Para conocer más de ti indica cuál es el nombre de tu marca y describre tus intereses, hobbies, talentos y características personales. Esta información humanizará tu estrategia y se integrará en el prompt de la IA.</p>
+                            <textarea id="descCreador" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Soy @Belucaa Gamer y me encanta tocar la guitarra, soy fan de la ciencia ficción, y disfruto el diseño digital..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll"></textarea>
+                        </div>
+
+                            <div>
+                            <label class="block text-sm font-semibold text-gray-600 mb-2">Personalidad basada en Arquetipos (Selecciona máximo 2 para evitar dilución de mensaje)</label>
+                            <div id="arquetiposContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-4 border rounded-lg bg-gray-50 max-h-64 overflow-y-auto custom-scroll"></div>
+                            <div id="arquetipoDescripcion" class="mt-4 p-5 bg-indigo-50 border-l-4 border-indigo-500 text-sm text-indigo-900 hidden"></div>
+                        </div>
+                    </div>
+
+                        <div class="border-t pt-4 mt-4">
+                            <label class="block text-sm font-semibold text-gray-600 mb-1">Identidad y Tono de Comunicación</label>
+                            <p class="text-xs text-gray-500 mb-2">Define la identidad de tu marca, tu tono de voz, y el estilo de tu comunicación. <br><span class="font-medium">Ejemplo:</span> <em>Mi personalidad mezcla los arquetipos de “El Sabio” y “El Bufón”. Tono académico pero accesible, uso lenguaje científico intercalado con referencias de la cultura pop, ritmo rápido y directo.</em></p>
+                            <textarea id="identidadTono" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Mi tono es inspirador, riguroso y disruptivo..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll"></textarea>
+                        </div>
+                        
+                    <div class="mb-6 border-t pt-6">
+                        <label class="block text-sm font-semibold text-gray-800 mb-4 bg-slate-100 p-2 rounded">Objetivos del Contenido (Redacción obligatoria)</label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="p-4 border rounded-lg border-blue-200 bg-blue-50">
+                                <h4 class="font-bold text-blue-800">Reconocimiento</h4>
+                                <p class="text-[10px] text-blue-600 mb-2 italic">Alcance masivo y descubrimiento.</p>
+                                <textarea id="strat_awareness" onblur="saveFunnel()" class="w-full p-2 text-sm border rounded" placeholder="Estrategia de alcance..."></textarea>
+                            </div>
+                            <div class="p-4 border rounded-lg border-emerald-200 bg-emerald-50">
+                                <h4 class="font-bold text-emerald-800">Consideración</h4>
+                                <p class="text-[10px] text-emerald-600 mb-2 italic">Generar confianza y consciencia.</p>
+                                <textarea id="strat_consideracion" onblur="saveFunnel()" class="w-full p-2 text-sm border rounded" placeholder="Estrategia de confianza..."></textarea>
+                            </div>
+                            <div class="p-4 border rounded-lg border-amber-200 bg-amber-50">
+                                <h4 class="font-bold text-amber-800">Conversión</h4>
+                                <p class="text-[10px] text-amber-600 mb-2 italic">La venta final o registro.</p>
+                                <textarea id="strat_conversion" onblur="saveFunnel()" class="w-full p-2 text-sm border rounded" placeholder="Estrategia de venta..."></textarea>
+                            </div>
+                            <div class="p-4 border rounded-lg border-purple-200 bg-purple-50">
+                                <h4 class="font-bold text-purple-800">Fidelización</h4>
+                                <p class="text-[10px] text-purple-600 mb-2 italic">Crear comunidad y recompra.</p>
+                                <textarea id="strat_fidelizacion" onblur="saveFunnel()" class="w-full p-2 text-sm border rounded" placeholder="Estrategia de comunidad..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="guardarEstrategia()" class="w-full md:w-auto bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition">Guardar Toda la Estrategia</button>
+                    <span id="estrategia-msg" class="ml-4 text-green-600 font-semibold hidden">¡Configuración guardada!</span>
+                </section>
+                
+                <section id="notas" class="tab-content w-full">
+        <h2 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Panel de Ideas y Tendencias</h2>
         
-        <aside class="w-full md:w-64 bg-slate-900 text-white flex flex-col shadow-lg flex-shrink-0 z-20">
-            <div class="p-4 md:p-6 flex justify-between items-center">
-                <h1 class="text-xl md:text-2xl font-bold tracking-wider text-indigo-400">Centro Creativo<br class="hidden md:block">Videoka</h1>
-                <div class="md:hidden flex items-center gap-2">
-                    <img class="user-pic w-8 h-8 rounded-full hidden" src="" alt="Perfil">
-                    <button onclick="cerrarSesion()" class="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded">Salir</button>
-                </div>
-            </div>
-            
-            <nav class="flex md:flex-col overflow-x-auto md:overflow-visible px-4 pb-4 md:pb-0 space-x-2 md:space-x-0 md:space-y-2 custom-scroll flex-1">
-                <button onclick="switchTab('estrategia')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition" id="btn-estrategia">1. Estrategia y Marca</button>
-                <button onclick="switchTab('notas')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-notas">2. Ideas y Tendencias</button>
-                <button onclick="switchTab('estrategia_resumen')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-estrategia_resumen">3. Estrategia de Contenido</button>
-                <button onclick="switchTab('ideas')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-ideas">4. Repositorio y Guiones</button>
-                <button onclick="switchTab('planificador')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-planificador">5. Planificador</button>
-                <button onclick="switchTab('blog_notas')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-blog_notas">6. Blog de Notas</button>
-            </nav>
+        <div class="mb-6 p-4 bg-indigo-50 border-l-4 border-indigo-600 rounded-r-lg shadow-sm">
+            <p class="text-xs text-indigo-800 leading-relaxed text-justify">
+                <strong>Instrucciones:</strong> Registre los datos correspondientes en cada columna para organizar la ideación.
+            </p>
+        </div>
 
-            <div class="hidden md:flex p-4 border-t border-slate-700 items-center justify-between">
-                <div class="flex items-center gap-2 overflow-hidden">
-                    <img class="user-pic w-8 h-8 rounded-full hidden" src="" alt="Perfil">
-                    <span id="userNameDesktop" class="text-xs truncate text-slate-300"></span>
-                </div>
-                <button onclick="cerrarSesion()" class="text-xs bg-red-500/20 text-red-400 hover:bg-red-500/40 px-3 py-2 rounded transition">Salir</button>
-            </div>
-        </aside>
-
-        <main class="flex-1 overflow-y-auto p-4 md:p-8 custom-scroll">
-            
-            <section id="estrategia" class="tab-content active max-w-4xl mx-auto bg-white p-4 md:p-8 rounded-xl shadow-sm border border-gray-100">
-                <h2 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Identidad y Estrategia Central</h2>
+        <div class="overflow-x-auto pb-4 custom-scroll">
+            <div class="flex gap-6 min-w-[1200px]">
                 
-                <div class="grid grid-cols-1 gap-6 mb-6">
-                    <div>
-                        <div class="flex justify-between items-end mb-1">
-                            <label class="block text-sm font-semibold text-gray-600">Tema Central (Pilar de Autoridad)</label>
-                            <span id="tema-guardado" class="text-xs text-green-600 font-bold opacity-0 transition-opacity duration-300">¡Guardado automáticamente!</span>
-                        </div>
-                        <p class="text-xs text-gray-500 mb-2">Representa tu nicho principal y área de mayor rigor o <em>expertise</em>. Es el núcleo primario por el que tu audiencia te reconocerá como referente. <br><span class="font-medium">Ejemplo:</span> <em>Emprendimiento STEAM, Astrofísica Aplicada, Biotecnología.</em></p>
-                        <input type="text" id="temaCentral" onblur="guardarTemaCentralAuto()" placeholder="Ej. Emprendimiento STEAM y Ciencia" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropTask(event, 'ideas')">
+                    <h3 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Ideas Crudas</h3>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="inputTarea_ideas" class="flex-1 p-2 border rounded text-sm" placeholder="Nueva idea..." onkeypress="if(event.key === 'Enter') addTask('ideas')">
+                        <button onclick="addTask('ideas')" class="bg-indigo-500 text-white px-3 rounded hover:bg-indigo-600 transition font-bold">+</button>
                     </div>
-                    
-                           <div class="mb-6 border-t pt-6">
-                    <label class="block text-sm font-semibold text-gray-600 mb-1">Ejes Transversales (Pilares Secundarios)</label>
-                    <p class="text-xs text-gray-500 mb-2">Temáticas complementarias que cruzan tu contenido principal para humanizar la marca, generar afinidad o alcanzar a una audiencia más amplia. <br><span class="font-medium">Ejemplo:</span> <em>Productividad para académicos, Salud mental en el laboratorio, Análisis de herramientas digitales.</em></p>
-                    <input type="text" id="inputEjes" placeholder="Escribe un eje secundario y presiona Enter..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mb-2">
-                    <div id="listaEjes" class="flex flex-wrap"></div>
-                </div>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-600 mb-2">Nicho de Contenido</label>
-                            <select id="nichoContenido" onchange="saveStrategyExtras()" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                                <option value="">Selecciona tu nicho...</option>
-                                <option value="Entretenimiento">Entretenimiento</option>
-                                <option value="Educación">Educación / Formación</option>
-                                <option value="Tecnología">Tecnología / Software</option>
-                                <option value="Ciencia">Ciencia / Academia</option>
-                                <option value="Negocios">Negocios / Emprendimiento</option>
-                                <option value="Gaming">Gaming</option>
-                                <option value="Salud">Salud / Bienestar</option>
-                                <option value="Estilo de Vida">Estilo de Vida (Vlogs)</option>
-                                <option value="Viajes">Viajes</option>
-                                <option value="Moda">Moda / Belleza</option>
-                                <option value="Gastronomía">Gastronomía / Cocina</option>
-                                <option value="Finanzas">Finanzas Personales</option>
-                                <option value="Humor">Humor / Comedia</option>
-                                <option value="Arte">Arte / Cultura</option>
-                                <option value="Misterio">Misterio / Storytelling</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-600 mb-2">Público Objetivo</label>
-                            <input type="text" id="publicoObjetivo" onblur="saveStrategyExtras()" placeholder="¿A quién diriges tus videos?" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                        </div>
-                    </div>
-                    <div class="border-t pt-4">
-                        <label class="block text-sm font-semibold text-gray-600 mb-1">Nombre y descripción del Creador de Contenido</label>
-                        <p class="text-xs text-gray-500 mb-2">Para conocer más de ti indica cuál es el nombre de tu marca y describre tus intereses, hobbies, talentos y características personales. Esta información humanizará tu estrategia y se integrará en el prompt de la IA.</p>
-                        <textarea id="descCreador" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Soy @Belucaa Gamer y me encanta tocar la guitarra, soy fan de la ciencia ficción, y disfruto el diseño digital..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll"></textarea>
-                    </div>
-
-                          <div>
-                        <label class="block text-sm font-semibold text-gray-600 mb-2">Personalidad basada en Arquetipos (Selecciona máximo 2 para evitar dilución de mensaje)</label>
-                        <div id="arquetiposContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-4 border rounded-lg bg-gray-50 max-h-64 overflow-y-auto custom-scroll"></div>
-                        <div id="arquetipoDescripcion" class="mt-4 p-5 bg-indigo-50 border-l-4 border-indigo-500 text-sm text-indigo-900 hidden"></div>
-                    </div>
+                    <ul id="lista_ideas" class="space-y-2 text-sm"></ul>
                 </div>
 
-                    <div class="border-t pt-4 mt-4">
-                        <label class="block text-sm font-semibold text-gray-600 mb-1">Identidad y Tono de Comunicación</label>
-                        <p class="text-xs text-gray-500 mb-2">Define la identidad de tu marca, tu tono de voz, y el estilo de tu comunicación. <br><span class="font-medium">Ejemplo:</span> <em>Mi personalidad mezcla los arquetipos de “El Sabio” y “El Bufón”. Tono académico pero accesible, uso lenguaje científico intercalado con referencias de la cultura pop, ritmo rápido y directo.</em></p>
-                        <textarea id="identidadTono" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Mi tono es inspirador, riguroso y disruptivo..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll"></textarea>
+                <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropTask(event, 'audios')">
+                    <h3 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Audios y Referencias</h3>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="inputTarea_audios" class="flex-1 p-2 border rounded text-sm" placeholder="Link..." onkeypress="if(event.key === 'Enter') addTask('audios')">
+                        <button onclick="addTask('audios')" class="bg-indigo-500 text-white px-3 rounded hover:bg-indigo-600 transition font-bold">+</button>
                     </div>
-                    
-                <div class="mb-6 border-t pt-6">
-                    <label class="block text-sm font-semibold text-gray-800 mb-4 bg-slate-100 p-2 rounded">Objetivos del Contenido (Redacción obligatoria)</label>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="p-4 border rounded-lg border-blue-200 bg-blue-50">
-                            <h4 class="font-bold text-blue-800">Reconocimiento</h4>
-                            <p class="text-[10px] text-blue-600 mb-2 italic">Alcance masivo y descubrimiento.</p>
-                            <textarea id="strat_awareness" onblur="saveFunnel()" class="w-full p-2 text-sm border rounded" placeholder="Estrategia de alcance..."></textarea>
-                        </div>
-                        <div class="p-4 border rounded-lg border-emerald-200 bg-emerald-50">
-                            <h4 class="font-bold text-emerald-800">Consideración</h4>
-                            <p class="text-[10px] text-emerald-600 mb-2 italic">Generar confianza y consciencia.</p>
-                            <textarea id="strat_consideracion" onblur="saveFunnel()" class="w-full p-2 text-sm border rounded" placeholder="Estrategia de confianza..."></textarea>
-                        </div>
-                        <div class="p-4 border rounded-lg border-amber-200 bg-amber-50">
-                            <h4 class="font-bold text-amber-800">Conversión</h4>
-                            <p class="text-[10px] text-amber-600 mb-2 italic">La venta final o registro.</p>
-                            <textarea id="strat_conversion" onblur="saveFunnel()" class="w-full p-2 text-sm border rounded" placeholder="Estrategia de venta..."></textarea>
-                        </div>
-                        <div class="p-4 border rounded-lg border-purple-200 bg-purple-50">
-                            <h4 class="font-bold text-purple-800">Fidelización</h4>
-                            <p class="text-[10px] text-purple-600 mb-2 italic">Crear comunidad y recompra.</p>
-                            <textarea id="strat_fidelizacion" onblur="saveFunnel()" class="w-full p-2 text-sm border rounded" placeholder="Estrategia de comunidad..."></textarea>
-                        </div>
+                    <ul id="lista_audios" class="space-y-2 text-sm"></ul>
+                </div>
+
+                <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropTask(event, 'tendencias')">
+                    <h3 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Tendencias</h3>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="inputTarea_tendencias" class="flex-1 p-2 border rounded text-sm" placeholder="Tendencia..." onkeypress="if(event.key === 'Enter') addTask('tendencias')">
+                        <button onclick="addTask('tendencias')" class="bg-indigo-500 text-white px-3 rounded hover:bg-indigo-600 transition font-bold">+</button>
                     </div>
+                    <ul id="lista_tendencias" class="space-y-2 text-sm"></ul>
                 </div>
 
-                <button onclick="guardarEstrategia()" class="w-full md:w-auto bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition">Guardar Toda la Estrategia</button>
-                <span id="estrategia-msg" class="ml-4 text-green-600 font-semibold hidden">¡Configuración guardada!</span>
-            </section>
-            
-            <section id="notas" class="tab-content w-full">
-    <h2 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Panel de Ideas y Tendencias</h2>
-    
-    <div class="mb-6 p-4 bg-indigo-50 border-l-4 border-indigo-600 rounded-r-lg shadow-sm">
-        <p class="text-xs text-indigo-800 leading-relaxed text-justify">
-            <strong>Instrucciones:</strong> Registre los datos correspondientes en cada columna para organizar la ideación.
-        </p>
-    </div>
-
-    <div class="overflow-x-auto pb-4 custom-scroll">
-        <div class="flex gap-6 min-w-[1200px]">
-            
-            <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropTask(event, 'ideas')">
-                <h3 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Ideas Crudas</h3>
-                <div class="flex gap-2 mb-4">
-                    <input type="text" id="inputTarea_ideas" class="flex-1 p-2 border rounded text-sm" placeholder="Nueva idea..." onkeypress="if(event.key === 'Enter') addTask('ideas')">
-                    <button onclick="addTask('ideas')" class="bg-indigo-500 text-white px-3 rounded hover:bg-indigo-600 transition font-bold">+</button>
-                </div>
-                <ul id="lista_ideas" class="space-y-2 text-sm"></ul>
-            </div>
-
-            <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropTask(event, 'audios')">
-                <h3 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Audios y Referencias</h3>
-                <div class="flex gap-2 mb-4">
-                    <input type="text" id="inputTarea_audios" class="flex-1 p-2 border rounded text-sm" placeholder="Link..." onkeypress="if(event.key === 'Enter') addTask('audios')">
-                    <button onclick="addTask('audios')" class="bg-indigo-500 text-white px-3 rounded hover:bg-indigo-600 transition font-bold">+</button>
-                </div>
-                <ul id="lista_audios" class="space-y-2 text-sm"></ul>
-            </div>
-
-            <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropTask(event, 'tendencias')">
-                <h3 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Tendencias</h3>
-                <div class="flex gap-2 mb-4">
-                    <input type="text" id="inputTarea_tendencias" class="flex-1 p-2 border rounded text-sm" placeholder="Tendencia..." onkeypress="if(event.key === 'Enter') addTask('tendencias')">
-                    <button onclick="addTask('tendencias')" class="bg-indigo-500 text-white px-3 rounded hover:bg-indigo-600 transition font-bold">+</button>
-                </div>
-                <ul id="lista_tendencias" class="space-y-2 text-sm"></ul>
-            </div>
-
-            <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropTask(event, 'proximos')">
-                <h3 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Próximos Videos</h3>
-                <div class="flex gap-2 mb-4">
-                    <input type="text" id="inputTarea_proximos" class="flex-1 p-2 border rounded text-sm" placeholder="Video..." onkeypress="if(event.key === 'Enter') addTask('proximos')">
-                    <button onclick="addTask('proximos')" class="bg-indigo-500 text-white px-3 rounded hover:bg-indigo-600 transition font-bold">+</button>
-                </div>
-                <ul id="lista_proximos" class="space-y-2 text-sm"></ul>
-            </div>
-
-        </div> </div> <div class="mt-12 pt-6 border-t border-gray-200 w-full">
-        <h4 class="font-bold text-gray-700 text-sm mb-2">Historial de Tareas Completadas</h4>
-        <div id="history-list-tasks" class="max-h-40 overflow-y-auto bg-white p-2 rounded border border-gray-200"></div>
-    </div>
-</section>
-
-            <section id="estrategia_resumen" class="tab-content max-w-4xl mx-auto bg-white p-4 md:p-8 rounded-xl shadow-sm border border-gray-100">
-                <h2 class="text-3xl font-bold mb-6 text-indigo-900 border-b pb-2">Estrategia de Contenido Resumida</h2>
-                
-                <div id="resumenContent" class="space-y-6">
+                <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropTask(event, 'proximos')">
+                    <h3 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Próximos Videos</h3>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="inputTarea_proximos" class="flex-1 p-2 border rounded text-sm" placeholder="Video..." onkeypress="if(event.key === 'Enter') addTask('proximos')">
+                        <button onclick="addTask('proximos')" class="bg-indigo-500 text-white px-3 rounded hover:bg-indigo-600 transition font-bold">+</button>
                     </div>
-<div class="mt-8 border-t pt-6 bg-indigo-50/30 p-6 rounded-xl border border-indigo-100">
-    <h3 class="text-xl font-bold mb-2 text-indigo-800 flex items-center gap-2">⭐ Formatos Estrella</h3>
-    <p class="text-xs text-gray-500 mb-4 italic">Define hasta 3 formatos ganadores para que la IA los considere en el calendario.</p>
-    
-<div class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <textarea id="starFormat1_name" onblur="saveStarFormats()" placeholder="Nombre Formato Estrella 1 (Ej: Qué tan probable es...?)" class="w-full p-3 border rounded-lg text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
-            <textarea id="starFormat1_desc" onblur="saveStarFormats()" placeholder="Descripción del formato estrella 1..." class="w-full p-3 border rounded-lg text-xs md:col-span-2 shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
+                    <ul id="lista_proximos" class="space-y-2 text-sm"></ul>
+                </div>
+
+            </div> </div> <div class="mt-12 pt-6 border-t border-gray-200 w-full">
+            <h4 class="font-bold text-gray-700 text-sm mb-2">Historial de Tareas Completadas</h4>
+            <div id="history-list-tasks" class="max-h-40 overflow-y-auto bg-white p-2 rounded border border-gray-200"></div>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <textarea id="starFormat2_name" onblur="saveStarFormats()" placeholder="Nombre Formato Estrella 2 (Ej: ¿Sabías qué...?)" class="w-full p-3 border rounded-lg text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
-            <textarea id="starFormat2_desc" onblur="saveStarFormats()" placeholder="Descripción del formato estrella 2..." class="w-full p-3 border rounded-lg text-xs md:col-span-2 shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <textarea id="starFormat3_name" onblur="saveStarFormats()" placeholder="Nombre Formato Estrella 3 (Ej: Esto es lo que tienes que hacer para que tú...)" class="w-full p-3 border rounded-lg text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
-            <textarea id="starFormat3_desc" onblur="saveStarFormats()" placeholder="Descripción del formato estrella 3..." class="w-full p-3 border rounded-lg text-xs md:col-span-2 shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
+    </section>
+
+                <section id="estrategia_resumen" class="tab-content max-w-4xl mx-auto bg-white p-4 md:p-8 rounded-xl shadow-sm border border-gray-100">
+                    <h2 class="text-3xl font-bold mb-6 text-indigo-900 border-b pb-2">Estrategia de Contenido Resumida</h2>
+                    
+                    <div id="resumenContent" class="space-y-6">
+                        </div>
+    <div class="mt-8 border-t pt-6 bg-indigo-50/30 p-6 rounded-xl border border-indigo-100">
+        <h3 class="text-xl font-bold mb-2 text-indigo-800 flex items-center gap-2">⭐ Formatos Estrella</h3>
+        <p class="text-xs text-gray-500 mb-4 italic">Define hasta 3 formatos ganadores para que la IA los considere en el calendario.</p>
+        
+    <div class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <textarea id="starFormat1_name" onblur="saveStarFormats()" placeholder="Nombre Formato Estrella 1 (Ej: Qué tan probable es...?)" class="w-full p-3 border rounded-lg text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
+                <textarea id="starFormat1_desc" onblur="saveStarFormats()" placeholder="Descripción del formato estrella 1..." class="w-full p-3 border rounded-lg text-xs md:col-span-2 shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <textarea id="starFormat2_name" onblur="saveStarFormats()" placeholder="Nombre Formato Estrella 2 (Ej: ¿Sabías qué...?)" class="w-full p-3 border rounded-lg text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
+                <textarea id="starFormat2_desc" onblur="saveStarFormats()" placeholder="Descripción del formato estrella 2..." class="w-full p-3 border rounded-lg text-xs md:col-span-2 shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <textarea id="starFormat3_name" onblur="saveStarFormats()" placeholder="Nombre Formato Estrella 3 (Ej: Esto es lo que tienes que hacer para que tú...)" class="w-full p-3 border rounded-lg text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
+                <textarea id="starFormat3_desc" onblur="saveStarFormats()" placeholder="Descripción del formato estrella 3..." class="w-full p-3 border rounded-lg text-xs md:col-span-2 shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
+            </div>
         </div>
     </div>
-</div>
-                <div class="mt-8 border-t pt-6">
-                    <h3 class="text-xl font-bold mb-4 text-gray-800">AI Prompt Generator</h3>
-                    <p class="text-sm text-gray-500 mb-4">Copia este prompt para usarlo en ChatGPT, Claude o Gemini y generar tu calendario de 30 días.</p>
-                    <div class="relative">
-                        <textarea id="aiPromptArea" rows="12" class="w-full p-4 bg-slate-900 text-indigo-200 font-mono text-xs rounded-lg border border-slate-700 leading-relaxed custom-scroll" readonly></textarea>
-                        <button onclick="copyPrompt()" class="absolute top-2 right-2 bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-500 transition">Copiar Prompt</button>
-                    </div>
-                </div>
-                <div class="mt-8 border-t-2 border-indigo-200 pt-6">
-                    <h3 class="text-xl font-bold mb-4 text-indigo-900">📥 Importar y Ejecutar Calendario de IA</h3>
-                    <p class="text-sm text-gray-500 mb-4">Pega en este cuadro la tabla generada por tu IA. Luego haz clic en "Generar y Guardar Tabla" para procesarla y almacenarla de forma persistente.</p>
-                    <textarea id="tablaIAPaste" rows="4" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 text-xs custom-scroll bg-indigo-50/20" placeholder="Pega tu tabla aquí (Asegúrate de copiar los datos desde la fila de encabezados)..."></textarea>
-                    
-                   <button onclick="guardarYProcesarTabla()" class="mt-3 w-full md:w-auto bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-md transition">
-    Generar y Guardar Tabla
-</button>
-                    <div id="calendarioTablaContainer" class="mt-6 hidden">
-                        <div class="overflow-x-auto custom-scroll border rounded-lg shadow-sm relative">
-                           <table class="w-full text-left text-xs border-collapse min-w-[1200px]">
-                                <thead>
-                                    <tr class="bg-indigo-100 text-indigo-900 border-b-2 border-indigo-200">
-                                        <th class="p-3">Día</th>
-                                        <th class="p-3">Tipo</th>
-                                        <th class="p-3">Tema (Título)</th>
-                                        <th class="p-3">Formato</th>
-                                        <th class="p-3">Gancho (Hook)</th>
-                                        <th class="p-3">Contenido</th>
-                                        <th class="p-3">Guion base</th>
-                                        <th class="p-3">CTA</th>
-                                        <th class="p-3 text-center sticky right-0 bg-indigo-100 shadow-[-5px_0_10px_-5px_rgba(0,0,0,0.1)] z-10">Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="calendarioTablaBody" class="bg-white">
-                                    </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section id="ideas" class="tab-content max-w-5xl mx-auto">
-                <div class="bg-white p-4 md:p-8 rounded-xl shadow-sm border border-gray-100 mb-8">
-                    <h2 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Generador de Ideas y Guiones</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div class="md:col-span-3">
-                            <label class="block text-sm font-semibold text-gray-600 mb-2">Título de la Idea</label>
-                            <input type="text" id="ideaTitulo" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-600 mb-2">Formato Digital</label>
-                            <select id="ideaFormato" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
-                                <option value="Short Content">Short Content</option>
-                                <option value="Long Content">Long Content</option>
-                                <option value="Podcast">Podcast</option>
-                                <option value="Infografías">Infografías</option>
-                                <option value="Fotos">Fotos</option>
-                                <option value="Memes">Memes</option>
-                                <option value="Blogs">Blogs</option>
-                                <option value="Lives">Lives</option>
-                                <option value="Carruseles">Carruseles</option>
-                                <option value="Ponencias">Ponencias</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-600 mb-2">Tipo de Contenido</label>
-                            <select id="ideaTipo" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
-                                <option value="Divulgación">Divulgación</option>
-                                <option value="Opiniones">Opiniones</option>
-                                <option value="Tutoriales">Tutoriales</option>
-                                <option value="POV">POV</option>
-                                <option value="Bailes/Trends">Bailes/Trends</option>
-                                <option value="Videoreeacciones">Videoreeacciones</option>
-                                <option value="Videoblogs">Videoblogs</option>
-                                <option value="Visitas a lugares">Visitas a lugares</option>
-                                <option value="Recomendaciones">Recomendaciones</option>
-                                <option value="Misterio">Misterio</option>
-                                <option value="Viajes">Viajes</option>
-                                <option value="Storytime">Storytime</option>
-                                <option value="Trivias">Trivias</option>
-                                <option value="Dinámicas">Dinámicas</option>
-                                <option value="Entrevistas">Entrevistas</option>
-                                <option value="Gameplays">Gameplays</option>
-                                <option value="GRWM">GRWM</option>
-                                <option value="Actuación">Actuación</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-600 mb-2">Objetivo del Contenido</label>
-                            <select id="ideaObjetivo" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
-                                <option value="Reconocimiento">Reconocimiento</option>
-                                <option value="Consideración">Consideración</option>
-                                <option value="Conversión">Conversión</option>
-                                <option value="Fidelización">Fidelización</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-600 mb-2">Tipo según Objetivo</label>
-                            <select id="ideaTipoEstrategico" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
-                                <option value="Genérica">Genérica (Alcance superficial/Likes fugaces)</option>
-                                <option value="Estratégica: Presencia">Estratégica: Presencia</option>
-                                <option value="Estratégica: Marca">Estratégica: Marca</option>
-                                <option value="Estratégica: Valor Entretenimiento">Estratégica: Valor Entretenimiento</option>
-                                <option value="Estratégica: Valor Enseñanza">Estratégica: Valor Enseñanza</option>
-                                <option value="Estratégica: Valor Conversión">Estratégica: Valor Conversión</option>
-                                <option value="Estratégica: Valor Inspiracional">Estratégica: Valor Inspiracional</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-600 mb-2">Tipo de Colaboración</label>
-                            <select id="ideaColaboracion" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
-                                <option value="Independiente">Independiente</option>
-                                <option value="Con otros creadores">Colaboración con otros creadores</option>
-                                <option value="Con marcas u ONGs">Colaboraciones con marcas u ONGs</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-600 mb-2">Tipo de Publicación</label>
-                            <select id="ideaPublicacion" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
-                                <option value="Orgánica">Orgánica</option>
-                                <option value="Pautada">Pautada</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-600 mb-2">Fecha de Publicación</label>
-                            <input type="date" id="ideaFecha" class="w-full p-3 border rounded-lg outline-none">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-600 mb-2">Hora</label>
-                            <input type="time" id="ideaHora" class="w-full p-3 border rounded-lg outline-none">
-                        </div>
-                        <div>
-    <label class="block text-sm font-semibold text-purple-600 mb-2">⭐ Formato Estrella <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
-    <select id="ideaStarFormat" onchange="updateLivePrompt()" class="w-full p-3 border border-purple-200 rounded-lg outline-none bg-purple-50/20 font-medium text-purple-900">
-        <option value="">Ninguno / Formato Libre</option>
-    </select>
-</div>
-                    </div>
-
-                    <div class="mb-6">
-                        <label class="block text-sm font-semibold text-indigo-600 mb-2">Idea de Gancho (HOOK)</label>
-                        <textarea id="ideaHook" oninput="updateLivePrompt()" placeholder="Ej: ¿Sabías que...?" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50/30 custom-scroll" rows="3"></textarea>
-                    </div>
-<div class="mb-6">
-    <label class="block text-sm font-semibold text-indigo-600 mb-2">Enlaces de Referencia <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
-    <textarea id="ideaEnlaces" oninput="updateLivePrompt()" placeholder="Ej: https://ejemplo.com (Deja vacío si no aplica)" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50/30 custom-scroll" rows="3"></textarea>
-</div>
-
-<div class="mb-6">
-    <label class="block text-sm font-semibold text-indigo-600 mb-2">Idea Inicial o Guion Base <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
-    <textarea id="ideaGuionBase" oninput="updateLivePrompt()" placeholder="Ej: Deseo explicar los 3 pilares... (Deja vacío si no aplica)" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50/30 custom-scroll" rows="3"></textarea>
-</div>
-                    <div class="mb-8 border-t-2 border-dashed pt-6 bg-slate-50 p-6 rounded-xl">
-                        <h3 class="text-sm font-bold text-indigo-900 mb-3 uppercase tracking-wider flex items-center gap-2">
-                            ✨ AI SCRIPT PROMPT (Basado en tu selección)
-                        </h3>
+                    <div class="mt-8 border-t pt-6">
+                        <h3 class="text-xl font-bold mb-4 text-gray-800">AI Prompt Generator</h3>
+                        <p class="text-sm text-gray-500 mb-4">Copia este prompt para usarlo en ChatGPT, Claude o Gemini y generar tu calendario de 30 días.</p>
                         <div class="relative">
-                            <textarea id="aiScriptPromptArea" rows="6" class="w-full p-4 bg-white text-slate-700 font-mono text-[11px] rounded-lg border border-slate-200 leading-relaxed shadow-inner custom-scroll" readonly></textarea>
-                            <button onclick="copyToClipboardElement('aiScriptPromptArea')" class="absolute top-2 right-2 bg-slate-800 text-white px-3 py-1 rounded text-[10px] hover:bg-slate-700 transition">Copiar Prompt</button>
+                            <textarea id="aiPromptArea" rows="12" class="w-full p-4 bg-slate-900 text-indigo-200 font-mono text-xs rounded-lg border border-slate-700 leading-relaxed custom-scroll" readonly></textarea>
+                            <button onclick="copyPrompt()" class="absolute top-2 right-2 bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-500 transition">Copiar Prompt</button>
                         </div>
-                        <p class="text-[10px] text-slate-400 mt-2 italic">Este prompt se actualiza automáticamente según los selectores de arriba.</p>
                     </div>
-
-                    <div class="mb-4">
-                        <label class="block text-sm font-semibold text-gray-600 mb-1">Guion</label>
-                        <p class="text-[10px] text-gray-400 mb-2">💡 Estructura: [HOOK] -> [FRASE DE REFUERZO] -> [CUERPO] -> [CIERRE]</p>
-                        <textarea id="ideaGuion" rows="5" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" placeholder="Escribe aquí la estructura de tu guion..."></textarea>
-                    </div>
-
-                    <div class="mb-4 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                        <label class="block text-sm font-semibold text-gray-600 mb-1">Copy</label>
-                        <div class="text-[10px] text-indigo-500 mb-3 leading-tight">
-                            🔑 <b>Copy Efectivo:</b> Resumir guion • Dato adicional relevante • Cero faltas de ortografía • Palabras clave SEO • CTA claro • Máx. 4 líneas.
-                        </div>
-                        <textarea id="ideaCopy" rows="3" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" placeholder="Escribe el copy de la publicación..."></textarea>
-                    </div>
-
-                    <div class="mb-6">
-                        <label class="block text-sm font-semibold text-gray-600 mb-1">Hashtags</label>
-                        <p class="text-[10px] text-gray-400 mb-2">🏷️ Usa 4: #TipoContenido #Tema #Nicho #ProgramaTiktok (Ej: #tutorial #Bioestadistica #LGBT #STEAM)</p>
-                        <input type="text" id="ideaHashtags" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400" placeholder="#tag1 #tag2 #tag3 #tag4">
-                    </div>
-
-                    <div class="flex flex-col md:flex-row gap-4">
-                        <button id="btnGuardarGuion" onclick="guardarIdea()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition flex-1">Guardar Guion Estructurado</button>
-                        <button id="btnCancelarEdicion" onclick="cancelarEdicion()" class="bg-gray-200 text-gray-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition hidden">Cancelar</button>
-                    </div>
-                </div>
-                
-                <div id="listaIdeas" class="grid grid-cols-1 gap-4"></div>
-            </section>
-
-            <section id="planificador" class="tab-content max-w-6xl mx-auto">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                    <div class="flex flex-col">
-                        <h2 class="text-3xl font-bold text-gray-800">Planificador Cronológico</h2>
-                        <p id="calendarHeader" class="text-sm text-indigo-600 font-bold uppercase mt-1"></p>
-                    </div>
-                    <div class="flex bg-gray-200 p-1 rounded-lg gap-1">
-                        <button onclick="renderCalendario('dia')" class="px-4 py-1 rounded hover:bg-white transition text-xs font-bold" id="view-dia">Día</button>
-                        <button onclick="renderCalendario('semana')" class="px-4 py-1 rounded hover:bg-white transition text-xs font-bold" id="view-semana">Semana</button>
-                        <button onclick="renderCalendario('mes')" class="px-4 py-1 rounded bg-white shadow transition text-xs font-bold" id="view-mes">Mes</button>
-                    </div>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div id="plannerContainer" class="overflow-auto max-h-[70vh] custom-scroll">
-                        </div>
-                </div>
-            </section>
-
-            <section id="blog_notas" class="tab-content w-full">
-                <h2 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Blog de Notas Aislado</h2>
-                <div class="overflow-x-auto pb-4 custom-scroll">
-                    <div class="flex gap-6 min-w-[1200px]">
-                        <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-emerald-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropNota(event, 'rapidas')">
-                            <h3 class="text-xl font-bold text-emerald-700 mb-4 border-b pb-2">Notas Rápidas</h3>
-                            <div class="flex gap-2 mb-4">
-                                <input type="text" id="inputNota_rapidas" class="flex-1 p-2 border border-emerald-200 rounded text-sm outline-none focus:ring-1 focus:ring-emerald-400" placeholder="Anotación..." onkeypress="if(event.key === 'Enter') addNota('rapidas')">
-                                <button onclick="addNota('rapidas')" class="bg-emerald-500 text-white px-3 rounded hover:bg-emerald-600 transition font-bold">+</button>
-                            </div>
-                            <ul id="lista_rapidas" class="space-y-2 text-sm"></ul>
-                        </div>
+                    <div class="mt-8 border-t-2 border-indigo-200 pt-6">
+                        <h3 class="text-xl font-bold mb-4 text-indigo-900">📥 Importar y Ejecutar Calendario de IA</h3>
+                        <p class="text-sm text-gray-500 mb-4">Pega en este cuadro la tabla generada por tu IA. Luego haz clic en "Generar y Guardar Tabla" para procesarla y almacenarla de forma persistente.</p>
+                        <textarea id="tablaIAPaste" rows="4" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 text-xs custom-scroll bg-indigo-50/20" placeholder="Pega tu tabla aquí (Asegúrate de copiar los datos desde la fila de encabezados)..."></textarea>
                         
-                        <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-emerald-100 flex flex-col" ondragover="allowDrop(event)" ondrop="dropNota(event, 'borradores')">
-                            <h3 class="text-xl font-bold text-emerald-700 mb-4 border-b pb-2">Formatos a Probar</h3>
-                            <div class="flex gap-2 mb-4">
-                                <input type="text" id="inputNota_borradores" class="flex-1 p-2 border border-emerald-200 rounded text-sm outline-none focus:ring-1 focus:ring-emerald-400" placeholder="Borrador..." onkeypress="if(event.key === 'Enter') addNota('borradores')">
-                                <button onclick="addNota('borradores')" class="bg-emerald-500 text-white px-3 rounded hover:bg-emerald-600 transition font-bold">+</button>
+                    <button onclick="guardarYProcesarTabla()" class="mt-3 w-full md:w-auto bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-md transition">
+        Generar y Guardar Tabla
+    </button>
+                        <div id="calendarioTablaContainer" class="mt-6 hidden">
+                            <div class="overflow-x-auto custom-scroll border rounded-lg shadow-sm relative">
+                            <table class="w-full text-left text-xs border-collapse min-w-[1200px]">
+                                    <thead>
+                                        <tr class="bg-indigo-100 text-indigo-900 border-b-2 border-indigo-200">
+                                            <th class="p-3">Día</th>
+                                            <th class="p-3">Tipo</th>
+                                            <th class="p-3">Tema (Título)</th>
+                                            <th class="p-3">Formato</th>
+                                            <th class="p-3">Gancho (Hook)</th>
+                                            <th class="p-3">Contenido</th>
+                                            <th class="p-3">Guion base</th>
+                                            <th class="p-3">CTA</th>
+                                            <th class="p-3 text-center sticky right-0 bg-indigo-100 shadow-[-5px_0_10px_-5px_rgba(0,0,0,0.1)] z-10">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="calendarioTablaBody" class="bg-white">
+                                        </tbody>
+                                </table>
                             </div>
-                            <ul id="lista_borradores" class="space-y-2 text-sm"></ul>
-                        </div>
-                        
-                        <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-emerald-100 flex flex-col" ondragover="allowDrop(event)" ondrop="dropNota(event, 'recursos')">
-                            <h3 class="text-xl font-bold text-emerald-700 mb-4 border-b pb-2">Recursos y Enlaces</h3>
-                            <div class="flex gap-2 mb-4">
-                                <input type="text" id="inputNota_recursos" class="flex-1 p-2 border border-emerald-200 rounded text-sm outline-none focus:ring-1 focus:ring-emerald-400" placeholder="Recurso..." onkeypress="if(event.key === 'Enter') addNota('recursos')">
-                                <button onclick="addNota('recursos')" class="bg-emerald-500 text-white px-3 rounded hover:bg-emerald-600 transition font-bold">+</button>
-                            </div>
-                            <ul id="lista_recursos" class="space-y-2 text-sm"></ul>
-                        </div>
-                        
-                        <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-emerald-100 flex flex-col" ondragover="allowDrop(event)" ondrop="dropNota(event, 'personales')">
-                            <h3 class="text-xl font-bold text-emerald-700 mb-4 border-b pb-2">Fuentes de Información</h3>
-                            <div class="flex gap-2 mb-4">
-                                <input type="text" id="inputNota_personales" class="flex-1 p-2 border border-emerald-200 rounded text-sm outline-none focus:ring-1 focus:ring-emerald-400" placeholder="Reflexión..." onkeypress="if(event.key === 'Enter') addNota('personales')">
-                                <button onclick="addNota('personales')" class="bg-emerald-500 text-white px-3 rounded hover:bg-emerald-600 transition font-bold">+</button>
-                            </div>
-                            <ul id="lista_personales" class="space-y-2 text-sm"></ul>
                         </div>
                     </div>
-                </div>
-              <div class="mt-12 pt-6 border-t border-gray-200 w-full" style="clear: both;">
-        <h4 class="font-bold text-gray-700 text-sm mb-2">Historial de Notas Completadas</h4>
-        <div id="history-list-notas" class="max-h-40 overflow-y-auto bg-white p-2 rounded border border-gray-200"></div>
+                </section>
+
+                <section id="ideas" class="tab-content max-w-5xl mx-auto">
+                    <div class="bg-white p-4 md:p-8 rounded-xl shadow-sm border border-gray-100 mb-8">
+                        <h2 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Generador de Ideas y Guiones</h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div class="md:col-span-3">
+                                <label class="block text-sm font-semibold text-gray-600 mb-2">Título de la Idea</label>
+                                <input type="text" id="ideaTitulo" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-2">Formato Digital</label>
+                                <select id="ideaFormato" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
+                                    <option value="Short Content">Short Content</option>
+                                    <option value="Long Content">Long Content</option>
+                                    <option value="Podcast">Podcast</option>
+                                    <option value="Infografías">Infografías</option>
+                                    <option value="Fotos">Fotos</option>
+                                    <option value="Memes">Memes</option>
+                                    <option value="Blogs">Blogs</option>
+                                    <option value="Lives">Lives</option>
+                                    <option value="Carruseles">Carruseles</option>
+                                    <option value="Ponencias">Ponencias</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-2">Tipo de Contenido</label>
+                                <select id="ideaTipo" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
+                                    <option value="Divulgación">Divulgación</option>
+                                    <option value="Opiniones">Opiniones</option>
+                                    <option value="Tutoriales">Tutoriales</option>
+                                    <option value="POV">POV</option>
+                                    <option value="Bailes/Trends">Bailes/Trends</option>
+                                    <option value="Videoreeacciones">Videoreeacciones</option>
+                                    <option value="Videoblogs">Videoblogs</option>
+                                    <option value="Visitas a lugares">Visitas a lugares</option>
+                                    <option value="Recomendaciones">Recomendaciones</option>
+                                    <option value="Misterio">Misterio</option>
+                                    <option value="Viajes">Viajes</option>
+                                    <option value="Storytime">Storytime</option>
+                                    <option value="Trivias">Trivias</option>
+                                    <option value="Dinámicas">Dinámicas</option>
+                                    <option value="Entrevistas">Entrevistas</option>
+                                    <option value="Gameplays">Gameplays</option>
+                                    <option value="GRWM">GRWM</option>
+                                    <option value="Actuación">Actuación</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-2">Objetivo del Contenido</label>
+                                <select id="ideaObjetivo" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
+                                    <option value="Reconocimiento">Reconocimiento</option>
+                                    <option value="Consideración">Consideración</option>
+                                    <option value="Conversión">Conversión</option>
+                                    <option value="Fidelización">Fidelización</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-2">Tipo según Objetivo</label>
+                                <select id="ideaTipoEstrategico" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
+                                    <option value="Genérica">Genérica (Alcance superficial/Likes fugaces)</option>
+                                    <option value="Estratégica: Presencia">Estratégica: Presencia</option>
+                                    <option value="Estratégica: Marca">Estratégica: Marca</option>
+                                    <option value="Estratégica: Valor Entretenimiento">Estratégica: Valor Entretenimiento</option>
+                                    <option value="Estratégica: Valor Enseñanza">Estratégica: Valor Enseñanza</option>
+                                    <option value="Estratégica: Valor Conversión">Estratégica: Valor Conversión</option>
+                                    <option value="Estratégica: Valor Inspiracional">Estratégica: Valor Inspiracional</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-2">Tipo de Colaboración</label>
+                                <select id="ideaColaboracion" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
+                                    <option value="Independiente">Independiente</option>
+                                    <option value="Con otros creadores">Colaboración con otros creadores</option>
+                                    <option value="Con marcas u ONGs">Colaboraciones con marcas u ONGs</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-2">Tipo de Publicación</label>
+                                <select id="ideaPublicacion" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
+                                    <option value="Orgánica">Orgánica</option>
+                                    <option value="Pautada">Pautada</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-2">Fecha de Publicación</label>
+                                <input type="date" id="ideaFecha" class="w-full p-3 border rounded-lg outline-none">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-2">Hora</label>
+                                <input type="time" id="ideaHora" class="w-full p-3 border rounded-lg outline-none">
+                            </div>
+                            <div>
+        <label class="block text-sm font-semibold text-purple-600 mb-2">⭐ Formato Estrella <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
+        <select id="ideaStarFormat" onchange="updateLivePrompt()" class="w-full p-3 border border-purple-200 rounded-lg outline-none bg-purple-50/20 font-medium text-purple-900">
+            <option value="">Ninguno / Formato Libre</option>
+        </select>
     </div>
-</section>
+                        </div>
 
-        </main>
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-indigo-600 mb-2">Idea de Gancho (HOOK)</label>
+                            <textarea id="ideaHook" oninput="updateLivePrompt()" placeholder="Ej: ¿Sabías que...?" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50/30 custom-scroll" rows="3"></textarea>
+                        </div>
+    <div class="mb-6">
+        <label class="block text-sm font-semibold text-indigo-600 mb-2">Enlaces de Referencia <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
+        <textarea id="ideaEnlaces" oninput="updateLivePrompt()" placeholder="Ej: https://ejemplo.com (Deja vacío si no aplica)" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50/30 custom-scroll" rows="3"></textarea>
     </div>
 
-    <script>
+    <div class="mb-6">
+        <label class="block text-sm font-semibold text-indigo-600 mb-2">Idea Inicial o Guion Base <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
+        <textarea id="ideaGuionBase" oninput="updateLivePrompt()" placeholder="Ej: Deseo explicar los 3 pilares... (Deja vacío si no aplica)" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50/30 custom-scroll" rows="3"></textarea>
+    </div>
+                        <div class="mb-8 border-t-2 border-dashed pt-6 bg-slate-50 p-6 rounded-xl">
+                            <h3 class="text-sm font-bold text-indigo-900 mb-3 uppercase tracking-wider flex items-center gap-2">
+                                ✨ AI SCRIPT PROMPT (Basado en tu selección)
+                            </h3>
+                            <div class="relative">
+                                <textarea id="aiScriptPromptArea" rows="6" class="w-full p-4 bg-white text-slate-700 font-mono text-[11px] rounded-lg border border-slate-200 leading-relaxed shadow-inner custom-scroll" readonly></textarea>
+                                <button onclick="copyToClipboardElement('aiScriptPromptArea')" class="absolute top-2 right-2 bg-slate-800 text-white px-3 py-1 rounded text-[10px] hover:bg-slate-700 transition">Copiar Prompt</button>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-2 italic">Este prompt se actualiza automáticamente según los selectores de arriba.</p>
+                        </div>
+
+                        <div class="mb-4 relative">
+                            <div class="flex justify-between items-end mb-1">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-600 mb-1">Guion</label>
+                                    <p class="text-[10px] text-gray-400">💡 Estructura: [HOOK] -> [FRASE DE REFUERZO] -> [CUERPO] -> [CIERRE]</p>
+                                </div>
+                                <button type="button" onclick="generarEnlaceColaborativo()" class="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1 rounded font-bold transition shadow-sm flex items-center gap-1 border border-emerald-300">🔗 Generar Enlace de Edición en Vivo</button>
+                            </div>
+                            <textarea id="ideaGuion" rows="5" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" placeholder="Escribe aquí la estructura de tu guion..."></textarea>
+                        </div>
+
+                        <div class="mb-4 bg-slate-50 p-4 rounded-lg border border-slate-100">
+                            <label class="block text-sm font-semibold text-gray-600 mb-1">Copy</label>
+                            <div class="text-[10px] text-indigo-500 mb-3 leading-tight">
+                                🔑 <b>Copy Efectivo:</b> Resumir guion • Dato adicional relevante • Cero faltas de ortografía • Palabras clave SEO • CTA claro • Máx. 4 líneas.
+                            </div>
+                            <textarea id="ideaCopy" rows="3" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" placeholder="Escribe el copy de la publicación..."></textarea>
+                        </div>
+
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-gray-600 mb-1">Hashtags</label>
+                            <p class="text-[10px] text-gray-400 mb-2">🏷️ Usa 4: #TipoContenido #Tema #Nicho #ProgramaTiktok (Ej: #tutorial #Bioestadistica #LGBT #STEAM)</p>
+                            <input type="text" id="ideaHashtags" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400" placeholder="#tag1 #tag2 #tag3 #tag4">
+                        </div>
+
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <button id="btnGuardarGuion" onclick="guardarIdea()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition flex-1">Guardar Guion Estructurado</button>
+                            <button id="btnCancelarEdicion" onclick="cancelarEdicion()" class="bg-gray-200 text-gray-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition hidden">Cancelar</button>
+                        </div>
+                    </div>
+                    
+                    <div id="listaIdeas" class="grid grid-cols-1 gap-4"></div>
+                </section>
+
+                <section id="planificador" class="tab-content max-w-6xl mx-auto">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <div class="flex flex-col">
+                            <h2 class="text-3xl font-bold text-gray-800">Planificador Cronológico</h2>
+                            <p id="calendarHeader" class="text-sm text-indigo-600 font-bold uppercase mt-1"></p>
+                        </div>
+                        <div class="flex bg-gray-200 p-1 rounded-lg gap-1">
+                            <button onclick="renderCalendario('dia')" class="px-4 py-1 rounded hover:bg-white transition text-xs font-bold" id="view-dia">Día</button>
+                            <button onclick="renderCalendario('semana')" class="px-4 py-1 rounded hover:bg-white transition text-xs font-bold" id="view-semana">Semana</button>
+                            <button onclick="renderCalendario('mes')" class="px-4 py-1 rounded bg-white shadow transition text-xs font-bold" id="view-mes">Mes</button>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div id="plannerContainer" class="overflow-auto max-h-[70vh] custom-scroll">
+                            </div>
+                    </div>
+                </section>
+
+                <section id="blog_notas" class="tab-content w-full">
+                    <h2 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Blog de Notas Aislado</h2>
+                    <div class="overflow-x-auto pb-4 custom-scroll">
+                        <div class="flex gap-6 min-w-[1200px]">
+                            <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-emerald-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropNota(event, 'rapidas')">
+                                <h3 class="text-xl font-bold text-emerald-700 mb-4 border-b pb-2">Notas Rápidas</h3>
+                                <div class="flex gap-2 mb-4">
+                                    <input type="text" id="inputNota_rapidas" class="flex-1 p-2 border border-emerald-200 rounded text-sm outline-none focus:ring-1 focus:ring-emerald-400" placeholder="Anotación..." onkeypress="if(event.key === 'Enter') addNota('rapidas')">
+                                    <button onclick="addNota('rapidas')" class="bg-emerald-500 text-white px-3 rounded hover:bg-emerald-600 transition font-bold">+</button>
+                                </div>
+                                <ul id="lista_rapidas" class="space-y-2 text-sm"></ul>
+                            </div>
+                            
+                            <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-emerald-100 flex flex-col" ondragover="allowDrop(event)" ondrop="dropNota(event, 'borradores')">
+                                <h3 class="text-xl font-bold text-emerald-700 mb-4 border-b pb-2">Formatos a Probar</h3>
+                                <div class="flex gap-2 mb-4">
+                                    <input type="text" id="inputNota_borradores" class="flex-1 p-2 border border-emerald-200 rounded text-sm outline-none focus:ring-1 focus:ring-emerald-400" placeholder="Borrador..." onkeypress="if(event.key === 'Enter') addNota('borradores')">
+                                    <button onclick="addNota('borradores')" class="bg-emerald-500 text-white px-3 rounded hover:bg-emerald-600 transition font-bold">+</button>
+                                </div>
+                                <ul id="lista_borradores" class="space-y-2 text-sm"></ul>
+                            </div>
+                            
+                            <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-emerald-100 flex flex-col" ondragover="allowDrop(event)" ondrop="dropNota(event, 'recursos')">
+                                <h3 class="text-xl font-bold text-emerald-700 mb-4 border-b pb-2">Recursos y Enlaces</h3>
+                                <div class="flex gap-2 mb-4">
+                                    <input type="text" id="inputNota_recursos" class="flex-1 p-2 border border-emerald-200 rounded text-sm outline-none focus:ring-1 focus:ring-emerald-400" placeholder="Recurso..." onkeypress="if(event.key === 'Enter') addNota('recursos')">
+                                    <button onclick="addNota('recursos')" class="bg-emerald-500 text-white px-3 rounded hover:bg-emerald-600 transition font-bold">+</button>
+                                </div>
+                                <ul id="lista_recursos" class="space-y-2 text-sm"></ul>
+                            </div>
+                            
+                            <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-emerald-100 flex flex-col" ondragover="allowDrop(event)" ondrop="dropNota(event, 'personales')">
+                                <h3 class="text-xl font-bold text-emerald-700 mb-4 border-b pb-2">Fuentes de Información</h3>
+                                <div class="flex gap-2 mb-4">
+                                    <input type="text" id="inputNota_personales" class="flex-1 p-2 border border-emerald-200 rounded text-sm outline-none focus:ring-1 focus:ring-emerald-400" placeholder="Reflexión..." onkeypress="if(event.key === 'Enter') addNota('personales')">
+                                    <button onclick="addNota('personales')" class="bg-emerald-500 text-white px-3 rounded hover:bg-emerald-600 transition font-bold">+</button>
+                                </div>
+                                <ul id="lista_personales" class="space-y-2 text-sm"></ul>
+                            </div>
+                        </div>
+                    </div>
+                  <div class="mt-12 pt-6 border-t border-gray-200 w-full" style="clear: both;">
+            <h4 class="font-bold text-gray-700 text-sm mb-2">Historial de Notas Completadas</h4>
+            <div id="history-list-notas" class="max-h-40 overflow-y-auto bg-white p-2 rounded border border-gray-200"></div>
+        </div>
+    </section>
+
+            </main>
+        </div>
+    </div> <script>
         const arquetiposInfo = {
             "El Sabio": "Busca la verdad y el conocimiento. Su estrategia se basa en el rigor científico, el análisis y la pedagogía. Formatos: Data-storytelling, análisis de papers.",
             "El Bufón": "Vive el momento con alegría e irreverencia. Su estrategia es la viralidad emocional y romper la tensión con humor. Formatos: Memes educativos, POV.",
@@ -696,7 +820,6 @@
             "El Amigo": { adjetivo: "cercana, realista y confiable", contenido: "el 'día a día' sin filtros, charlas tipo podcast relajado y confesiones de errores comunes" }
         };
 
-        // Variables de estado (Se inicializan vacías, se llenan en initAppState)
         let ideas = [];
         let ejesTags = [];
         let tasks = { ideas: [], audios: [], tendencias: [], proximos: [] };
@@ -921,6 +1044,42 @@
             }
             select.value = valorActual;
         }
+
+        // --- NUEVA FUNCIÓN: GENERAR ENLACE DE COLABORACIÓN ---
+        async function generarEnlaceColaborativo() {
+            if(!window.db) {
+                alert("Debes iniciar sesión para generar un enlace en vivo.");
+                return;
+            }
+            const guionActual = document.getElementById('ideaGuion').value;
+            
+            // Generamos un ID único y seguro
+            const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+            
+            try {
+                // Importamos dinámicamente doc y setDoc del window.db
+                const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js");
+                const docRef = doc(window.db, "shared_guiones", uniqueId);
+                
+                await setDoc(docRef, {
+                    text: guionActual,
+                    createdAt: window.serverTimestamp()
+                });
+
+                // Crear URL
+                const shareUrl = window.location.origin + window.location.pathname + "?shared=" + uniqueId;
+                
+                // Copiar al portapapeles
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    alert(`¡Enlace generado y copiado!\n\nPégalo en el navegador o envíalo a tu equipo. Todos verán los cambios en tiempo real.\n\nEnlace: ${shareUrl}`);
+                });
+                
+            } catch (error) {
+                console.error("Error al crear sesión compartida:", error);
+                alert("Hubo un error al crear la sesión en vivo. ¿Actualizaste las reglas de Firestore como te indiqué?");
+            }
+        }
+        // --------------------------------------------------------
 
         function guardarIdea() {
             const titulo = document.getElementById('ideaTitulo').value;
@@ -1544,7 +1703,6 @@ ENTREGABLES ADICIONALES (Debajo del guion):
             renderHistoryNotas();
         }
 
-        // --- MOTOR DE INICIALIZACIÓN (Reemplaza a window.onload) ---
         window.initAppState = () => {
             ideas = JSON.parse(localStorage.getItem('contentIdeas')) || [];
             ejesTags = JSON.parse(localStorage.getItem('ejesTags')) || [];
@@ -1603,3 +1761,5 @@ ENTREGABLES ADICIONALES (Debajo del guion):
     </script>
 </body>
 </html>
+
+```
