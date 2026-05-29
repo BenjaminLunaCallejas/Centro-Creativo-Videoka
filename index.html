@@ -326,7 +326,41 @@ window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT) => {
             
             alert("✅ Datos importados y sincronizados. Puedes continuar editando el guion.");
         };
-
+        
+// --- FUNCIONES DE SINCRONIZACIÓN COMPARTIDA ---
+        window.sincronizarDesdeEnlace = async () => {
+            if (typeof editandoId === 'undefined' || !editandoId) return;
+            // Requiere que la variable ideas esté disponible globalmente desde el script base
+            if (typeof ideas === 'undefined') return;
+            
+            const idea = ideas.find(i => i.id === editandoId);
+            if (!idea || !idea.sharedId) return alert("No hay un enlace activo.");
+            
+            const btnSync = document.getElementById('btnSyncEnlace');
+            btnSync.innerText = "⏳ Consultando...";
+            
+            try {
+                const docSnap = await getDoc(doc(window.db, "shared_guiones", idea.sharedId));
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    window.tempSyncData = { guion: data.guion || '', copy: data.copy || '', tags: data.hashtags || '' };   
+                    
+                    window.mostrarAuditoriaCambios(
+                        document.getElementById('ideaGuion').value, data.guion,
+                        document.getElementById('ideaCopy').value, data.copy,
+                        document.getElementById('ideaHashtags').value, data.hashtags
+                    );
+                } else {
+                    alert("El guion compartido ya no existe en la nube.");
+                }
+            } catch(e) {
+                console.error("Error al sincronizar:", e);
+                alert("Fallo al conectar con la nube.");
+            }
+            btnSync.innerText = "⬇️ Sincronizar cambios de la nube";
+        };
+        
         window.generarEnlaceColaborativo = async () => {
             if(!window.db) return alert("Debes iniciar sesión para generar un enlace en vivo.");
             
