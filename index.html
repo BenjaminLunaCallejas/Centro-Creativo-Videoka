@@ -196,42 +196,44 @@ onAuthStateChanged(auth, (user) => {
             ).join(' ');
         };
 
-        window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT) => {
-            const modal = document.getElementById('modalOverlay');
-            const content = document.getElementById('modalContent');
+window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT) => {
+    const modal = document.getElementById('modalOverlay');
+    const content = document.getElementById('modalContent');
+    
+    const highlightedGuion = window.highlightChanges(lG, nG);
+    const highlightedCopy = window.highlightChanges(lC, nC);
+    const highlightedTags = window.highlightChanges(lT, nT);
+    
+    content.innerHTML = `
+        <div class="w-full">
+            <h3 class="font-bold text-2xl mb-2 text-indigo-900 border-b pb-2">Auditoría de Cambios</h3>
+            <p class="text-xs text-gray-500 mb-6 italic">Las palabras marcadas en <b>verde</b> son las que están en la nube pero no en tu versión local.</p>
             
-            const highlightedGuion = window.highlightChanges(lG, nG);
-            const highlightedCopy = window.highlightChanges(lC, nC);
-            const highlightedTags = window.highlightChanges(lT, nT);
-            
-            content.innerHTML = `
-                <div class="max-w-6xl w-full">
-                    <h3 class="font-bold text-2xl mb-2 text-indigo-900 border-b pb-2">Auditoría de Cambios</h3>
-                    <p class="text-xs text-gray-500 mb-6 italic">Visualizando diferencias. Las palabras marcadas en <b>verde</b> son las que están en la nube pero no en tu versión local.</p>
-                    
-                    <div class="grid grid-cols-2 gap-6">
-                        <div class="space-y-4">
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Versión Local (Tu editor)</label>
-                            <div class="p-4 bg-gray-50 rounded-lg border h-96 overflow-y-auto custom-scroll text-sm text-gray-700 whitespace-pre-wrap">${lG}</div>
-                            <div class="p-4 bg-gray-50 rounded-lg border h-32 overflow-y-auto custom-scroll text-sm text-gray-700 whitespace-pre-wrap">${lC}</div>
-                            <div class="p-4 bg-gray-50 rounded-lg border text-sm text-gray-700">${lT}</div>
-                        </div>
-                        <div class="space-y-4">
-                            <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest">Versión Nube (Cambios detectados)</label>
-                            <div class="p-4 bg-emerald-50 rounded-lg border h-96 overflow-y-auto custom-scroll text-sm text-emerald-900 whitespace-pre-wrap">${highlightedGuion}</div>
-                            <div class="p-4 bg-emerald-50 rounded-lg border h-32 overflow-y-auto custom-scroll text-sm text-emerald-900 whitespace-pre-wrap">${highlightedCopy}</div>
-                            <div class="p-4 bg-emerald-50 rounded-lg border text-sm text-emerald-900">${highlightedTags}</div>
-                        </div>
+            <div class="flex flex-col gap-6">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="flex-1 space-y-4">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Versión Local</label>
+                        <div class="audit-text-container">${lG}</div>
+                        <div class="audit-text-container">${lC}</div>
+                        <div class="audit-text-container">${lT}</div>
                     </div>
-                    
-                    <div class="mt-8 flex justify-end gap-3 border-t pt-4">
-                        <button onclick="closeModal(null)" class="px-6 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg">Rechazar / Cancelar</button>
-                        <button onclick="aplicarAuditoria()" class="bg-indigo-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-lg">Aceptar Cambios y Sincronizar</button>
+                    <div class="flex-1 space-y-4">
+                        <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest">Versión Nube</label>
+                        <div class="audit-text-container border-emerald-200 bg-emerald-50">${highlightedGuion}</div>
+                        <div class="audit-text-container border-emerald-200 bg-emerald-50">${highlightedCopy}</div>
+                        <div class="audit-text-container border-emerald-200 bg-emerald-50">${highlightedTags}</div>
                     </div>
                 </div>
-            `;
-            modal.style.display = 'flex';
-        };
+            </div>
+            
+            <div class="mt-8 flex justify-end gap-3 border-t pt-4">
+                <button onclick="closeModal(null)" class="px-6 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg">Cancelar</button>
+                <button onclick="aplicarAuditoria()" class="bg-indigo-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-lg">Aceptar Cambios</button>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+};
 
         window.aplicarAuditoria = () => {
             document.getElementById('ideaGuion').value = window.tempSyncData.guion;
