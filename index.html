@@ -1166,9 +1166,10 @@
 CONTEXTO:
 - Nicho: ${nicho} | Tema de autoridad: ${tema}
 - Nombre y descripción del Creador: ${creador}
-- Identidad y Tono de Comunicación: ${tono}
 - Personalidad (Arquetipos): ${arq.join(', ')} | Público: ${publico}
 - Ejes Transversales: ${ejes.join(', ')}
+- Identidad y Tono de Comunicación: ${tono}
+
 ${seccionFormatos}
 FUNNEL:
 - Reconocimiento: ${aw} | Consideración: ${co} | Conversión: ${cv} | Fidelización: ${fi}
@@ -1186,7 +1187,7 @@ REGLAS CRÍTICAS:
 5. DURACIÓN: Contenido diseñado para videos de 45-60 segundos.
 6. Distribución: 70% de valor, 20% de marca, 10% de presencia. 70% formato estrella, 30% libre. 50% tema central puro, 50% ejes transversales cruzados con tema central.
 7. El guión base debe entregar información oficial, precisa y útil. Prioriza la densidad de información.
-8. TONO: Coherente con los arquetipos ${arq.join(' y ')}. Aplica estrictamente este tono y estilo: ${tono}.`;
+8. TONO: Coherente con los arquetipos ${arq.join(' y ')}. Aplica estrictamente el tono descrito en CONTEXTO;
             if (promptArea) promptArea.value = prompt;
         }
 
@@ -1231,11 +1232,11 @@ REGLAS CRÍTICAS:
 MI PERFIL ESTRATÉGICO:
 - Tema central (Autoridad): ${tema}
 - Nombre y descripción del Creador: ${creador}
-- Identidad y Tono de Comunicación: ${tono}
 - Nicho: ${nicho} 
 - Personalidad (Arquetipos): ${arq.join(', ')} 
 - Público Objetivo: ${publico}
 - Ejes Transversales: ${ejes.join(', ')}
+- Identidad y Tono de Comunicación: ${tono}
 
 TAREA: Redacta un guión completo para un contenido de tipo "${formato}". El guión debe llamar la atención, generar interés, despertar deseo y entrener. El storytelling debe ser entretenido, memorable, emotivo, interesante y carismático.
 Si utilizas un formato estrella listado arriba, asegúrate que el guión siga  la estructura de ese formato específico.
@@ -1249,7 +1250,7 @@ ESPECIFICACIONES TÉCNICAS DEL VIDEO:
 - GANCHO (Hook) PROPUESTO: "${hook}"${especificacionesOpcionales}
 
 INSTRUCCIONES DE REDACCIÓN:
-1. TONO: Debe estar escrito obligatoriamente bajo esta directriz: ${tono}. DEBE SER MEMORABLE, EMOCIONAL Y ENTRETENIDO.
+1. TONO: Debe estar escrito obligatoriamente bajo el tono e identidad descrito en CONTEXTO. DEBE SER MEMORABLE, EMOCIONAL Y ENTRETENIDO.
 2. CALIDAD: Entrega información de valor, precisa, confiable, útil y oficial. Evita lo superficial.
 3. ESTRUCTURA: Diseña el guion en UN SOLO PÁRRAFO. Debe incluir: Hook verbal interesante (incluye promesa del video) + Frase breve de refuerzo + Desarrollo dinámico + Llamado a la acción (CTA).
 4. RESTRICCIONES: No especifiques las partes en el video. Evita figuras retóricas. PROHIBIDO PRESENTARSE.
