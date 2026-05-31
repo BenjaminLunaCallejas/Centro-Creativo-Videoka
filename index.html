@@ -1044,11 +1044,16 @@ window.aplicarAuditoria = () => {
                 </section>
 
                 <section id="planificador" class="tab-content max-w-6xl mx-auto">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                        <div class="flex flex-col">
-                            <h2 class="text-3xl font-bold text-gray-800">Planificador Cronológico</h2>
-                            <p id="calendarHeader" class="text-sm text-indigo-600 font-bold uppercase mt-1"></p>
-                        </div>
+                   <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <div class="flex flex-col">
+        <h2 class="text-3xl font-bold text-gray-800">Planificador Cronológico</h2>
+        <div class="flex items-center gap-2 mt-2">
+            <button onclick="cambiarFecha(-1)" class="p-1 hover:bg-gray-200 rounded text-gray-600 transition" title="Anterior">◀</button>
+            <button onclick="cambiarFecha(0)" class="text-xs px-3 py-1 bg-indigo-50 text-indigo-600 rounded border border-indigo-200 hover:bg-indigo-100 transition font-bold shadow-sm">HOY</button>
+            <button onclick="cambiarFecha(1)" class="p-1 hover:bg-gray-200 rounded text-gray-600 transition" title="Siguiente">▶</button>
+            <p id="calendarHeader" class="text-sm text-indigo-600 font-bold uppercase ml-2"></p>
+        </div>
+    </div>
                         <div class="flex bg-gray-200 p-1 rounded-lg gap-1">
                             <button onclick="renderCalendario('dia')" class="px-4 py-1 rounded hover:bg-white transition text-xs font-bold" id="view-dia">Día</button>
                             <button onclick="renderCalendario('semana')" class="px-4 py-1 rounded hover:bg-white transition text-xs font-bold" id="view-semana">Semana</button>
@@ -1151,6 +1156,8 @@ window.aplicarAuditoria = () => {
         let historyNotas = [];
         let tablaIAParsed = [];
         let editandoId = null;
+let currentCalendarDate = new Date(); // Rastrea la fecha en la que estamos navegando
+let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
 
         function linkify(text) {
             const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/g;
@@ -1481,86 +1488,124 @@ window.aplicarAuditoria = () => {
             renderIdeas();
         }
 
-        function renderCalendario(vista) {
-            const container = document.getElementById('plannerContainer');
-            const header = document.getElementById('calendarHeader');
-            container.innerHTML = '';
-            
-            document.querySelectorAll('#planificador button').forEach(b => b.classList.remove('bg-white', 'shadow'));
-            document.getElementById(`view-${vista}`).classList.add('bg-white', 'shadow');
+function renderCalendario(vista) {
+    if (vista) currentCalendarView = vista;
+    const container = document.getElementById('plannerContainer');
+    const header = document.getElementById('calendarHeader');
+    container.innerHTML = '';
+    
+    document.querySelectorAll('#planificador button[id^="view-"]').forEach(b => b.classList.remove('bg-white', 'shadow'));
+    document.getElementById(`view-${currentCalendarView}`).classList.add('bg-white', 'shadow');
 
-            const dActual = new Date(2026, 4, 7);
-            const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    
+    const dActual = new Date(currentCalendarDate);
+    const año = dActual.getFullYear();
+    const mes = dActual.getMonth();
 
-            if(vista === 'mes') {
-                header.innerText = `${meses[dActual.getMonth()]} 2026`;
-                const diasSemana = ['LUN','MAR','MIE','JUE','VIE','SAB','DOM'];
-                let html = '<div class="calendar-grid">';
-                diasSemana.forEach(d => html += `<div class="bg-slate-800 text-white text-[10px] text-center p-2 font-bold">${d}</div>`);
-                
-                let firstDay = new Date(2026, 4, 1);
-                let startDay = firstDay.getDay(); 
-                startDay = (startDay === 0) ? 6 : startDay - 1;
+    const getLocalISO = (d) => {
+        const tzOffset = d.getTimezoneOffset() * 60000;
+        return (new Date(d - tzOffset)).toISOString().split('T')[0];
+    };
 
-                for(let e=0; e<startDay; e++) html += `<div class="calendar-day bg-gray-50 border-r border-b"></div>`;
+    if(currentCalendarView === 'mes') {
+        header.innerText = `${meses[mes]} ${año}`;
+        const diasSemana = ['LUN','MAR','MIE','JUE','VIE','SAB','DOM'];
+        let html = '<div class="calendar-grid">';
+        diasSemana.forEach(d => html += `<div class="bg-slate-800 text-white text-[10px] text-center p-2 font-bold">${d}</div>`);
+        
+        let firstDay = new Date(año, mes, 1);
+        let lastDay = new Date(año, mes + 1, 0).getDate();
+        let startDay = firstDay.getDay(); 
+        startDay = (startDay === 0) ? 6 : startDay - 1;
 
-                for(let i=1; i<=31; i++) {
-                    let d = new Date(2026, 4, i);
-                    let iso = d.toISOString().split('T')[0];
-                    let isToday = (i === 7);
-                    let dailyIdeas = ideas.filter(id => id.fecha === iso);
+        for(let e=0; e<startDay; e++) html += `<div class="calendar-day bg-gray-50 border-r border-b"></div>`;
 
-                    html += `<div class="calendar-day border-r border-b ${isToday ? 'today' : ''}">
-                        <div class="text-[9px] font-bold ${isToday ? 'text-indigo-600' : 'text-gray-400'}">${i}</div>
-                        ${dailyIdeas.map(di => `
-                            <div class="content-item truncate" onclick="openModal(${di.id})">
-                                ${di.titulo}
-                                <button class="edit-mini-btn" onclick="event.stopPropagation(); editarIdea(${di.id})">✏️</button>
-                            </div>`).join('')}
-                    </div>`;
-                }
-                html += '</div>';
-                container.innerHTML = html;
-            } else if (vista === 'semana') {
-                header.innerText = `Semana del 4 al 10 de Mayo`;
-                let html = '<div class="flex gap-2 p-4 min-w-max">';
-                let lunesRef = new Date(2026, 4, 4);
+        let hoyReal = new Date();
+        
+        for(let i=1; i<=lastDay; i++) {
+            let d = new Date(año, mes, i);
+            let iso = getLocalISO(d);
+            let isToday = (d.getDate() === hoyReal.getDate() && d.getMonth() === hoyReal.getMonth() && d.getFullYear() === hoyReal.getFullYear());
+            let dailyIdeas = ideas.filter(id => id.fecha === iso);
 
-                for(let i=0; i<7; i++) {
-                    let d = new Date(lunesRef);
-                    d.setDate(lunesRef.getDate() + i);
-                    let iso = d.toISOString().split('T')[0];
-                    let nombreDia = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-                    let isToday = (d.getDate() === 7);
-                    let daily = ideas.filter(id => id.fecha === iso);
-
-                    html += `<div class="flex-1 min-w-[200px] ${isToday ? 'bg-indigo-50 border-indigo-300' : 'bg-slate-50'} p-4 rounded-lg border">
-                        <div class="font-bold text-indigo-600 mb-4 border-b pb-1 text-xs capitalize">${nombreDia}</div>
-                        ${daily.map(di => `
-                            <div class="content-item" onclick="openModal(${di.id})">
-                                <b>${di.hora}</b>: ${di.titulo}
-                                <button class="edit-mini-btn" onclick="event.stopPropagation(); editarIdea(${di.id})">✏️</button>
-                            </div>`).join('')}
-                        ${daily.length === 0 ? '<p class="text-[10px] text-gray-300 italic">Sin contenido</p>' : ''}
-                    </div>`;
-                }
-                html += '</div>';
-                container.innerHTML = html;
-            } else {
-                let nombreHoy = dActual.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-                header.innerText = `Vista Diaria`;
-                let hoyISO = dActual.toISOString().split('T')[0];
-                let daily = ideas.filter(id => id.fecha === hoyISO).sort((a,b) => a.hora.localeCompare(b.hora));
-                container.innerHTML = `<div class="p-4 md:p-8 max-w-lg mx-auto">
-                    <h3 class="text-xl font-bold mb-4 border-b pb-2 capitalize">${nombreHoy}</h3>
-                    ${daily.map(di => `<div class="p-4 mb-2 bg-indigo-50 border border-indigo-200 rounded-lg cursor-pointer flex justify-between items-center" onclick="openModal(${di.id})">
-                        <span><b>${di.hora}</b> - ${di.titulo}</span>
-                        <button onclick="event.stopPropagation(); editarIdea(${di.id})" class="text-indigo-500">✏️</button>
+            html += `<div class="calendar-day border-r border-b ${isToday ? 'today' : ''}">
+                <div class="text-[9px] font-bold ${isToday ? 'text-indigo-600' : 'text-gray-400'}">${i}</div>
+                ${dailyIdeas.map(di => `
+                    <div class="content-item truncate" onclick="openModal(${di.id})">
+                        ${di.titulo}
+                        <button class="edit-mini-btn" onclick="event.stopPropagation(); editarIdea(${di.id})">✏️</button>
                     </div>`).join('')}
-                    ${daily.length === 0 ? '<p class="text-gray-400 italic">No tienes actividades programadas para hoy.</p>' : ''}
-                </div>`;
-            }
+            </div>`;
         }
+        html += '</div>';
+        container.innerHTML = html;
+        
+    } else if (currentCalendarView === 'semana') {
+        let day = dActual.getDay();
+        let diff = dActual.getDate() - day + (day === 0 ? -6 : 1);
+        let lunesRef = new Date(dActual.setDate(diff));
+        
+        let domingoRef = new Date(lunesRef);
+        domingoRef.setDate(lunesRef.getDate() + 6);
+        
+        header.innerText = `Semana del ${lunesRef.getDate()} al ${domingoRef.getDate()} de ${meses[domingoRef.getMonth()]}`;
+        
+        let html = '<div class="flex gap-2 p-4 min-w-max">';
+        let hoyReal = new Date();
+
+        for(let i=0; i<7; i++) {
+            let d = new Date(lunesRef);
+            d.setDate(lunesRef.getDate() + i);
+            let iso = getLocalISO(d);
+            let nombreDia = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+            let isToday = (d.getDate() === hoyReal.getDate() && d.getMonth() === hoyReal.getMonth() && d.getFullYear() === hoyReal.getFullYear());
+            let daily = ideas.filter(id => id.fecha === iso);
+
+            html += `<div class="flex-1 min-w-[200px] ${isToday ? 'bg-indigo-50 border-indigo-300' : 'bg-slate-50'} p-4 rounded-lg border">
+                <div class="font-bold text-indigo-600 mb-4 border-b pb-1 text-xs capitalize">${nombreDia}</div>
+                ${daily.map(di => `
+                    <div class="content-item" onclick="openModal(${di.id})">
+                        <b>${di.hora || '--:--'}</b>: ${di.titulo}
+                        <button class="edit-mini-btn" onclick="event.stopPropagation(); editarIdea(${di.id})">✏️</button>
+                    </div>`).join('')}
+                ${daily.length === 0 ? '<p class="text-[10px] text-gray-300 italic">Sin contenido</p>' : ''}
+            </div>`;
+        }
+        html += '</div>';
+        container.innerHTML = html;
+        
+    } else {
+        let nombreHoy = dActual.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        header.innerText = `Vista Diaria`;
+        let hoyISO = getLocalISO(dActual);
+        let daily = ideas.filter(id => id.fecha === hoyISO).sort((a,b) => (a.hora || '').localeCompare(b.hora || ''));
+        
+        container.innerHTML = `<div class="p-4 md:p-8 max-w-lg mx-auto">
+            <h3 class="text-xl font-bold mb-4 border-b pb-2 capitalize">${nombreHoy}</h3>
+            ${daily.map(di => `<div class="p-4 mb-2 bg-indigo-50 border border-indigo-200 rounded-lg cursor-pointer flex justify-between items-center hover:bg-indigo-100 transition" onclick="openModal(${di.id})">
+                <span><b>${di.hora || '--:--'}</b> - ${di.titulo}</span>
+                <button onclick="event.stopPropagation(); editarIdea(${di.id})" class="text-indigo-500 hover:text-indigo-700">✏️</button>
+            </div>`).join('')}
+            ${daily.length === 0 ? '<p class="text-gray-400 italic">No tienes actividades programadas para esta fecha.</p>' : ''}
+        </div>`;
+    }
+}
+
+function cambiarFecha(offset) {
+    if (offset === 0) {
+        currentCalendarDate = new Date();
+    } else {
+        if (currentCalendarView === 'mes') {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + offset);
+        } else if (currentCalendarView === 'semana') {
+            currentCalendarDate.setDate(currentCalendarDate.getDate() + (offset * 7));
+        } else if (currentCalendarView === 'dia') {
+            currentCalendarDate.setDate(currentCalendarDate.getDate() + offset);
+        }
+    }
+    renderCalendario();
+}
 
         function renderEstrategiaResumen() {
             const container = document.getElementById('resumenContent');
