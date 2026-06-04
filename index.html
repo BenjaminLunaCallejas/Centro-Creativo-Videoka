@@ -1852,7 +1852,29 @@ ENTREGABLES ADICIONALES (Debajo del guion):
             navigator.clipboard.writeText(text).then(() => alert('Copiado!'));
         }
 
-        function allowDrop(ev) { ev.preventDefault(); }
+ function allowDrop(ev) { ev.preventDefault(); }
+
+        // NUEVA FUNCIÓN: Interpola la coordenada Y para calcular el índice geométrico de inserción
+        function getInsertIndex(containerId, y, sourceCat, destCat, taskIndex) {
+            const container = document.getElementById(containerId);
+            if (!container) return 0;
+            
+            const listItems = Array.from(container.children);
+            let insertIndex = 0;
+            
+            for (let i = 0; i < listItems.length; i++) {
+                // Se ignora el nodo visual de origen si la reestructuración es intra-columna
+                if (sourceCat === destCat && i === taskIndex) continue;
+                
+                const box = listItems[i].getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                
+                // Si la coordenada de intersección es negativa, hemos cruzado la mitad del elemento
+                if (offset < 0) break;
+                insertIndex++;
+            }
+            return insertIndex;
+        }
 
         function dragTask(ev, cat, index) {
             ev.dataTransfer.setData("text/plain", JSON.stringify({ block: 'tarea_idea', sourceCat: cat, taskIndex: index }));
@@ -1866,9 +1888,16 @@ ENTREGABLES ADICIONALES (Debajo del guion):
                 const parsed = JSON.parse(dataStr);
                 if (parsed.block !== 'tarea_idea') return;
                 const { sourceCat, taskIndex } = parsed;
-                if (sourceCat === destCat) return;
+                
+                // 1. Extracción destructiva del elemento de la matriz de origen
                 const [taskMoved] = tasks[sourceCat].splice(taskIndex, 1);
-                tasks[destCat].push(taskMoved);
+                
+                // 2. Cálculo vectorial del índice de destino
+                const insertIndex = getInsertIndex(`lista_${destCat}`, ev.clientY, sourceCat, destCat, taskIndex);
+                
+                // 3. Inyección posicional en la matriz (Sustituye la directiva .push)
+                tasks[destCat].splice(insertIndex, 0, taskMoved);
+                
                 localStorage.setItem('contentTasks', JSON.stringify(tasks));
                 renderTasks();
                 if (typeof renderEstrategiaResumen === "function") renderEstrategiaResumen();
@@ -1887,9 +1916,16 @@ ENTREGABLES ADICIONALES (Debajo del guion):
                 const parsed = JSON.parse(dataStr);
                 if (parsed.block !== 'nota_bloc') return;
                 const { sourceCat, taskIndex } = parsed;
-                if (sourceCat === destCat) return;
+                
+                // 1. Extracción destructiva del elemento de la matriz de origen
                 const [taskMoved] = blocNotas[sourceCat].splice(taskIndex, 1);
-                blocNotas[destCat].push(taskMoved);
+                
+                // 2. Cálculo vectorial del índice de destino
+                const insertIndex = getInsertIndex(`lista_${destCat}`, ev.clientY, sourceCat, destCat, taskIndex);
+                
+                // 3. Inyección posicional en la matriz
+                blocNotas[destCat].splice(insertIndex, 0, taskMoved);
+                
                 localStorage.setItem('blocNotasTasks', JSON.stringify(blocNotas));
                 renderNotas();
             } catch (err) { console.error("Error al mover la tarjeta del blog:", err); }
