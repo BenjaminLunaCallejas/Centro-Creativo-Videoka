@@ -1341,14 +1341,33 @@ let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
             });
         }
 
-        function editNota(cat, index) {
+       function editNota(cat, index) {
             const tareaActual = blocNotas[cat][index].text;
-            const nuevoTexto = prompt("Editar nota del blog:", tareaActual);
+            const modal = document.getElementById('modalOverlay');
+            const content = document.getElementById('modalContent');
+            const safeText = tareaActual.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
+            content.innerHTML = `
+                <div class="p-4 w-full">
+                    <h3 class="font-bold text-xl mb-4 text-emerald-700 border-b pb-2">Editar Nota del Blog</h3>
+                    <textarea id="editNotaTextarea" class="w-full p-3 border border-emerald-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-400 custom-scroll min-h-[150px] resize-y">${safeText}</textarea>
+                    <div class="flex justify-end gap-3 mt-4">
+                        <button onclick="closeModal(null)" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-bold transition">Cancelar</button>
+                        <button onclick="saveEditedNota('${cat}', ${index})" class="bg-emerald-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-emerald-700 transition shadow-lg">Guardar</button>
+                    </div>
+                </div>
+            `;
+            modal.style.display = 'flex';
+        }
+
+        function saveEditedNota(cat, index) {
+            const nuevoTexto = document.getElementById('editNotaTextarea').value;
             if (nuevoTexto !== null && nuevoTexto.trim() !== "") {
                 blocNotas[cat][index].text = nuevoTexto.trim();
                 localStorage.setItem('blocNotasTasks', JSON.stringify(blocNotas));
                 renderNotas();
             }
+            closeModal(null);
         }
 
         function copyNotaText(cat, index) {
@@ -1876,15 +1895,34 @@ ENTREGABLES ADICIONALES (Debajo del guion):
             } catch (err) { console.error("Error al mover la tarjeta del blog:", err); }
         }
 
-        function editTask(cat, index) {
+ function editTask(cat, index) {
             const tareaActual = tasks[cat][index].text;
-            const nuevoTexto = prompt("Editar nota:", tareaActual);
+            const modal = document.getElementById('modalOverlay');
+            const content = document.getElementById('modalContent');
+            const safeText = tareaActual.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
+            content.innerHTML = `
+                <div class="p-4 w-full">
+                    <h3 class="font-bold text-xl mb-4 text-indigo-900 border-b pb-2">Editar Idea / Tendencia</h3>
+                    <textarea id="editTaskTextarea" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll min-h-[150px] resize-y">${safeText}</textarea>
+                    <div class="flex justify-end gap-3 mt-4">
+                        <button onclick="closeModal(null)" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-bold transition">Cancelar</button>
+                        <button onclick="saveEditedTask('${cat}', ${index})" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 transition shadow-lg">Guardar</button>
+                    </div>
+                </div>
+            `;
+            modal.style.display = 'flex';
+        }
+
+        function saveEditedTask(cat, index) {
+            const nuevoTexto = document.getElementById('editTaskTextarea').value;
             if (nuevoTexto !== null && nuevoTexto.trim() !== "") {
                 tasks[cat][index].text = nuevoTexto.trim();
                 localStorage.setItem('contentTasks', JSON.stringify(tasks));
                 renderTasks();
                 if (typeof renderEstrategiaResumen === "function") renderEstrategiaResumen();
             }
+            closeModal(null);
         }
 
         function copyTaskText(cat, index) {
