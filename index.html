@@ -125,39 +125,68 @@
         flex-direction: column !important;
     }
 
-    /* 2. Blog de Notas y Kanban: Apilar las columnas en lugar de ponerlas lado a lado */
+    /* 2. Pestañas 2 y 6: Anular el ancho forzado y apilar columnas en vertical */
+    #notas .flex.gap-6, #blog_notas .flex.gap-6 {
+        min-width: 100% !important;
+        flex-direction: column !important;
+    }
     #notas .flex.gap-6 > div, #blog_notas .flex.gap-6 > div {
         flex: none !important;
         width: 100% !important;
-        min-height: auto !important; /* Para que no queden huecos gigantes vacíos */
+        min-height: auto !important; 
         margin-bottom: 1rem;
     }
 
-    /* 3. Calendario: Pasar de 7 columnas a 1 sola columna (lista hacia abajo) */
+    /* 3. Pestaña 5 (Calendario): Forzar 1 sola columna */
     .calendar-grid {
         grid-template-columns: 1fr !important;
         gap: 10px;
         background-color: transparent !important;
         border: none !important;
     }
-    
     .calendar-day {
         border: 1px solid #e2e8f0;
         border-radius: 8px;
         min-height: auto !important;
     }
 
-    /* 4. Tabla de IA: Permitir scroll horizontal sin deformar toda la app */
+    /* 4. Pestaña 3 (Tabla IA): Convertir la tabla en "Tarjetas" para celular (SIN AFECTAR PC) */
     #calendarioTablaContainer .min-w-\[1200px\] {
-        min-width: 800px !important; 
+        min-width: 100% !important; 
     }
+    #calendarioTablaContainer table, #calendarioTablaContainer thead,
+    #calendarioTablaContainer tbody, #calendarioTablaContainer th,
+    #calendarioTablaContainer td, #calendarioTablaContainer tr {
+        display: block !important; width: 100% !important;
+    }
+    #calendarioTablaContainer thead tr { display: none !important; }
+    #calendarioTablaContainer tr {
+        border: 1px solid #cbd5e1; margin-bottom: 1.5rem; border-radius: 8px; overflow: hidden; background: #fff;
+    }
+    #calendarioTablaContainer td {
+        border: none; border-bottom: 1px solid #f1f5f9; position: relative;
+        padding: 0.5rem 0.5rem 0.5rem 35% !important; text-align: left; min-height: 2.5rem;
+    }
+    #calendarioTablaContainer td:before {
+        position: absolute; top: 0.5rem; left: 0.5rem; width: 30%;
+        font-weight: bold; color: #4f46e5; font-size: 11px; text-transform: uppercase;
+    }
+    #calendarioTablaContainer td:nth-of-type(1):before { content: "Día:"; }
+    #calendarioTablaContainer td:nth-of-type(2):before { content: "Tipo:"; }
+    #calendarioTablaContainer td:nth-of-type(3):before { content: "Tema:"; }
+    #calendarioTablaContainer td:nth-of-type(4):before { content: "Formato:"; }
+    #calendarioTablaContainer td:nth-of-type(5):before { content: "Gancho:"; }
+    #calendarioTablaContainer td:nth-of-type(6):before { content: "Contenido:"; }
+    #calendarioTablaContainer td:nth-of-type(7):before { content: "Guion:"; }
+    #calendarioTablaContainer td:nth-of-type(8):before { content: "CTA:"; }
+    #calendarioTablaContainer td:nth-of-type(9) { text-align: center; padding: 1rem !important; display: flex; justify-content: center; }
+    #calendarioTablaContainer td:nth-of-type(9):before { display: none; }
 
-    /* 5. EL TRUCO PARA LAS LETRAS MANEJABLES:
-       Forzar 16px en inputs y textareas evita que iOS/Android hagan 
-       zoom automático que distorsiona la pantalla, y no son "letrotas" */
+    /* 5. Prevenir zoom automático en inputs de móviles */
     input, select, textarea {
         font-size: 16px !important;
     }
+}
 }
     </style>
 
@@ -1653,14 +1682,17 @@ function renderCalendario(vista) {
         header.innerText = `${meses[mes]} ${año}`;
         const diasSemana = ['LUN','MAR','MIE','JUE','VIE','SAB','DOM'];
         let html = '<div class="calendar-grid">';
-        diasSemana.forEach(d => html += `<div class="bg-slate-800 text-white text-[10px] text-center p-2 font-bold">${d}</div>`);
+        
+        // CABECERAS: Visibles en PC (md:block), Ocultas en Celular (hidden)
+        diasSemana.forEach(d => html += `<div class="bg-slate-800 text-white text-[10px] text-center p-2 font-bold hidden md:block">${d}</div>`);
         
         let firstDay = new Date(año, mes, 1);
         let lastDay = new Date(año, mes + 1, 0).getDate();
         let startDay = firstDay.getDay(); 
         startDay = (startDay === 0) ? 6 : startDay - 1;
 
-        for(let e=0; e<startDay; e++) html += `<div class="calendar-day bg-gray-50 border-r border-b"></div>`;
+        // CAJAS VACÍAS DE RELLENO: Visibles en PC (md:block), Ocultas en Celular (hidden)
+        for(let e=0; e<startDay; e++) html += `<div class="calendar-day bg-gray-50 border-r border-b hidden md:block"></div>`;
 
         let hoyReal = new Date();
         
@@ -1670,8 +1702,13 @@ function renderCalendario(vista) {
             let isToday = (d.getDate() === hoyReal.getDate() && d.getMonth() === hoyReal.getMonth() && d.getFullYear() === hoyReal.getFullYear());
             let dailyIdeas = ideas.filter(id => id.fecha === iso);
 
+            // Nombre del día para el celular
+            let nombreDia = d.toLocaleDateString('es-ES', { weekday: 'long' });
+
             html += `<div class="calendar-day border-r border-b ${isToday ? 'today' : ''}">
-                <div class="text-[9px] font-bold ${isToday ? 'text-indigo-600' : 'text-gray-400'}">${i}</div>
+                <div class="text-[10px] font-bold mb-1 ${isToday ? 'text-indigo-600' : 'text-gray-500'}">
+                    <span class="md:hidden capitalize inline-block mr-1">${nombreDia}</span>${i}
+                </div>
                 ${dailyIdeas.map(di => `
                     <div class="content-item truncate" onclick="openModal(${di.id})">
                         ${di.titulo}
