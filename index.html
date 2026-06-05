@@ -445,7 +445,7 @@ window.aplicarAuditoria = () => {
                 hashtags: document.getElementById('ideaHashtags').value,
                 enlaces: document.getElementById('ideaEnlaces') ? document.getElementById('ideaEnlaces').value : '',
                 enlaceCarpeta: document.getElementById('ideaEnlaceCarpeta') ? document.getElementById('ideaEnlaceCarpeta').value : '',
-                observaciones: ideaBase && ideaBase.observaciones ? ideaBase.observaciones : '',
+                observaciones: document.getElementById('ideaObservaciones') ? document.getElementById('ideaObservaciones').value : '',
                 createdAt: window.serverTimestamp()
             };
 
@@ -510,8 +510,11 @@ window.aplicarAuditoria = () => {
                     if (document.activeElement !== txtGuion) txtGuion.value = data.guion || '';
                     if (document.activeElement !== txtCopy) txtCopy.value = data.copy || '';
                     if (document.activeElement !== txtTags) txtTags.value = data.hashtags || '';
+                    if (document.activeElement !== txtEnlaces) txtEnlaces.value = data.enlaces || '';
+                    if (document.activeElement !== txtCarpeta) txtCarpeta.value = data.enlaceCarpeta || '';
+                    if (document.activeElement !== txtObs) txtObs.value = data.observaciones || '';
                     
-                    [txtGuion, txtCopy, txtTags].forEach(ta => autoResize(ta));
+                    [txtGuion, txtCopy, txtTags, txtEnlaces, txtCarpeta, txtObs].forEach(ta => autoResize(ta));
                 } else {
                     status.innerText = "Guion no encontrado";
                     status.classList.replace('text-emerald-600', 'text-red-600');
