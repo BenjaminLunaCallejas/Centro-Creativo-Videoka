@@ -1033,13 +1033,13 @@ window.aplicarAuditoria = () => {
                             <p class="text-[10px] text-gray-400 mb-2">🏷️ Usa 4: #TipoContenido #Tema #Nicho #ProgramaTiktok (Ej: #tutorial #Bioestadistica #LGBT #STEAM)</p>
                             <input type="text" id="ideaHashtags" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400" placeholder="#tag1 #tag2 #tag3 #tag4">
                         </div>
-                              <div class="mb-4 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                            <label class="block text-sm font-semibold text-gray-600 mb-1">Copy</label>
-                            <div class="text-[10px] text-indigo-500 mb-3 leading-tight">
-                                🔑 <b>Enlace de Carpeta de Recursos:</b> Copia el enlace de tu carpeta donde guardarás recursos para edición del video, así como el contenido final a publicar.
-                            </div>
-                            <textarea id="ideaCopy" rows="3" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" placeholder="Ej: https://ejemplo.com (Deja vacío si no aplica)"></textarea>
-                        </div>
+                    <div class="mb-4 bg-slate-50 p-4 rounded-lg border border-slate-100">
+    <label class="block text-sm font-semibold text-gray-600 mb-1">Enlace de Carpeta de Recursos</label>
+    <div class="text-[10px] text-indigo-500 mb-3 leading-tight">
+        🔑 <b>Directorio de Recursos:</b> Copia el enlace de tu carpeta donde guardarás recursos para edición del video, así como el contenido final a publicar.
+    </div>
+    <textarea id="ideaEnlaceCarpeta" rows="2" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" placeholder="Ej: https://drive.google.com/... (Deja vacío si no aplica)"></textarea>
+</div>
 
                         <div class="flex flex-col md:flex-row gap-4">
                             <button id="btnGuardarGuion" onclick="guardarIdea()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition flex-1">Guardar Guion Estructurado</button>
