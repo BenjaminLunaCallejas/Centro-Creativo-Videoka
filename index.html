@@ -1857,8 +1857,8 @@ ENTREGABLES ADICIONALES (Debajo del guion):
         
         function copyToClipboardData(id) {
         const idea = ideas.find(i => i.id == id);
-        
-        let text = `ESTRATEGIA: ${idea.titulo}\nGANCHO: ${idea.hook}\nGUIÓN:\n${idea.guion}\n\nCOPY:\n${idea.copy}`;
+            
+      let text = `ESTRATEGIA: ${idea.titulo}\n\nGANCHO: ${idea.hook}\n\nGUIÓN:\n${idea.guion}\n\nCOPY:\n${idea.copy}`;
         
         // Evaluaciones condicionales: Solo se agregan las secciones si el string no está vacío ni es indefinido.
         if (idea.hashtags && idea.hashtags.trim() !== '') {
