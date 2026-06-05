@@ -1827,7 +1827,7 @@ ENTREGABLES ADICIONALES (Debajo del guion):
                         <div><span class="text-gray-400 font-bold uppercase block">📂 Tipo:</span> ${idea.tipo}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">🎯 Objetivo:</span> ${idea.objetivo}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">⚡ Estrategia:</span> ${idea.tipoEstrategico}</div>
-                        <div><span class="text-gray-400 font-bold uppercase block">🤝 Colab:</span> ${idea.colaboracion}</div>
+                        <div><span class="text-gray-400 font-bold uppercase block">🤝 Colaboración:</span> ${idea.colaboracion}</div>
                     </div>
                     ${idea.hook ? `<div class="mt-4 p-3 bg-indigo-50 border-l-4 border-indigo-500 text-xs italic"><b>Gancho:</b> "${idea.hook}"</div>` : ''}
                     ${idea.enlaces ? `<div class="mt-2 p-3 bg-slate-50 border border-gray-200 rounded-lg text-xs font-mono text-gray-600"><b>Enlaces de Referencia:</b><br>${idea.enlaces.replace(/\n/g, '<br>')}</div>` : ''}
@@ -1842,6 +1842,23 @@ ENTREGABLES ADICIONALES (Debajo del guion):
                         <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Copy para Redes</label>
                         <div class="p-4 bg-indigo-50/50 rounded-lg text-sm whitespace-pre-wrap border border-indigo-100 leading-relaxed italic text-gray-700">"${idea.copy}"</div>
                     </div>
+                    
+                    ${idea.hashtags ? `
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Hashtags</label>
+                        <div class="p-4 bg-gray-50 rounded-lg text-sm font-mono text-indigo-600 border border-gray-100 tracking-wide">${idea.hashtags}</div>
+                    </div>
+                    ` : ''}
+                    
+                    ${idea.enlaceCarpeta ? `
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Carpeta de Recursos</label>
+                        <div class="p-4 bg-slate-50 rounded-lg text-sm border border-slate-200 flex items-center gap-2">
+                            <span>📁</span>
+                            <a href="${idea.enlaceCarpeta}" target="_blank" class="text-indigo-600 hover:text-indigo-800 underline font-medium break-all">${idea.enlaceCarpeta}</a>
+                        </div>
+                    </div>
+                    ` : ''}
                 </div>
                 <div class="flex flex-col sm:flex-row gap-3 mt-8">
                     <button onclick="copyToClipboardData(${idea.id})" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 transition font-bold text-sm shadow-lg shadow-indigo-100">
