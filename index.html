@@ -542,6 +542,9 @@ window.aplicarAuditoria = () => {
                     guion: txtGuion.value,
                     copy: txtCopy.value,
                     hashtags: txtTags.value,
+                    enlaces: txtEnlaces.value,
+                    enlaceCarpeta: txtCarpeta.value,
+                    observaciones: txtObs.value,
                     lastUpdate: serverTimestamp() 
                 }, { merge: true })
                 .then(() => {
