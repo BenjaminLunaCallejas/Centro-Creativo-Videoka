@@ -1089,6 +1089,15 @@ window.aplicarAuditoria = () => {
     </div>
     <textarea id="ideaEnlaceCarpeta" rows="2" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" placeholder="Ej: https://drive.google.com/... (Deja vacío si no aplica)"></textarea>
 </div>
+                    <div class="mb-4 bg-amber-50 p-4 rounded-lg border border-amber-100">
+    <label class="block text-sm font-semibold text-amber-700 mb-1 flex items-center gap-2">
+        <span>📌</span> Observaciones / Pendientes de Colaboración <span class="text-xs text-amber-500 font-normal">(Opcional)</span>
+    </label>
+    <div class="text-[10px] text-amber-600 mb-3 leading-tight">
+        🔑 <b>Notas para el equipo:</b> Instrucciones de edición, feedback o tareas pendientes para la colaboración.
+    </div>
+    <textarea id="ideaObservaciones" rows="2" class="w-full p-3 border border-amber-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-400 custom-scroll bg-white" placeholder="Ej: Revisar el audio en el segundo 15... (Deja vacío si no aplica)"></textarea>
+</div>
 
                         <div class="flex flex-col md:flex-row gap-4">
                             <button id="btnGuardarGuion" onclick="guardarIdea()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition flex-1">Guardar Guion Estructurado</button>
@@ -1476,7 +1485,8 @@ let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
                 guion: document.getElementById('ideaGuion').value,
                 copy: document.getElementById('ideaCopy').value,
                 hashtags: document.getElementById('ideaHashtags').value,
-enlaceCarpeta: document.getElementById('ideaEnlaceCarpeta').value
+enlaceCarpeta: document.getElementById('ideaEnlaceCarpeta').value,
+                observaciones: document.getElementById('ideaObservaciones').value
             };
             
             if (editandoId) {
@@ -1516,6 +1526,7 @@ enlaceCarpeta: document.getElementById('ideaEnlaceCarpeta').value
             document.getElementById('ideaCopy').value = idea.copy || '';
             document.getElementById('ideaHashtags').value = idea.hashtags || '';
             document.getElementById('ideaEnlaceCarpeta').value = idea.enlaceCarpeta || '';
+            document.getElementById('ideaObservaciones').value = idea.observaciones || '';
             
             if (idea.sharedId) {
                 document.getElementById('btnSyncEnlace').classList.remove('hidden');
@@ -1535,7 +1546,7 @@ enlaceCarpeta: document.getElementById('ideaEnlaceCarpeta').value
             editandoId = null;
             document.getElementById('btnGuardarGuion').innerText = "Guardar Guion Estructurado";
             document.getElementById('btnCancelarEdicion').classList.add('hidden');
-            ['ideaTitulo','ideaGuion','ideaCopy','ideaHashtags','ideaFecha','ideaHora', 'ideaHook', 'ideaEnlaces', 'ideaGuionBase', 'ideaStarFormat', 'ideaEnlaceCarpeta'].forEach(id => document.getElementById(id).value = '');
+            ['ideaTitulo','ideaGuion','ideaCopy','ideaHashtags','ideaFecha','ideaHora', 'ideaHook', 'ideaEnlaces', 'ideaGuionBase', 'ideaStarFormat', 'ideaEnlaceCarpeta', 'ideaObservaciones'].forEach(id => document.getElementById(id).value = '');
             updateLivePrompt();
             document.getElementById('btnSyncEnlace').classList.add('hidden');
         }
@@ -1908,6 +1919,12 @@ ENTREGABLES ADICIONALES (Debajo del guion):
                         </div>
                     </div>
                     ` : ''}
+                    ${idea.observaciones ? `
+<div>
+    <label class="block text-[10px] font-bold text-amber-600 uppercase mb-1 flex items-center gap-1"><span>📌</span> Observaciones</label>
+    <div class="p-4 bg-amber-50 rounded-lg text-sm border border-amber-200 text-amber-900 whitespace-pre-wrap leading-relaxed">${idea.observaciones}</div>
+</div>
+` : ''}
                 </div>
                 <div class="flex flex-col sm:flex-row gap-3 mt-8">
                     <button onclick="copyToClipboardData(${idea.id})" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 transition font-bold text-sm shadow-lg shadow-indigo-100">
