@@ -225,11 +225,14 @@ onAuthStateChanged(auth, (user) => {
 
        // --- LÓGICA DE AUDITORÍA Y COMPARACIÓN AMPLIADA ---
         
-        // 1. Encuentra lo que se AGREGÓ en la nube (Verde)
+       // 1. Encuentra lo que se AGREGÓ en la nube (Verde)
         window.highlightAdditions = (local, cloud) => {
-            if (!local || !cloud) return cloud || '';
-            const localWords = local.split(' ');
-            const cloudWords = cloud.split(' ');
+            if (!cloud) return ''; // Si la nube está vacía, no hay texto agregado.
+            
+            // Si el local tiene texto lo dividimos, si no, lo tratamos como un arreglo vacío.
+            const localWords = local ? local.split(/\s+/) : []; 
+            const cloudWords = cloud.split(/\s+/);
+            
             return cloudWords.map(word => 
                 localWords.includes(word) ? word : `<span class="highlight-diff">${word}</span>`
             ).join(' ');
@@ -237,14 +240,17 @@ onAuthStateChanged(auth, (user) => {
 
         // 2. Encuentra lo que se ELIMINÓ en la nube (Rojo Tachado)
         window.highlightDeletions = (local, cloud) => {
-            if (!local || !cloud) return local || '';
-            const localWords = local.split(' ');
-            const cloudWords = cloud.split(' ');
+            if (!local) return ''; // Si el local está vacío, no hay nada que eliminar.
+            
+            const localWords = local.split(/\s+/);
+            // Si la nube tiene texto lo dividimos, si no, lo tratamos como un arreglo vacío.
+            const cloudWords = cloud ? cloud.split(/\s+/) : []; 
+            
             return localWords.map(word => 
                 cloudWords.includes(word) ? word : `<span class="highlight-deleted">${word}</span>`
             ).join(' ');
         };
-
+        
 window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT, lE, nE, lCarp, nCarp, lObs, nObs) => {
             const modal = document.getElementById('modalOverlay');
             const content = document.getElementById('modalContent');
