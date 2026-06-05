@@ -258,78 +258,86 @@ window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT) => {
             
             const addedTags = window.highlightAdditions(lT, nT);
             const deletedTags = window.highlightDeletions(lT, nT);
+
+    const addedEnlaces = window.highlightAdditions(lE, nE);
+    const deletedEnlaces = window.highlightDeletions(lE, nE);
+    const addedCarpeta = window.highlightAdditions(lCarp, nCarp);
+    const deletedCarpeta = window.highlightDeletions(lCarp, nCarp);
+    const addedObs = window.highlightAdditions(lObs, nObs);
+    const deletedObs = window.highlightDeletions(lObs, nObs);
+    
+content.innerHTML = `
+        <div class="w-full">
+            <h3 class="font-bold text-2xl mb-2 text-indigo-900 border-b pb-2">Auditoría de Cambios</h3>
             
-            content.innerHTML = `
-                <div class="w-full">
-                    <h3 class="font-bold text-2xl mb-2 text-indigo-900 border-b pb-2">Auditoría de Cambios</h3>
-                    
-                    <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 mb-6 rounded-r shadow-sm">
-                        <p class="text-sm text-indigo-900 font-bold mb-2">💡 ¿Cómo revisar y aprobar los cambios?</p>
-                        <ul class="text-xs text-indigo-800 list-disc ml-5 space-y-1">
-                            <li>Las palabras en <b class="text-emerald-700 bg-emerald-100 px-1 rounded">verde</b> se agregaron en la nube.</li>
-                            <li>Las palabras en <b class="text-red-700 bg-red-100 px-1 rounded line-through">rojo tachado</b> se eliminaron en la nube.</li>
-                            <li><b>¡MODO INTERACTIVO! ✏️:</b> Haz clic dentro de los recuadros de la <b>"Versión Nube"</b> para editar el texto directamente. Borra lo que no te sirva y deja el texto exactamente como deseas conservarlo antes de presionar "Aceptar Cambios".</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="flex flex-col gap-8">
-                        <div>
-                            <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2">
-                                <span>📝</span> Guión Estructurado
-                            </h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="flex flex-col">
-                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label>
-                                    <div class="audit-text-container">${deletedGuion}</div>
-                                </div>
-                                <div class="flex flex-col">
-                                    <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube (Editable ✏️)</label>
-                                    <div id="auditGuionFinal" class="audit-text-container border-emerald-200 bg-emerald-50 cursor-text focus:ring-2 focus:ring-emerald-400 outline-none transition-all" contenteditable="true" title="Edita este texto para dejar la versión final">${addedGuion}</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2">
-                                <span>✍️</span> Copywriting
-                            </h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="flex flex-col">
-                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label>
-                                    <div class="audit-text-container">${deletedCopy}</div>
-                                </div>
-                                <div class="flex flex-col">
-                                    <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube (Editable ✏️)</label>
-                                    <div id="auditCopyFinal" class="audit-text-container border-emerald-200 bg-emerald-50 cursor-text focus:ring-2 focus:ring-emerald-400 outline-none transition-all" contenteditable="true" title="Edita este texto para dejar la versión final">${addedCopy}</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2">
-                                <span>🏷️</span> Hashtags
-                            </h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="flex flex-col">
-                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label>
-                                    <div class="audit-text-container">${deletedTags}</div>
-                                </div>
-                                <div class="flex flex-col">
-                                    <label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube (Editable ✏️)</label>
-                                    <div id="auditTagsFinal" class="audit-text-container border-emerald-200 bg-emerald-50 cursor-text focus:ring-2 focus:ring-emerald-400 outline-none transition-all" contenteditable="true" title="Edita este texto para dejar la versión final">${addedTags}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-8 flex justify-end gap-3 border-t pt-4 sticky bottom-0 bg-white bg-opacity-95 z-10 pb-2">
-                        <button onclick="closeModal(null)" class="px-6 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg transition-colors">Cancelar</button>
-                        <button onclick="aplicarAuditoria()" class="bg-indigo-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-lg transition-colors">Aceptar Cambios</button>
+            <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 mb-6 rounded-r shadow-sm">
+                <p class="text-sm text-indigo-900 font-bold mb-2">💡 ¿Cómo revisar y aprobar los cambios?</p>
+                <ul class="text-xs text-indigo-800 list-disc ml-5 space-y-1">
+                    <li>Las palabras en <b class="text-emerald-700 bg-emerald-100 px-1 rounded">verde</b> se agregaron en la nube.</li>
+                    <li>Las palabras en <b class="text-red-700 bg-red-100 px-1 rounded line-through">rojo tachado</b> se eliminaron en la nube.</li>
+                    <li><b>¡MODO INTERACTIVO! ✏️:</b> Haz clic dentro de los recuadros de la <b>"Versión Nube"</b> para editar el texto directamente.</li>
+                </ul>
+            </div>
+            
+            <div class="flex flex-col gap-8">
+                <div>
+                    <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2"><span>📝</span> Guión Estructurado</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col"><label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label><div class="audit-text-container">${deletedGuion}</div></div>
+                        <div class="flex flex-col"><label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube (Editable ✏️)</label><div id="auditGuionFinal" class="audit-text-container border-emerald-200 bg-emerald-50 cursor-text focus:ring-2 focus:ring-emerald-400 outline-none transition-all" contenteditable="true">${addedGuion}</div></div>
                     </div>
                 </div>
-            `;
-            modal.style.display = 'flex';
-        };
+
+                <div>
+                    <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2"><span>✍️</span> Copywriting</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col"><label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label><div class="audit-text-container">${deletedCopy}</div></div>
+                        <div class="flex flex-col"><label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube (Editable ✏️)</label><div id="auditCopyFinal" class="audit-text-container border-emerald-200 bg-emerald-50 cursor-text focus:ring-2 focus:ring-emerald-400 outline-none transition-all" contenteditable="true">${addedCopy}</div></div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2"><span>🏷️</span> Hashtags</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col"><label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label><div class="audit-text-container">${deletedTags}</div></div>
+                        <div class="flex flex-col"><label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube (Editable ✏️)</label><div id="auditTagsFinal" class="audit-text-container border-emerald-200 bg-emerald-50 cursor-text focus:ring-2 focus:ring-emerald-400 outline-none transition-all" contenteditable="true">${addedTags}</div></div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2"><span>🔗</span> Enlaces de Referencia</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col"><label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label><div class="audit-text-container">${deletedEnlaces}</div></div>
+                        <div class="flex flex-col"><label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube (Editable ✏️)</label><div id="auditEnlacesFinal" class="audit-text-container border-emerald-200 bg-emerald-50 cursor-text focus:ring-2 focus:ring-emerald-400 outline-none transition-all" contenteditable="true">${addedEnlaces}</div></div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2"><span>📁</span> Carpeta de Recursos</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col"><label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label><div class="audit-text-container">${deletedCarpeta}</div></div>
+                        <div class="flex flex-col"><label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube (Editable ✏️)</label><div id="auditCarpetaFinal" class="audit-text-container border-emerald-200 bg-emerald-50 cursor-text focus:ring-2 focus:ring-emerald-400 outline-none transition-all" contenteditable="true">${addedCarpeta}</div></div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-amber-700 border-b border-amber-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2"><span>📌</span> Observaciones de Colaboración</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col"><label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label><div class="audit-text-container bg-amber-50/30">${deletedObs}</div></div>
+                        <div class="flex flex-col"><label class="block text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Versión Nube (Editable ✏️)</label><div id="auditObsFinal" class="audit-text-container border-amber-200 bg-amber-50 cursor-text focus:ring-2 focus:ring-amber-400 outline-none transition-all" contenteditable="true">${addedObs}</div></div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="mt-8 flex justify-end gap-3 border-t pt-4 sticky bottom-0 bg-white bg-opacity-95 z-10 pb-2">
+                <button onclick="closeModal(null)" class="px-6 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="aplicarAuditoria()" class="bg-indigo-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-lg transition-colors">Aceptar Cambios</button>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+};
         
 window.aplicarAuditoria = () => {
             // 1. Extraemos el texto limpio de los cuadros editables (ignorando los colores HTML)
