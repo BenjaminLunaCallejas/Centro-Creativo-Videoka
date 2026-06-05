@@ -1426,7 +1426,8 @@ let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
                 guionBase: document.getElementById('ideaGuionBase').value,
                 guion: document.getElementById('ideaGuion').value,
                 copy: document.getElementById('ideaCopy').value,
-                hashtags: document.getElementById('ideaHashtags').value
+                hashtags: document.getElementById('ideaHashtags').value,
+enlaceCarpeta: document.getElementById('ideaEnlaceCarpeta').value
             };
             
             if (editandoId) {
@@ -1465,6 +1466,7 @@ let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
             document.getElementById('ideaGuion').value = idea.guion || '';
             document.getElementById('ideaCopy').value = idea.copy || '';
             document.getElementById('ideaHashtags').value = idea.hashtags || '';
+            document.getElementById('ideaEnlaceCarpeta').value = idea.enlaceCarpeta || '';
             
             if (idea.sharedId) {
                 document.getElementById('btnSyncEnlace').classList.remove('hidden');
@@ -1484,7 +1486,7 @@ let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
             editandoId = null;
             document.getElementById('btnGuardarGuion').innerText = "Guardar Guion Estructurado";
             document.getElementById('btnCancelarEdicion').classList.add('hidden');
-            ['ideaTitulo','ideaGuion','ideaCopy','ideaHashtags','ideaFecha','ideaHora', 'ideaHook', 'ideaEnlaces', 'ideaGuionBase', 'ideaStarFormat'].forEach(id => document.getElementById(id).value = '');
+            ['ideaTitulo','ideaGuion','ideaCopy','ideaHashtags','ideaFecha','ideaHora', 'ideaHook', 'ideaEnlaces', 'ideaGuionBase', 'ideaStarFormat', 'ideaEnlaceCarpeta'].forEach(id => document.getElementById(id).value = '');
             updateLivePrompt();
             document.getElementById('btnSyncEnlace').classList.add('hidden');
         }
@@ -1855,7 +1857,7 @@ ENTREGABLES ADICIONALES (Debajo del guion):
 
         function copyToClipboardData(id) {
             const idea = ideas.find(i => i.id == id);
-            const text = `ESTRATEGIA: ${idea.titulo}\nGANCHO: ${idea.hook}\nGUIÓN:\n${idea.guion}\n\nCOPY:\n${idea.copy}\n\nHASHTAGS:\n${idea.hashtags || ''}\n\nENLACES DE REFERENCIA:\n${idea.enlaces || ''}`;
+            const text = `ESTRATEGIA: ${idea.titulo}\nGANCHO: ${idea.hook}\nGUIÓN:\n${idea.guion}\n\nCOPY:\n${idea.copy}\n\nHASHTAGS:\n${idea.hashtags || ''}\n\nCARPETA DE RECURSOS:\n${idea.enlaceCarpeta || ''}\n\nENLACES DE REFERENCIA:\n${idea.enlaces || ''}`;
             navigator.clipboard.writeText(text).then(() => alert('Copiado!'));
         }
  function allowDrop(ev) { ev.preventDefault(); }
