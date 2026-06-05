@@ -115,6 +115,50 @@
     border-radius: 0.25rem;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
+        /* =========================================================
+   PARCHE RESPONSIVO PARA MÓVILES (CELULARES)
+========================================================= */
+@media (max-width: 768px) {
+    /* 1. Quitar el candado de 1200px a los contenedores principales */
+    .min-w-\[1200px\] {
+        min-width: 100% !important;
+        flex-direction: column !important;
+    }
+
+    /* 2. Blog de Notas y Kanban: Apilar las columnas en lugar de ponerlas lado a lado */
+    #notas .flex.gap-6 > div, #blog_notas .flex.gap-6 > div {
+        flex: none !important;
+        width: 100% !important;
+        min-height: auto !important; /* Para que no queden huecos gigantes vacíos */
+        margin-bottom: 1rem;
+    }
+
+    /* 3. Calendario: Pasar de 7 columnas a 1 sola columna (lista hacia abajo) */
+    .calendar-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px;
+        background-color: transparent !important;
+        border: none !important;
+    }
+    
+    .calendar-day {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        min-height: auto !important;
+    }
+
+    /* 4. Tabla de IA: Permitir scroll horizontal sin deformar toda la app */
+    #calendarioTablaContainer .min-w-\[1200px\] {
+        min-width: 800px !important; 
+    }
+
+    /* 5. EL TRUCO PARA LAS LETRAS MANEJABLES:
+       Forzar 16px en inputs y textareas evita que iOS/Android hagan 
+       zoom automático que distorsiona la pantalla, y no son "letrotas" */
+    input, select, textarea {
+        font-size: 16px !important;
+    }
+}
     </style>
 
     <script type="module">
