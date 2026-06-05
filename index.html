@@ -340,56 +340,50 @@ content.innerHTML = `
 };
         
 window.aplicarAuditoria = () => {
-            // 1. Extraemos el texto limpio de los cuadros editables (ignorando los colores HTML)
-            const guionFinal = document.getElementById('auditGuionFinal').innerText;
-            const copyFinal = document.getElementById('auditCopyFinal').innerText;
-            const tagsFinal = document.getElementById('auditTagsFinal').innerText;
+    // 1. Extraemos el texto limpio de los cuadros editables
+    const guionFinal = document.getElementById('auditGuionFinal').innerText;
+    const copyFinal = document.getElementById('auditCopyFinal').innerText;
+    const tagsFinal = document.getElementById('auditTagsFinal').innerText;
+    const enlacesFinal = document.getElementById('auditEnlacesFinal').innerText;
+    const carpetaFinal = document.getElementById('auditCarpetaFinal').innerText;
+    const obsFinal = document.getElementById('auditObsFinal').innerText;
 
-            // 2. Insertamos los datos aprobados en los campos actuales
-            document.getElementById('ideaGuion').value = guionFinal;
-            document.getElementById('ideaCopy').value = copyFinal;
-            document.getElementById('ideaHashtags').value = tagsFinal;
-            
-            // 3. Guardamos los cambios en segundo plano sin cerrar el formulario
+    // 2. Insertamos los datos aprobados en los campos actuales (si existen en el DOM)
+    if(document.getElementById('ideaGuion')) document.getElementById('ideaGuion').value = guionFinal;
+    if(document.getElementById('ideaCopy')) document.getElementById('ideaCopy').value = copyFinal;
+    if(document.getElementById('ideaHashtags')) document.getElementById('ideaHashtags').value = tagsFinal;
+    if(document.getElementById('ideaEnlaces')) document.getElementById('ideaEnlaces').value = enlacesFinal;
+    if(document.getElementById('ideaEnlaceCarpeta')) document.getElementById('ideaEnlaceCarpeta').value = carpetaFinal;
+    if(document.getElementById('ideaObservaciones')) document.getElementById('ideaObservaciones').value = obsFinal;
     
-            if (typeof editandoId !== 'undefined' && editandoId && typeof ideas !== 'undefined') {
-                const index = ideas.findIndex(i => i.id === editandoId);
-                if (index > -1) {
-                    ideas[index].guion = guionFinal;
-                    ideas[index].copy = copyFinal;
-                    ideas[index].hashtags = tagsFinal;
-                    
-                    // Sincronización matricial de metadatos colaborativos (silenciosa)
-                    if(window.tempSyncData) {
-                        ideas[index].enlaces = window.tempSyncData.enlaces || ideas[index].enlaces;
-                        ideas[index].enlaceCarpeta = window.tempSyncData.enlaceCarpeta || ideas[index].enlaceCarpeta;
-                        ideas[index].observaciones = window.tempSyncData.observaciones || ideas[index].observaciones;
-                        
-                        // Reflejar la inyección en el DOM local si los nodos existen
-                        if(document.getElementById('ideaEnlaces')) document.getElementById('ideaEnlaces').value = ideas[index].enlaces;
-                        if(document.getElementById('ideaEnlaceCarpeta')) document.getElementById('ideaEnlaceCarpeta').value = ideas[index].enlaceCarpeta;
-                    }
-
-                    localStorage.setItem('contentIdeas', JSON.stringify(ideas));
-                }
-            } else {
-                console.warn("No se detectó un ID de edición activo. Los cambios se aplicaron visualmente.");
-            }
-
-            // 4. Ajustamos automáticamente la altura de las cajas de texto al nuevo contenido
-            ['ideaGuion', 'ideaCopy', 'ideaHashtags'].forEach(id => {
-                const el = document.getElementById(id);
-                if(el) {
-                    el.style.height = 'auto';
-                    el.style.height = (el.scrollHeight) + 'px';
-                }
-            });
-
-            // 5. Cerramos el modal
-            if (typeof closeModal === 'function') closeModal(null);
+    // 3. Guardamos los cambios en segundo plano
+    if (typeof editandoId !== 'undefined' && editandoId && typeof ideas !== 'undefined') {
+        const index = ideas.findIndex(i => i.id === editandoId);
+        if (index > -1) {
+            ideas[index].guion = guionFinal;
+            ideas[index].copy = copyFinal;
+            ideas[index].hashtags = tagsFinal;
+            ideas[index].enlaces = enlacesFinal;
+            ideas[index].enlaceCarpeta = carpetaFinal;
+            ideas[index].observaciones = obsFinal;
             
-            alert("✅ Cambios auditados y aplicados correctamente.");
-        };
+            localStorage.setItem('contentIdeas', JSON.stringify(ideas));
+        }
+    }
+
+    // 4. Ajustamos automáticamente la altura de las cajas de texto
+    ['ideaGuion', 'ideaCopy', 'ideaHashtags', 'ideaEnlaces', 'ideaEnlaceCarpeta'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) {
+            el.style.height = 'auto';
+            el.style.height = (el.scrollHeight) + 'px';
+        }
+    });
+
+    // 5. Cerramos el modal
+    if (typeof closeModal === 'function') closeModal(null);
+    alert("✅ Cambios auditados y aplicados correctamente.");
+};
         
 // --- FUNCIONES DE SINCRONIZACIÓN COMPARTIDA ---
         window.sincronizarDesdeEnlace = async () => {
@@ -417,11 +411,14 @@ window.aplicarAuditoria = () => {
     observaciones: data.observaciones || ''
 };
                     
-                    window.mostrarAuditoriaCambios(
-                        document.getElementById('ideaGuion').value, data.guion,
-                        document.getElementById('ideaCopy').value, data.copy,
-                        document.getElementById('ideaHashtags').value, data.hashtags
-                    );
+               window.mostrarAuditoriaCambios(
+    document.getElementById('ideaGuion').value || '', data.guion || '',
+    document.getElementById('ideaCopy').value || '', data.copy || '',
+    document.getElementById('ideaHashtags').value || '', data.hashtags || '',
+    (document.getElementById('ideaEnlaces') ? document.getElementById('ideaEnlaces').value : ''), data.enlaces || '',
+    (document.getElementById('ideaEnlaceCarpeta') ? document.getElementById('ideaEnlaceCarpeta').value : ''), data.enlaceCarpeta || '',
+    (document.getElementById('ideaObservaciones') ? document.getElementById('ideaObservaciones').value : ''), data.observaciones || ''
+);
                 } else {
                     alert("El guion compartido ya no existe en la nube.");
                 }
