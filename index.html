@@ -1854,12 +1854,25 @@ ENTREGABLES ADICIONALES (Debajo del guion):
         }
 
         function closeModal(e) { document.getElementById('modalOverlay').style.display = 'none'; }
+        
+        function copyToClipboardData(id) {
+        const idea = ideas.find(i => i.id == id);
+        
+        let text = `ESTRATEGIA: ${idea.titulo}\nGANCHO: ${idea.hook}\nGUIÓN:\n${idea.guion}\n\nCOPY:\n${idea.copy}`;
+        
+        // Evaluaciones condicionales: Solo se agregan las secciones si el string no está vacío ni es indefinido.
+        if (idea.hashtags && idea.hashtags.trim() !== '') {
+            text += `\n\nHASHTAGS:\n${idea.hashtags}`;
+        }
+        if (idea.enlaces && idea.enlaces.trim() !== '') {
+            text += `\n\nENLACES DE REFERENCIA:\n${idea.enlaces}`;
+        }
+        if (idea.enlaceCarpeta && idea.enlaceCarpeta.trim() !== '') {
+            text += `\n\nCARPETA DE RECURSOS:\n${idea.enlaceCarpeta}`;
+        }
 
-    function copyToClipboardData(id) {
-    const idea = ideas.find(i => i.id == id);
-    const text = `ESTRATEGIA: ${idea.titulo}\nGANCHO: ${idea.hook}\nGUIÓN:\n${idea.guion}\n\nCOPY:\n${idea.copy}\n\nHASHTAGS:\n${idea.hashtags || ''}\n\nENLACES DE REFERENCIA:\n${idea.enlaces || ''}\n\nCARPETA DE RECURSOS:\n${idea.enlaceCarpeta || ''}`;
-    navigator.clipboard.writeText(text).then(() => alert('Copiado!'));
-}
+        navigator.clipboard.writeText(text).then(() => alert('¡Información copiada al portapapeles!'));
+    }
  function allowDrop(ev) { ev.preventDefault(); }
 
         // NUEVA FUNCIÓN: Interpola la coordenada Y para calcular el índice geométrico de inserción
