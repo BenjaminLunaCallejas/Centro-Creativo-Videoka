@@ -337,7 +337,7 @@ window.descargarDatosNube = () => {
     }, (error) => {
         console.error("Fallo en la resolución del socket en tiempo real:", error);
     });
-
+};
 // 2. SUBIDA SEGURA: Sincronización corregida para evitar doble sufijo
 window.syncToCloud = async () => {
     if (!window.currentUserUID) return;
