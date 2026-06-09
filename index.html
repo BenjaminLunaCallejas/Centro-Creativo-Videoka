@@ -334,13 +334,61 @@ await setDoc(doc(db, "videoka_planner", docId), fullData);
             window.location.reload(); // Recarga la página para refrescar todas las variables limpiamente
         };
 
-        window.crearNuevaCuenta = function() {
-            const nombre = prompt("Ingresa el nombre del nuevo creador o marca:");
-            if (!nombre || nombre.trim() === '') return;
-            const newId = 'perfil_' + Date.now();
-            window.creatorProfiles.push({ id: newId, name: nombre.trim() });
-            originalSetItem.call(localStorage, 'videoka_profiles', JSON.stringify(window.creatorProfiles));
-            window.cambiarCuenta(newId);
+window.abrirModalNuevaCuenta = function() {
+            document.getElementById('accountModalTitle').innerText = "✨ Nueva Cuenta";
+            document.getElementById('accountNameInput').value = "";
+            document.getElementById('accountIdInput').value = "NUEVA";
+            document.getElementById('btnDeleteAccount').classList.add('hidden');
+            document.getElementById('accountModal').classList.replace('hidden', 'flex');
+        };
+
+        window.abrirModalEdicionCuenta = function() {
+            const currentProfile = window.creatorProfiles.find(p => p.id === window.currentProfileId);
+            document.getElementById('accountModalTitle').innerText = "⚙️ Renombrar Cuenta";
+            document.getElementById('accountNameInput').value = currentProfile ? currentProfile.name : "";
+            document.getElementById('accountIdInput').value = window.currentProfileId;
+
+            if (window.creatorProfiles.length <= 1) {
+                document.getElementById('btnDeleteAccount').classList.add('hidden');
+            } else {
+                document.getElementById('btnDeleteAccount').classList.remove('hidden');
+            }
+            document.getElementById('accountModal').classList.replace('hidden', 'flex');
+        };
+
+        window.cerrarAccountModal = function() {
+            document.getElementById('accountModal').classList.replace('flex', 'hidden');
+        };
+
+        window.guardarAccountModal = function() {
+            const nombre = document.getElementById('accountNameInput').value.trim();
+            const id = document.getElementById('accountIdInput').value;
+            
+            if (!nombre) return alert("⚠️ El nombre no puede estar vacío.");
+
+            if (id === "NUEVA") {
+                const newId = 'perfil_' + Date.now();
+                window.creatorProfiles.push({ id: newId, name: nombre });
+                originalSetItem.call(localStorage, 'videoka_profiles', JSON.stringify(window.creatorProfiles));
+                window.cambiarCuenta(newId);
+            } else {
+                const idx = window.creatorProfiles.findIndex(p => p.id === id);
+                if (idx > -1) {
+                    window.creatorProfiles[idx].name = nombre;
+                    originalSetItem.call(localStorage, 'videoka_profiles', JSON.stringify(window.creatorProfiles));
+                    window.renderSelectorCuentas();
+                    window.cerrarAccountModal();
+                }
+            }
+        };
+
+        window.eliminarAccountModal = function() {
+            const id = document.getElementById('accountIdInput').value;
+            if (confirm("⚠️ ¿Estás seguro de archivar esta cuenta? Dejarás de verla en la lista.")) {
+                window.creatorProfiles = window.creatorProfiles.filter(p => p.id !== id);
+                originalSetItem.call(localStorage, 'videoka_profiles', JSON.stringify(window.creatorProfiles));
+                window.cambiarCuenta(window.creatorProfiles[0].id);
+            }
         };
 
         window.renderSelectorCuentas = function() {
@@ -830,14 +878,29 @@ window.generarEnlaceColaborativo = async () => {
             </button>
         </div>
 
-        <div id="modalOverlay" onclick="closeModal(event)">
+<div id="modalOverlay" onclick="closeModal(event)">
             <div class="modal-card shadow-2xl custom-scroll" onclick="event.stopPropagation()">
                 <button onclick="closeModal(null)" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
                 <div id="modalContent"></div>
             </div>
         </div>
 
-        <div class="flex flex-col md:flex-row h-screen overflow-hidden">
+        <div id="accountModal" class="hidden fixed inset-0 bg-slate-900/60 z-[3000] items-center justify-center backdrop-blur-sm">
+            <div class="bg-white rounded-xl shadow-2xl p-6 w-11/12 max-w-md border border-indigo-100">
+                <h3 class="font-bold text-xl mb-4 text-indigo-900 flex items-center gap-2" id="accountModalTitle">⚙️ Gestionar Cuenta</h3>
+                <label class="block text-sm font-semibold text-gray-600 mb-2">Nombre del Creador o Marca</label>
+                <input type="text" id="accountNameInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mb-4 text-slate-700" placeholder="Ej. Mi Cuenta Principal">
+                <input type="hidden" id="accountIdInput">
+                <div class="flex justify-between items-center mt-6 pt-4 border-t border-gray-100">
+                    <button id="btnDeleteAccount" onclick="eliminarAccountModal()" class="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg text-sm font-bold transition">🗑️ Archivar</button>
+                    <div class="flex gap-2">
+                        <button onclick="cerrarAccountModal()" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-bold transition">Cancelar</button>
+                        <button onclick="guardarAccountModal()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-lg transition">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+                <div class="flex flex-col md:flex-row h-screen overflow-hidden">
             
             <aside class="w-full md:w-64 bg-slate-900 text-white flex flex-col shadow-lg flex-shrink-0 z-20">
                 <div class="p-4 md:p-6 flex justify-between items-center">
@@ -847,11 +910,14 @@ window.generarEnlaceColaborativo = async () => {
                         <button onclick="cerrarSesion()" class="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded">Salir</button>
                     </div>
                 </div>
-                <div class="px-4 pb-4 md:px-6 border-b border-slate-700 mb-2">
+<div class="px-4 pb-4 md:px-6 border-b border-slate-700 mb-2">
                     <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Perfil de Creador / Cliente</label>
-                    <select id="selectorCuentas" onchange="cambiarCuenta(this.value)" class="w-full p-2 bg-slate-800 text-sm text-white rounded outline-none border border-slate-700 mb-2 focus:ring-1 focus:ring-indigo-500 cursor-pointer">
-                    </select>
-                    <button onclick="crearNuevaCuenta()" class="w-full text-xs bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded transition font-bold shadow-md">+ Agregar Cuenta</button>
+                    <div class="flex gap-2 mb-2">
+                        <select id="selectorCuentas" onchange="cambiarCuenta(this.value)" class="flex-1 p-2 bg-slate-800 text-sm text-white rounded outline-none border border-slate-700 focus:ring-1 focus:ring-indigo-500 cursor-pointer">
+                        </select>
+                        <button onclick="abrirModalEdicionCuenta()" class="bg-slate-700 hover:bg-slate-600 px-3 rounded-lg text-white transition shadow-sm" title="Ajustes de cuenta actual">⚙️</button>
+                    </div>
+                    <button onclick="abrirModalNuevaCuenta()" class="w-full text-xs bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg transition font-bold shadow-md">+ Agregar Cuenta</button>
                 </div>
                 <nav class="flex md:flex-col overflow-x-auto md:overflow-visible px-4 pb-4 md:pb-0 space-x-2 md:space-x-0 md:space-y-2 custom-scroll flex-1">
                     <button onclick="switchTab('estrategia')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition" id="btn-estrategia">1. Estrategia y Marca</button>
