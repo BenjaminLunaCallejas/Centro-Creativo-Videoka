@@ -301,7 +301,7 @@ window.descargarDatosNube = () => {
         plannerSnapshotUnsubscribe();
     }
     
-    // Suscripción al flujo de datos del documento
+// Suscripción al flujo de datos del documento
     plannerSnapshotUnsubscribe = onSnapshot(doc(window.db, "videoka_planner", docId), (docSnap) => {
         if (docSnap.exists()) {
             // Activamos la bandera para evitar el bucle de subida en localstorage
@@ -326,11 +326,14 @@ window.descargarDatosNube = () => {
             
             // Desactivar bandera una vez finalizado el renderizado
             window.isUpdatingFromCloud = false; 
+            window.dataLoadedFromCloud = true; // <-- NUEVO: Desbloqueamos la subida de datos
+        } else {
+            // Si el doc no existe, es un usuario nuevo, le quitamos el candado
+            window.dataLoadedFromCloud = true; // <-- NUEVO
         }
     }, (error) => {
         console.error("Fallo en la resolución del socket en tiempo real:", error);
     });
-};
 
 // 2. SUBIDA SEGURA: Sincronización corregida para evitar doble sufijo
 window.syncToCloud = async () => {
@@ -384,8 +387,9 @@ window.syncToCloud = async () => {
 // Llaves del sistema que no deben dividirse por cliente
         const systemKeys = ['videoka_profiles', 'videoka_active_profile'];
         
-        // BANDERA DE CONTROL DE CONCURRENCIA
+// BANDERA DE CONTROL DE CONCURRENCIA
         window.isUpdatingFromCloud = false;
+        window.dataLoadedFromCloud = false; // <-- NUEVO: Candado de seguridad de inicio
         
         // 👇 CORRECCIÓN AQUÍ: Declaración formal del temporizador
 let syncTimeout = null;
@@ -442,8 +446,9 @@ localStorage.setItem = function(key, value) {
     originalSetItem.call(this, profileKey, value);
 
     // CONTROL DE CONCURRENCIA: 
-    // Solo subir a la nube si el cambio fue originado por una interacción local del usuario.
-    if (!window.isUpdatingFromCloud) {
+    // Solo subir a la nube si el cambio fue originado por una interacción local del usuario
+    // Y si YA verificamos/descargamos los datos de la nube.
+    if (!window.isUpdatingFromCloud && window.dataLoadedFromCloud) { // <-- AQUI SE APLICA EL CANDADO
         if (syncTimeout !== null) {
             clearTimeout(syncTimeout);
         }
