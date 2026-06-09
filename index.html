@@ -228,7 +228,7 @@ window.iniciarSesionGoogle = () => {
 };
 
 // 2. Observador global con validación para Modo Compartido
-onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, (user) => {
     // Verificamos si la URL trae un parámetro de edición compartida
     const urlParams = new URLSearchParams(window.location.search);
     const sharedId = urlParams.get('shared');
@@ -247,29 +247,33 @@ onAuthStateChanged(auth, async (user) => {
             loginScreen.classList.add('hidden');
         }
         
-        // NUEVO: Descargar la lista de perfiles desde la nube al iniciar sesión
-        try {
-            const docRef = doc(db, "videoka_master", user.uid);
-            const docSnap = await getDoc(docRef);
+        // SOLUCIÓN 1: Escuchar en TIEMPO REAL los perfiles desde la nube (evita sobreescritura accidental)
+        const docRef = doc(window.db, "videoka_master", user.uid);
+        onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists() && docSnap.data().profiles) {
                 window.creatorProfiles = docSnap.data().profiles;
-                originalSetItem.call(localStorage, 'videoka_profiles', JSON.stringify(window.creatorProfiles));
+                // Usamos el setItem original para guardar la lista sin accionar la sincronización de guiones
+                const setItemMethod = (typeof originalSetItem !== 'undefined') ? originalSetItem : localStorage.setItem;
+                setItemMethod.call(localStorage, 'videoka_profiles', JSON.stringify(window.creatorProfiles));
                 
                 // Verificar si la cuenta activa actual no fue archivada en otro dispositivo
                 const activeExists = window.creatorProfiles.find(p => p.id === window.currentProfileId && !p.archived);
                 if (!activeExists) {
                     const firstActive = window.creatorProfiles.find(p => !p.archived);
-                    window.currentProfileId = firstActive ? firstActive.id : 'default';
-                    originalSetItem.call(localStorage, 'videoka_active_profile', window.currentProfileId);
+                    if (firstActive) {
+                        window.currentProfileId = firstActive.id;
+                        setItemMethod.call(localStorage, 'videoka_active_profile', window.currentProfileId);
+                        window.location.reload(); 
+                    }
                 }
                 if (window.renderSelectorCuentas) window.renderSelectorCuentas();
             } else {
-                // Si no hay nube aún, forzar la subida de lo que hay en local
                 if (window.syncProfilesToCloud) window.syncProfilesToCloud();
             }
-        } catch (e) {
-            console.error("Error sincronizando perfiles al inicio:", e);
-        }
+        });
+
+        // SOLUCIÓN 2: Descargar automáticamente la info de los videos al loguearse
+        if (window.descargarDatosNube) window.descargarDatosNube();
 
     } else {
         window.currentUserUID = null;
@@ -280,41 +284,68 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
         
-        window.cerrarSesion = () => signOut(auth).then(() => window.location.reload());
+window.cerrarSesion = () => signOut(auth).then(() => window.location.reload());
 
-        let syncTimeout = null;
-        window.syncToCloud = async () => {
-            if (!window.currentUserUID) return;
-            const fullData = {
-                contentIdeas: localStorage.getItem('contentIdeas'),
-                ejesTags: localStorage.getItem('ejesTags'),
-                contentTasks: localStorage.getItem('contentTasks'),
-                blocNotasTasks: localStorage.getItem('blocNotasTasks'),
-                historyTasks: localStorage.getItem('historyTasks'),
-                historyNotas: localStorage.getItem('historyNotas'),
-                tablaIAGuardada: localStorage.getItem('tablaIAGuardada'),
-                temaCentral: localStorage.getItem('temaCentral'),
-                descCreador: localStorage.getItem('descCreador'),
-                identidadTono: localStorage.getItem('identidadTono'),
-                nichoContenido: localStorage.getItem('nichoContenido'),
-                publicoObjetivo: localStorage.getItem('publicoObjetivo'),
-                strat_awareness: localStorage.getItem('strat_awareness'),
-                strat_consideracion: localStorage.getItem('strat_consideracion'),
-                strat_conversion: localStorage.getItem('strat_conversion'),
-                strat_fidelizacion: localStorage.getItem('strat_fidelizacion'),
-                arquetiposSeleccionados: localStorage.getItem('arquetiposSeleccionados')
-            };
-            for(let i=1; i<=3; i++) {
-                fullData[`starFormat${i}_name`] = localStorage.getItem(`starFormat${i}_name`);
-                fullData[`starFormat${i}_desc`] = localStorage.getItem(`starFormat${i}_desc`);
-            }
-            try {
-                const docId = window.currentProfileId === 'default' 
-    ? window.currentUserUID 
-    : window.currentUserUID + "_" + window.currentProfileId;
-await setDoc(doc(db, "videoka_planner", docId), fullData);
-            } catch (e) { console.error("Error guardando:", e); }
-        };
+// NUEVA FUNCIÓN: Descarga los datos (guiones, ideas, ajustes) de la nube a tu dispositivo actual
+window.descargarDatosNube = async () => {
+    if (!window.currentUserUID) return;
+    const docId = window.currentProfileId === 'default' 
+        ? window.currentUserUID 
+        : window.currentUserUID + "_" + window.currentProfileId;
+    
+    try {
+        const docSnap = await getDoc(doc(window.db, "videoka_planner", docId));
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            const keys = ['contentIdeas', 'ejesTags', 'contentTasks', 'blocNotasTasks', 'historyTasks', 'historyNotas', 'tablaIAGuardada', 'temaCentral', 'descCreador', 'identidadTono', 'nichoContenido', 'publicoObjetivo', 'strat_awareness', 'strat_consideracion', 'strat_conversion', 'strat_fidelizacion', 'arquetiposSeleccionados', 'starFormat1_name', 'starFormat1_desc', 'starFormat2_name', 'starFormat2_desc', 'starFormat3_name', 'starFormat3_desc'];
+            
+            const setItemMethod = (typeof originalSetItem !== 'undefined') ? originalSetItem : localStorage.setItem;
+            
+            keys.forEach(k => {
+                if (data[k] !== undefined) {
+                    const profileKey = window.currentProfileId === 'default' ? k : k + '_' + window.currentProfileId;
+                    setItemMethod.call(localStorage, profileKey, data[k]);
+                }
+            });
+            // Refrescar toda la app con los nuevos datos descargados
+            if (window.initAppState) window.initAppState();
+        }
+    } catch (e) { console.error("Error descargando datos:", e); }
+};
+
+let syncTimeout = null;
+window.syncToCloud = async () => {
+    if (!window.currentUserUID) return;
+    const fullData = {
+        contentIdeas: localStorage.getItem('contentIdeas'),
+        ejesTags: localStorage.getItem('ejesTags'),
+        contentTasks: localStorage.getItem('contentTasks'),
+        blocNotasTasks: localStorage.getItem('blocNotasTasks'),
+        historyTasks: localStorage.getItem('historyTasks'),
+        historyNotas: localStorage.getItem('historyNotas'),
+        tablaIAGuardada: localStorage.getItem('tablaIAGuardada'),
+        temaCentral: localStorage.getItem('temaCentral'),
+        descCreador: localStorage.getItem('descCreador'),
+        identidadTono: localStorage.getItem('identidadTono'),
+        nichoContenido: localStorage.getItem('nichoContenido'),
+        publicoObjetivo: localStorage.getItem('publicoObjetivo'),
+        strat_awareness: localStorage.getItem('strat_awareness'),
+        strat_consideracion: localStorage.getItem('strat_consideracion'),
+        strat_conversion: localStorage.getItem('strat_conversion'),
+        strat_fidelizacion: localStorage.getItem('strat_fidelizacion'),
+        arquetiposSeleccionados: localStorage.getItem('arquetiposSeleccionados')
+    };
+    for(let i=1; i<=3; i++) {
+        fullData[`starFormat${i}_name`] = localStorage.getItem(`starFormat${i}_name`);
+        fullData[`starFormat${i}_desc`] = localStorage.getItem(`starFormat${i}_desc`);
+    }
+    try {
+        const docId = window.currentProfileId === 'default' 
+            ? window.currentUserUID 
+            : window.currentUserUID + "_" + window.currentProfileId;
+        await setDoc(doc(window.db, "videoka_planner", docId), fullData);
+    } catch (e) { console.error("Error guardando:", e); }
+};
 
 // --- INICIO LÓGICA MULTI-CUENTA ---
         const originalSetItem = localStorage.setItem;
