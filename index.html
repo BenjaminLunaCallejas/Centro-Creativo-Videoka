@@ -287,8 +287,10 @@ onAuthStateChanged(auth, (user) => {
 window.cerrarSesion = () => signOut(auth).then(() => window.location.reload());
 
 // NUEVA FUNCIÓN: Descarga los datos (guiones, ideas, ajustes) de la nube a tu dispositivo actual
+// 1. DESCARGA SEGURA: Trae los datos de Firebase y los acomoda en su lugar correcto
 window.descargarDatosNube = async () => {
     if (!window.currentUserUID) return;
+    
     const docId = window.currentProfileId === 'default' 
         ? window.currentUserUID 
         : window.currentUserUID + "_" + window.currentProfileId;
@@ -303,14 +305,62 @@ window.descargarDatosNube = async () => {
             
             keys.forEach(k => {
                 if (data[k] !== undefined) {
+                    const valueToSave = (data[k] === null || data[k] === "null") ? "" : data[k];
+                    
+                    // Si es 'default', guarda en 'contentIdeas'. Si no, en 'contentIdeas_Perfil'
                     const profileKey = window.currentProfileId === 'default' ? k : k + '_' + window.currentProfileId;
-                    setItemMethod.call(localStorage, profileKey, data[k]);
+                    
+                    setItemMethod.call(localStorage, profileKey, valueToSave);
                 }
             });
-            // Refrescar toda la app con los nuevos datos descargados
+            
             if (window.initAppState) window.initAppState();
         }
     } catch (e) { console.error("Error descargando datos:", e); }
+};
+
+// 2. SUBIDA SEGURA: Sabe exactamente de qué llave del localStorage leer según el perfil activo
+window.syncToCloud = async () => {
+    if (!window.currentUserUID) return;
+    
+    // CORRECCIÓN VITAL: safeGet ahora sabe si debe buscar con prefijo o no
+    const safeGet = (key) => {
+        const profileKey = window.currentProfileId === 'default' ? key : key + '_' + window.currentProfileId;
+        const val = localStorage.getItem(profileKey);
+        return (val === "null" || val === null) ? "" : val;
+    };
+
+    const fullData = {
+        contentIdeas: safeGet('contentIdeas'),
+        ejesTags: safeGet('ejesTags'),
+        contentTasks: safeGet('contentTasks'),
+        blocNotasTasks: safeGet('blocNotasTasks'),
+        historyTasks: safeGet('historyTasks'),
+        historyNotas: safeGet('historyNotas'),
+        tablaIAGuardada: safeGet('tablaIAGuardada'),
+        temaCentral: safeGet('temaCentral'),
+        descCreador: safeGet('descCreador'),
+        identidadTono: safeGet('identidadTono'),
+        nichoContenido: safeGet('nichoContenido'),
+        publicoObjetivo: safeGet('publicoObjetivo'),
+        strat_awareness: safeGet('strat_awareness'),
+        strat_consideracion: safeGet('strat_consideracion'),
+        strat_conversion: safeGet('strat_conversion'),
+        strat_fidelizacion: safeGet('strat_fidelizacion'),
+        arquetiposSeleccionados: safeGet('arquetiposSeleccionados')
+    };
+    
+    for(let i=1; i<=3; i++) {
+        fullData[`starFormat${i}_name`] = safeGet(`starFormat${i}_name`);
+        fullData[`starFormat${i}_desc`] = safeGet(`starFormat${i}_desc`);
+    }
+    
+    try {
+        const docId = window.currentProfileId === 'default' 
+            ? window.currentUserUID 
+            : window.currentUserUID + "_" + window.currentProfileId;
+        await setDoc(doc(window.db, "videoka_planner", docId), fullData);
+    } catch (e) { console.error("Error guardando en la nube:", e); }
 };
 
 let syncTimeout = null;
