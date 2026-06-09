@@ -386,6 +386,9 @@ window.syncToCloud = async () => {
         
         // BANDERA DE CONTROL DE CONCURRENCIA
         window.isUpdatingFromCloud = false;
+        
+        // 👇 CORRECCIÓN AQUÍ: Declaración formal del temporizador
+let syncTimeout = null;
 
         // INGENIERÍA DE MULTI-PESTAÑA (Session Isolation)
         // 1. Prioridad: URL (permite abrir en nueva pestaña con cuenta específica)
@@ -430,21 +433,23 @@ window.syncToCloud = async () => {
         };
 
 // Interceptar cuando la app GUARDA datos
-        localStorage.setItem = function(key, value) {
-            if (systemKeys.includes(key) || key.startsWith('firebase:')) {
-                originalSetItem.call(this, key, value);
-                return;
-            }
-            const profileKey = window.currentProfileId === 'default' ? key : key + '_' + window.currentProfileId;
-            originalSetItem.call(this, profileKey, value);
+localStorage.setItem = function(key, value) {
+    if (systemKeys.includes(key) || key.startsWith('firebase:')) {
+        originalSetItem.call(this, key, value);
+        return;
+    }
+    const profileKey = window.currentProfileId === 'default' ? key : key + '_' + window.currentProfileId;
+    originalSetItem.call(this, profileKey, value);
 
-            // CONTROL DE CONCURRENCIA: 
-            // Solo subir a la nube si el cambio fue originado por una interacción local del usuario.
-            if (!window.isUpdatingFromCloud) {
-                if (syncTimeout) clearTimeout(syncTimeout);
-                syncTimeout = setTimeout(window.syncToCloud, 1000);
-            }
-        };
+    // CONTROL DE CONCURRENCIA: 
+    // Solo subir a la nube si el cambio fue originado por una interacción local del usuario.
+    if (!window.isUpdatingFromCloud) {
+        if (syncTimeout !== null) {
+            clearTimeout(syncTimeout);
+        }
+        syncTimeout = setTimeout(window.syncToCloud, 1000);
+    }
+};
 
         // Funciones para la interfaz
 window.cambiarCuenta = function(id) {
