@@ -2067,7 +2067,7 @@ ENTREGABLES ADICIONALES (Debajo del guion):
                         <div><span class="text-gray-400 font-bold uppercase block">🤝 Colaboración:</span> ${idea.colaboracion}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">🌐 Plataformas:</span> ${(idea.plataformas && idea.plataformas.length > 0) ? idea.plataformas.join(', ') : 'N/A'}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">📊 Progreso:</span> ${idea.progreso || 'Planeación'}</div>
-                        <div><span class="text-gray-400 font-bold uppercase block">⭐ F. Estrella:</span> ${idea.starFormat || 'Ninguno'}</div>
+                        <div><span class="text-gray-400 font-bold uppercase block">⭐ Formato Estrella:</span> ${idea.starFormat || 'Ninguno'}</div>
                     </div>
                     ${idea.hook ? `<div class="mt-4 p-3 bg-indigo-50 border-l-4 border-indigo-500 text-xs italic"><b>Gancho:</b> "${idea.hook}"</div>` : ''}
                     ${idea.enlaces ? `<div class="mt-2 p-3 bg-slate-50 border border-gray-200 rounded-lg text-xs font-mono text-gray-600"><b>Enlaces de Referencia:</b><br>${idea.enlaces.replace(/\n/g, '<br>')}</div>` : ''}
@@ -2126,7 +2126,7 @@ function copyToClipboardData(id) {
         const progresoTexto = idea.progreso || 'Planeación';
 
         // Estructura maestra del texto a copiar
-        let text = `📌 ESTRATEGIA: ${idea.titulo}
+        let text = `📌 TÍTULO DEL GUIÓN: ${idea.titulo}
 
 📊 DETALLES GENERALES:
 • Formato Digital: ${idea.formato || 'N/A'}
