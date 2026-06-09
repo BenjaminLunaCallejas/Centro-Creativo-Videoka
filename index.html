@@ -2282,46 +2282,62 @@ ${idea.copy || 'N/A'}`;
         }
 
         function guardarYProcesarTabla() {
-            const textarea = document.getElementById('tablaIAPaste');
-            const content = textarea.value.trim();
-            const container = document.getElementById('calendarioTablaContainer');
-            if (!content) { alert("Por favor, ingresa los datos de la tabla."); return; }
+    const textarea = document.getElementById('tablaIAPaste');
+    const content = textarea.value.trim();
+    const container = document.getElementById('calendarioTablaContainer');
+    if (!content) { alert("Por favor, ingresa los datos de la tabla."); return; }
 
-            const rows = content.split(/\r?\n/);
-            tablaIAParsed = [];
+    const rows = content.split(/\r?\n/);
+    tablaIAParsed = [];
 
-            rows.forEach((row) => {
-                let columns = [];
-                let raw = row.trim();
-                if (raw.includes('|')) {
-                    if (raw.startsWith('|')) raw = raw.substring(1);
-                    if (raw.endsWith('|')) raw = raw.substring(0, raw.length - 1);
-                    columns = raw.split('|').map(c => c.trim());
-                } else if (raw.includes('\t')) {
-                    columns = raw.split('\t').map(c => c.trim());
-                } else if (raw.includes(',')) {
-                    columns = raw.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => {
-                        let val = c.trim();
-                        if (val.startsWith('"') && val.endsWith('"')) val = val.substring(1, val.length - 1);
-                        return val.replace(/""/g, '"');
-                    });
+    rows.forEach((row) => {
+        let columns = [];
+        let raw = row.trim();
+        
+        if (raw.includes('|')) {
+            if (raw.startsWith('|')) raw = raw.substring(1);
+            if (raw.endsWith('|')) raw = raw.substring(0, raw.length - 1);
+            columns = raw.split('|').map(c => c.trim());
+        } else if (raw.includes('\t')) {
+            columns = raw.split('\t').map(c => c.trim());
+        } else if (raw.includes(',')) {
+            // --- INICIO DEL NUEVO CÓDIGO ANTICRASHEOS ---
+            let inQuotes = false;
+            let current = '';
+            for (let i = 0; i < raw.length; i++) {
+                if (raw[i] === '"') inQuotes = !inQuotes;
+                else if (raw[i] === ',' && !inQuotes) {
+                    columns.push(current);
+                    current = '';
+                    continue;
                 }
-
-                if (columns.length >= 7 && !columns[0].includes('---')) {
-                    if (columns[0].toLowerCase().includes('día') || columns[0].toLowerCase().includes('dia')) return;
-                    tablaIAParsed.push({
-                        dia: columns[0] || '', tipo: columns[1] || '', tema: columns[2] || '',
-                        formato: columns[3] || '', hook: columns[4] || '', contenido: columns[5] || '',
-                        guionBase: columns[6] || '', cta: columns[7] || ''
-                    });
-                }
+                current += raw[i];
+            }
+            columns.push(current);
+            
+            columns = columns.map(c => {
+                let val = c.trim();
+                if (val.startsWith('"') && val.endsWith('"')) val = val.substring(1, val.length - 1);
+                return val.replace(/""/g, '"');
             });
-
-            localStorage.setItem('tablaIAGuardada', JSON.stringify(tablaIAParsed));
-            textarea.value = '';
-            renderTablaCalendario();
-            alert("✅ Tabla procesada y guardada con éxito.");
+            // --- FIN DEL NUEVO CÓDIGO ANTICRASHEOS ---
         }
+
+        if (columns.length >= 7 && !columns[0].includes('---')) {
+            if (columns[0].toLowerCase().includes('día') || columns[0].toLowerCase().includes('dia')) return;
+            tablaIAParsed.push({
+                dia: columns[0] || '', tipo: columns[1] || '', tema: columns[2] || '',
+                formato: columns[3] || '', hook: columns[4] || '', contenido: columns[5] || '',
+                guionBase: columns[6] || '', cta: columns[7] || ''
+            });
+        }
+    });
+
+    localStorage.setItem('tablaIAGuardada', JSON.stringify(tablaIAParsed));
+    textarea.value = '';
+    renderTablaCalendario();
+    alert("✅ Tabla procesada y guardada con éxito.");
+}
 
         function renderTablaCalendario() {
             const container = document.getElementById('calendarioTablaContainer');
