@@ -287,17 +287,19 @@ onAuthStateChanged(auth, (user) => {
 window.cerrarSesion = () => signOut(auth).then(() => window.location.reload());
 
 // NUEVA FUNCIÓN: Descarga los datos (guiones, ideas, ajustes) de la nube a tu dispositivo actual
-// 1. DESCARGA SEGURA: Trae los datos de Firebase y los acomoda en su lugar correcto
-window.descargarDatosNube = async () => {
+// 1. DESCARGA SEGURA EN TIEMPO REAL
+window.descargarDatosNube = () => {
     if (!window.currentUserUID) return;
     
     const docId = window.currentProfileId === 'default' 
         ? window.currentUserUID 
         : window.currentUserUID + "_" + window.currentProfileId;
     
-    try {
-        const docSnap = await getDoc(doc(window.db, "videoka_planner", docId));
+    // Cambiamos getDoc por onSnapshot para que se actualice solo
+    onSnapshot(doc(window.db, "videoka_planner", docId), (docSnap) => {
         if (docSnap.exists()) {
+            window.isDownloading = true; // PONER CANDADO: Evita sobreescribir la nube
+
             const data = docSnap.data();
             const keys = ['contentIdeas', 'ejesTags', 'contentTasks', 'blocNotasTasks', 'historyTasks', 'historyNotas', 'tablaIAGuardada', 'temaCentral', 'descCreador', 'identidadTono', 'nichoContenido', 'publicoObjetivo', 'strat_awareness', 'strat_consideracion', 'strat_conversion', 'strat_fidelizacion', 'arquetiposSeleccionados', 'starFormat1_name', 'starFormat1_desc', 'starFormat2_name', 'starFormat2_desc', 'starFormat3_name', 'starFormat3_desc'];
             
@@ -306,17 +308,18 @@ window.descargarDatosNube = async () => {
             keys.forEach(k => {
                 if (data[k] !== undefined) {
                     const valueToSave = (data[k] === null || data[k] === "null") ? "" : data[k];
-                    
-                    // Si es 'default', guarda en 'contentIdeas'. Si no, en 'contentIdeas_Perfil'
                     const profileKey = window.currentProfileId === 'default' ? k : k + '_' + window.currentProfileId;
-                    
                     setItemMethod.call(localStorage, profileKey, valueToSave);
                 }
             });
             
+            // Recargar la interfaz con los nuevos datos
             if (window.initAppState) window.initAppState();
+
+            // QUITAR CANDADO después de 500ms para permitir futuras ediciones locales
+            setTimeout(() => { window.isDownloading = false; }, 500);
         }
-    } catch (e) { console.error("Error descargando datos:", e); }
+    });
 };
 
 // 2. SUBIDA SEGURA: Sabe exactamente de qué llave del localStorage leer según el perfil activo
@@ -364,6 +367,7 @@ window.syncToCloud = async () => {
 };
 
 let syncTimeout = null;
+window.isDownloading = false; // NUEVO: Candado de sincronización
 
 // --- INICIO LÓGICA MULTI-CUENTA ---
         const originalSetItem = localStorage.setItem;
@@ -398,18 +402,21 @@ let syncTimeout = null;
             return originalGetItem.call(this, profileKey);
         };
 
-        // Interceptar cuando la app GUARDA datos
-        localStorage.setItem = function(key, value) {
-            if (systemKeys.includes(key) || key.startsWith('firebase:')) {
-                originalSetItem.call(this, key, value);
-                return;
-            }
-            const profileKey = window.currentProfileId === 'default' ? key : key + '_' + window.currentProfileId;
-            originalSetItem.call(this, profileKey, value);
+// Interceptar cuando la app GUARDA datos
+localStorage.setItem = function(key, value) {
+    if (systemKeys.includes(key) || key.startsWith('firebase:')) {
+        originalSetItem.call(this, key, value);
+        return;
+    }
+    const profileKey = window.currentProfileId === 'default' ? key : key + '_' + window.currentProfileId;
+    originalSetItem.call(this, profileKey, value);
 
-            if (syncTimeout) clearTimeout(syncTimeout);
-            syncTimeout = setTimeout(window.syncToCloud, 1000);
-        };
+    // NUEVO: Solo subir a la nube si NO estamos en medio de una descarga
+    if (!window.isDownloading) {
+        if (syncTimeout) clearTimeout(syncTimeout);
+        syncTimeout = setTimeout(window.syncToCloud, 1000);
+    }
+};
 
         // Funciones para la interfaz
         window.cambiarCuenta = function(id) {
