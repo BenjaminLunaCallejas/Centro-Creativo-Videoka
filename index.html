@@ -508,9 +508,13 @@ window.aplicarAuditoria = () => {
             btnSync.innerText = "⬇️ Sincronizar cambios de la nube";
         };
         
-        window.generarEnlaceColaborativo = async () => {
+window.generarEnlaceColaborativo = async () => {
             if(!window.db) return alert("Debes iniciar sesión para generar un enlace en vivo.");
             
+            // NUEVO: Capturar las plataformas antes de armar el payload
+            const checkboxes = document.querySelectorAll('.plataforma-cb:checked');
+            const plataformasSeleccionadas = Array.from(checkboxes).map(cb => cb.value);
+
             const payload = {
                 titulo: document.getElementById('ideaTitulo').value || 'Sin título',
                 formato: document.getElementById('ideaFormato').value,
@@ -519,6 +523,11 @@ window.aplicarAuditoria = () => {
                 tipoEstrategico: document.getElementById('ideaTipoEstrategico').value,
                 colaboracion: document.getElementById('ideaColaboracion').value,
                 publicacion: document.getElementById('ideaPublicacion').value,
+                
+                // NUEVO: Guardar Plataformas y Progreso
+                plataformas: plataformasSeleccionadas,
+                progreso: document.getElementById('ideaProgreso').value,
+                
                 fecha: document.getElementById('ideaFecha').value,
                 hora: document.getElementById('ideaHora').value,
                 starFormat: document.getElementById('ideaStarFormat').value,
@@ -552,6 +561,11 @@ window.aplicarAuditoria = () => {
                 navigator.clipboard.writeText(shareUrl).then(() => {
                     alert(`¡Enlace generado y copiado!`);
                 });
+            } catch (error) {
+                console.error("Error al exportar sesión:", error);
+                alert("Error al conectar con la nube.");
+            }
+        };
             } catch (error) {
                 console.error("Error al exportar sesión:", error);
                 alert("Error al conectar con la nube.");
@@ -2056,6 +2070,9 @@ ENTREGABLES ADICIONALES (Debajo del guion):
                         <div><span class="text-gray-400 font-bold uppercase block">🎯 Objetivo:</span> ${idea.objetivo}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">⚡ Estrategia:</span> ${idea.tipoEstrategico}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">🤝 Colaboración:</span> ${idea.colaboracion}</div>
+                        <div><span class="text-gray-400 font-bold uppercase block">🌐 Plataformas:</span> ${(idea.plataformas && idea.plataformas.length > 0) ? idea.plataformas.join(', ') : 'N/A'}</div>
+                        <div><span class="text-gray-400 font-bold uppercase block">📊 Progreso:</span> ${idea.progreso || 'Planeación'}</div>
+                        <div><span class="text-gray-400 font-bold uppercase block">⭐ F. Estrella:</span> ${idea.starFormat || 'Ninguno'}</div>
                     </div>
                     ${idea.hook ? `<div class="mt-4 p-3 bg-indigo-50 border-l-4 border-indigo-500 text-xs italic"><b>Gancho:</b> "${idea.hook}"</div>` : ''}
                     ${idea.enlaces ? `<div class="mt-2 p-3 bg-slate-50 border border-gray-200 rounded-lg text-xs font-mono text-gray-600"><b>Enlaces de Referencia:</b><br>${idea.enlaces.replace(/\n/g, '<br>')}</div>` : ''}
@@ -2106,23 +2123,52 @@ ENTREGABLES ADICIONALES (Debajo del guion):
 
         function closeModal(e) { document.getElementById('modalOverlay').style.display = 'none'; }
         
-        function copyToClipboardData(id) {
+function copyToClipboardData(id) {
         const idea = ideas.find(i => i.id == id);
-            
-      let text = `ESTRATEGIA: ${idea.titulo}\n\nGANCHO: ${idea.hook}\n\nGUIÓN:\n${idea.guion}\n\nCOPY:\n${idea.copy}`;
         
-        // Evaluaciones condicionales: Solo se agregan las secciones si el string no está vacío ni es indefinido.
+        // Condicionales para arreglos como plataformas
+        const plataformasTexto = (idea.plataformas && idea.plataformas.length > 0) ? idea.plataformas.join(', ') : 'N/A';
+        const progresoTexto = idea.progreso || 'Planeación';
+
+        // Estructura maestra del texto a copiar
+        let text = `📌 ESTRATEGIA: ${idea.titulo}
+
+📊 DETALLES GENERALES:
+• Formato Digital: ${idea.formato || 'N/A'}
+• Tipo de Contenido: ${idea.tipo || 'N/A'}
+• Objetivo: ${idea.objetivo || 'N/A'}
+• Tipo Estratégico: ${idea.tipoEstrategico || 'N/A'}
+• Colaboración: ${idea.colaboracion || 'N/A'}
+• Tipo de Publicación: ${idea.publicacion || 'N/A'}
+• Plataformas: ${plataformasTexto}
+• Formato Estrella: ${idea.starFormat || 'Ninguno'}
+• Progreso: ${progresoTexto}
+• Fecha y Hora: ${idea.fecha || 'N/A'} | ${idea.hora || 'N/A'}
+
+🔥 GANCHO (HOOK):
+${idea.hook || 'N/A'}
+
+🎬 GUIÓN ESTRUCTURADO:
+${idea.guion || 'N/A'}
+
+✍️ COPYWRITING:
+${idea.copy || 'N/A'}`;
+        
+        // Agregar opcionales solo si existen
         if (idea.hashtags && idea.hashtags.trim() !== '') {
-            text += `\n\nHASHTAGS:\n${idea.hashtags}`;
+            text += `\n\n🏷️ HASHTAGS:\n${idea.hashtags}`;
         }
         if (idea.enlaces && idea.enlaces.trim() !== '') {
-            text += `\n\nENLACES DE REFERENCIA:\n${idea.enlaces}`;
+            text += `\n\n🔗 ENLACES DE REFERENCIA:\n${idea.enlaces}`;
         }
         if (idea.enlaceCarpeta && idea.enlaceCarpeta.trim() !== '') {
-            text += `\n\nCARPETA DE RECURSOS:\n${idea.enlaceCarpeta}`;
+            text += `\n\n📁 CARPETA DE RECURSOS:\n${idea.enlaceCarpeta}`;
+        }
+        if (idea.observaciones && idea.observaciones.trim() !== '') {
+            text += `\n\n⚠️ OBSERVACIONES:\n${idea.observaciones}`;
         }
 
-        navigator.clipboard.writeText(text).then(() => alert('¡Información copiada al portapapeles!'));
+        navigator.clipboard.writeText(text).then(() => alert('¡Información completa copiada al portapapeles!'));
     }
  function allowDrop(ev) { ev.preventDefault(); }
 
