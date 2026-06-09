@@ -364,38 +364,6 @@ window.syncToCloud = async () => {
 };
 
 let syncTimeout = null;
-window.syncToCloud = async () => {
-    if (!window.currentUserUID) return;
-    const fullData = {
-        contentIdeas: localStorage.getItem('contentIdeas'),
-        ejesTags: localStorage.getItem('ejesTags'),
-        contentTasks: localStorage.getItem('contentTasks'),
-        blocNotasTasks: localStorage.getItem('blocNotasTasks'),
-        historyTasks: localStorage.getItem('historyTasks'),
-        historyNotas: localStorage.getItem('historyNotas'),
-        tablaIAGuardada: localStorage.getItem('tablaIAGuardada'),
-        temaCentral: localStorage.getItem('temaCentral'),
-        descCreador: localStorage.getItem('descCreador'),
-        identidadTono: localStorage.getItem('identidadTono'),
-        nichoContenido: localStorage.getItem('nichoContenido'),
-        publicoObjetivo: localStorage.getItem('publicoObjetivo'),
-        strat_awareness: localStorage.getItem('strat_awareness'),
-        strat_consideracion: localStorage.getItem('strat_consideracion'),
-        strat_conversion: localStorage.getItem('strat_conversion'),
-        strat_fidelizacion: localStorage.getItem('strat_fidelizacion'),
-        arquetiposSeleccionados: localStorage.getItem('arquetiposSeleccionados')
-    };
-    for(let i=1; i<=3; i++) {
-        fullData[`starFormat${i}_name`] = localStorage.getItem(`starFormat${i}_name`);
-        fullData[`starFormat${i}_desc`] = localStorage.getItem(`starFormat${i}_desc`);
-    }
-    try {
-        const docId = window.currentProfileId === 'default' 
-            ? window.currentUserUID 
-            : window.currentUserUID + "_" + window.currentProfileId;
-        await setDoc(doc(window.db, "videoka_planner", docId), fullData);
-    } catch (e) { console.error("Error guardando:", e); }
-};
 
 // --- INICIO LÓGICA MULTI-CUENTA ---
         const originalSetItem = localStorage.setItem;
