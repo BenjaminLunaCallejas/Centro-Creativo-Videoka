@@ -187,7 +187,6 @@
         font-size: 16px !important;
     }
 }
-}
     </style>
 
     <script type="module">
@@ -561,11 +560,7 @@ window.generarEnlaceColaborativo = async () => {
                 navigator.clipboard.writeText(shareUrl).then(() => {
                     alert(`¡Enlace generado y copiado!`);
                 });
-            } catch (error) {
-                console.error("Error al exportar sesión:", error);
-                alert("Error al conectar con la nube.");
-            }
-        };
+
             } catch (error) {
                 console.error("Error al exportar sesión:", error);
                 alert("Error al conectar con la nube.");
