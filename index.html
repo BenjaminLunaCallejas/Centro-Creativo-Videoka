@@ -1104,38 +1104,41 @@ window.aplicarAuditoria = () => {
                                     <option value="Pautada">Pautada</option>
                                 </select>
                             </div>
-<div>
+<!-- NUEVO COMPONENTE: Dropdown Multiselección para Plataformas -->
+<div class="relative" id="dropdownPlataformasContainer">
     <label class="block text-sm font-semibold text-gray-600 mb-2">Plataformas donde se publicará</label>
-    <div class="w-full p-4 border rounded-lg bg-white shadow-sm">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm" id="ideaPlataformasContainer">
-            <label class="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-50 rounded-md transition-colors border border-transparent hover:border-gray-100">
-                <input type="checkbox" value="TikTok" class="plataforma-cb w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"> 
-                <span class="font-medium text-gray-700">TikTok</span>
-            </label>
-            <label class="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-50 rounded-md transition-colors border border-transparent hover:border-gray-100">
-                <input type="checkbox" value="Instagram" class="plataforma-cb w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"> 
-                <span class="font-medium text-gray-700">Instagram</span>
-            </label>
-            <label class="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-50 rounded-md transition-colors border border-transparent hover:border-gray-100">
-                <input type="checkbox" value="Facebook" class="plataforma-cb w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"> 
-                <span class="font-medium text-gray-700">Facebook</span>
-            </label>
-            <label class="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-50 rounded-md transition-colors border border-transparent hover:border-gray-100">
-                <input type="checkbox" value="YouTube" class="plataforma-cb w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"> 
-                <span class="font-medium text-gray-700">YouTube</span>
-            </label>
-            <label class="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-50 rounded-md transition-colors border border-transparent hover:border-gray-100">
-                <input type="checkbox" value="X" class="plataforma-cb w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"> 
-                <span class="font-medium text-gray-700">X</span>
-            </label>
-            <label class="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-50 rounded-md transition-colors border border-transparent hover:border-gray-100">
-                <input type="checkbox" value="LinkedIn" class="plataforma-cb w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"> 
-                <span class="font-medium text-gray-700">LinkedIn</span>
-            </label>
-            <label class="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-50 rounded-md transition-colors border border-transparent hover:border-gray-100">
-                <input type="checkbox" value="Otros" class="plataforma-cb w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"> 
-                <span class="font-medium text-gray-700">Otros</span>
-            </label>
+    <div class="relative">
+        <!-- Botón que simula el select -->
+        <button type="button" onclick="toggleDropdownPlataformas()" class="w-full p-3 border rounded-lg bg-white text-left flex justify-between items-center outline-none focus:ring-2 focus:ring-indigo-400 text-gray-700 text-sm">
+            <span id="textoPlataformas">Seleccionar plataformas...</span>
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        </button>
+        
+        <!-- Menú desplegable con las casillas -->
+        <div id="menuPlataformas" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+            <div class="p-2 space-y-1">
+                <label class="flex items-center space-x-3 p-2 hover:bg-indigo-50 rounded cursor-pointer transition-colors">
+                    <input type="checkbox" value="TikTok" class="plataforma-cb w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" onchange="actualizarTextoPlataformas()"> <span class="text-sm font-medium text-gray-700">TikTok</span>
+                </label>
+                <label class="flex items-center space-x-3 p-2 hover:bg-indigo-50 rounded cursor-pointer transition-colors">
+                    <input type="checkbox" value="Instagram" class="plataforma-cb w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" onchange="actualizarTextoPlataformas()"> <span class="text-sm font-medium text-gray-700">Instagram</span>
+                </label>
+                <label class="flex items-center space-x-3 p-2 hover:bg-indigo-50 rounded cursor-pointer transition-colors">
+                    <input type="checkbox" value="Facebook" class="plataforma-cb w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" onchange="actualizarTextoPlataformas()"> <span class="text-sm font-medium text-gray-700">Facebook</span>
+                </label>
+                <label class="flex items-center space-x-3 p-2 hover:bg-indigo-50 rounded cursor-pointer transition-colors">
+                    <input type="checkbox" value="YouTube" class="plataforma-cb w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" onchange="actualizarTextoPlataformas()"> <span class="text-sm font-medium text-gray-700">YouTube</span>
+                </label>
+                <label class="flex items-center space-x-3 p-2 hover:bg-indigo-50 rounded cursor-pointer transition-colors">
+                    <input type="checkbox" value="X" class="plataforma-cb w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" onchange="actualizarTextoPlataformas()"> <span class="text-sm font-medium text-gray-700">X</span>
+                </label>
+                <label class="flex items-center space-x-3 p-2 hover:bg-indigo-50 rounded cursor-pointer transition-colors">
+                    <input type="checkbox" value="LinkedIn" class="plataforma-cb w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" onchange="actualizarTextoPlataformas()"> <span class="text-sm font-medium text-gray-700">LinkedIn</span>
+                </label>
+                <label class="flex items-center space-x-3 p-2 hover:bg-indigo-50 rounded cursor-pointer transition-colors">
+                    <input type="checkbox" value="Otros" class="plataforma-cb w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" onchange="actualizarTextoPlataformas()"> <span class="text-sm font-medium text-gray-700">Otros</span>
+                </label>
+            </div>
         </div>
     </div>
 </div>
@@ -1597,12 +1600,16 @@ let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
             select.value = valorActual;
         }
 
-        function guardarIdea() {
+function guardarIdea() {
             const titulo = document.getElementById('ideaTitulo').value;
             if (!titulo) return alert('Título requerido');
 
             const ideaActual = ideas.find(i => i.id === editandoId);
             const sharedId = ideaActual ? (ideaActual.sharedId || null) : null;
+
+            // NUEVO: Capturar las plataformas marcadas en el menú desplegable antes de crear el objeto
+            const checkboxes = document.querySelectorAll('.plataforma-cb:checked');
+            const plataformasSeleccionadas = Array.from(checkboxes).map(cb => cb.value);
 
             const datos = {
                 id: editandoId || Date.now(),
@@ -1614,6 +1621,11 @@ let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
                 tipoEstrategico: document.getElementById('ideaTipoEstrategico').value,
                 colaboracion: document.getElementById('ideaColaboracion').value,
                 publicacion: document.getElementById('ideaPublicacion').value,
+                
+                // NUEVO: Integración de las nuevas variables al objeto
+                plataformas: plataformasSeleccionadas,
+                progreso: document.getElementById('ideaProgreso').value,
+
                 fecha: document.getElementById('ideaFecha').value,
                 hora: document.getElementById('ideaHora').value,
                 starFormat: document.getElementById('ideaStarFormat').value,
@@ -1623,7 +1635,7 @@ let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
                 guion: document.getElementById('ideaGuion').value,
                 copy: document.getElementById('ideaCopy').value,
                 hashtags: document.getElementById('ideaHashtags').value,
-enlaceCarpeta: document.getElementById('ideaEnlaceCarpeta').value,
+                enlaceCarpeta: document.getElementById('ideaEnlaceCarpeta').value,
                 observaciones: document.getElementById('ideaObservaciones').value
             };
             
@@ -1636,7 +1648,7 @@ enlaceCarpeta: document.getElementById('ideaEnlaceCarpeta').value,
             }
 
             localStorage.setItem('contentIdeas', JSON.stringify(ideas));
-            cancelarEdicion();
+            cancelarEdicion(); // Esta función ya limpiará las casillas gracias a la modificación del paso anterior
             renderIdeas();
             if (editandoId) renderCalendario('mes');
         }
@@ -2430,6 +2442,33 @@ ENTREGABLES ADICIONALES (Debajo del guion):
             initAppState();
             autoResizeTextareas();
         });
+        // --- LÓGICA PARA EL MENÚ DESPLEGABLE DE PLATAFORMAS ---
+function toggleDropdownPlataformas() {
+    const menu = document.getElementById('menuPlataformas');
+    menu.classList.toggle('hidden');
+}
+
+function actualizarTextoPlataformas() {
+    const checkboxes = document.querySelectorAll('.plataforma-cb:checked');
+    const texto = document.getElementById('textoPlataformas');
+    
+    if (checkboxes.length === 0) {
+        texto.innerText = 'Seleccionar plataformas...';
+    } else if (checkboxes.length === 1) {
+        texto.innerText = checkboxes[0].value;
+    } else {
+        texto.innerText = `${checkboxes.length} plataformas seleccionadas`;
+    }
+}
+
+// Cierra el menú desplegable si haces clic fuera de él
+document.addEventListener('click', function(event) {
+    const container = document.getElementById('dropdownPlataformasContainer');
+    const menu = document.getElementById('menuPlataformas');
+    if (container && menu && !container.contains(event.target)) {
+        menu.classList.add('hidden');
+    }
+});
     </script>
 </body>
 </html>
