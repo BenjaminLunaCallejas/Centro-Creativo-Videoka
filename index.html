@@ -247,22 +247,25 @@ onAuthStateChanged(auth, (user) => {
             loginScreen.classList.add('hidden');
         }
         
-        // SOLUCIÓN 1: Escuchar en TIEMPO REAL los perfiles desde la nube (evita sobreescritura accidental)
+        // SOLUCIÓN 1: Escuchar en TIEMPO REAL los perfiles desde la nube
         const docRef = doc(window.db, "videoka_master", user.uid);
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists() && docSnap.data().profiles) {
                 window.creatorProfiles = docSnap.data().profiles;
-                // Usamos el setItem original para guardar la lista sin accionar la sincronización de guiones
                 const setItemMethod = (typeof originalSetItem !== 'undefined') ? originalSetItem : localStorage.setItem;
                 setItemMethod.call(localStorage, 'videoka_profiles', JSON.stringify(window.creatorProfiles));
                 
-                // Verificar si la cuenta activa actual no fue archivada en otro dispositivo
+                // Verificar si la cuenta activa actual no fue archivada
                 const activeExists = window.creatorProfiles.find(p => p.id === window.currentProfileId && !p.archived);
                 if (!activeExists) {
                     const firstActive = window.creatorProfiles.find(p => !p.archived);
                     if (firstActive) {
                         window.currentProfileId = firstActive.id;
                         setItemMethod.call(localStorage, 'videoka_active_profile', window.currentProfileId);
+                        
+                        // 👇 LA LÍNEA MÁGICA QUE EVITA EL CRASHEO DEL BUCLE INFINITO
+                        sessionStorage.setItem('videoka_tab_profile', window.currentProfileId); 
+                        
                         window.location.reload(); 
                     }
                 }
@@ -427,34 +430,34 @@ let syncTimeout = null;
             } catch (e) { console.error("Error guardando perfiles en la nube:", e); }
         };
 
-        // Interceptar cuando la app LEE datos
+// Interceptar cuando la app LEE datos
         localStorage.getItem = function(key) {
-            if (systemKeys.includes(key) || key.startsWith('firebase:')) {
+            // Protección anti-nulos para procesos nativos del navegador o Firebase
+            if (!key || typeof key !== 'string' || systemKeys.includes(key) || key.startsWith('firebase:')) {
                 return originalGetItem.call(this, key);
             }
             const profileKey = window.currentProfileId === 'default' ? key : key + '_' + window.currentProfileId;
             return originalGetItem.call(this, profileKey);
         };
 
-// Interceptar cuando la app GUARDA datos
-localStorage.setItem = function(key, value) {
-    if (systemKeys.includes(key) || key.startsWith('firebase:')) {
-        originalSetItem.call(this, key, value);
-        return;
-    }
-    const profileKey = window.currentProfileId === 'default' ? key : key + '_' + window.currentProfileId;
-    originalSetItem.call(this, profileKey, value);
+        // Interceptar cuando la app GUARDA datos
+        localStorage.setItem = function(key, value) {
+            // Protección anti-nulos
+            if (!key || typeof key !== 'string' || systemKeys.includes(key) || key.startsWith('firebase:')) {
+                originalSetItem.call(this, key, value);
+                return;
+            }
+            const profileKey = window.currentProfileId === 'default' ? key : key + '_' + window.currentProfileId;
+            originalSetItem.call(this, profileKey, value);
 
-    // CONTROL DE CONCURRENCIA: 
-    // Solo subir a la nube si el cambio fue originado por una interacción local del usuario
-    // Y si YA verificamos/descargamos los datos de la nube.
-    if (!window.isUpdatingFromCloud && window.dataLoadedFromCloud) { // <-- AQUI SE APLICA EL CANDADO
-        if (syncTimeout !== null) {
-            clearTimeout(syncTimeout);
-        }
-        syncTimeout = setTimeout(window.syncToCloud, 1000);
-    }
-};
+            // CONTROL DE CONCURRENCIA: 
+            if (!window.isUpdatingFromCloud && window.dataLoadedFromCloud) { 
+                if (syncTimeout !== null) {
+                    clearTimeout(syncTimeout);
+                }
+                syncTimeout = setTimeout(window.syncToCloud, 1000);
+            }
+        };
 
         // Funciones para la interfaz
 window.cambiarCuenta = function(id) {
