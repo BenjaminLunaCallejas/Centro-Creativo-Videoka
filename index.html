@@ -2776,6 +2776,8 @@ ${idea.copy || 'N/A'}`;
             ejesTags = JSON.parse(localStorage.getItem('ejesTags')) || [];
             tasks = JSON.parse(localStorage.getItem('contentTasks')) || { ideas: [], audios: [], tendencias: [], proximos: [] };
             blocNotas = JSON.parse(localStorage.getItem('blocNotasTasks')) || { rapidas: [], borradores: [], recursos: [], personales: [] };
+            window.tasks = tasks;
+    window.blocNotas = blocNotas;
             historyTasks = JSON.parse(localStorage.getItem('historyTasks')) || [];
             historyNotas = JSON.parse(localStorage.getItem('historyNotas')) || [];
             tablaIAParsed = JSON.parse(localStorage.getItem('tablaIAGuardada')) || [];
@@ -2826,11 +2828,15 @@ ${idea.copy || 'N/A'}`;
             });
         }
         
-window.addEventListener('load', () => {
-            if(window.renderSelectorCuentas) window.renderSelectorCuentas();
-            initAppState();
-            autoResizeTextareas();
-        });
+// 2. AQUI SUSTITUYES EL "WINDOW.ADDEVENTLISTENER" POR ESTE:
+    window.addEventListener('load', () => {
+        if(window.renderSelectorCuentas) window.renderSelectorCuentas();
+        
+        // Esta línea ahora sí buscará la función correctamente
+        window.initAppState(); 
+        
+        autoResizeTextareas();
+    });
         // --- LÓGICA PARA EL MENÚ DESPLEGABLE DE PLATAFORMAS ---
 function toggleDropdownPlataformas() {
     const menu = document.getElementById('menuPlataformas');
@@ -2858,6 +2864,57 @@ document.addEventListener('click', function(event) {
         menu.classList.add('hidden');
     }
 });
-    </script>
+        // 3. EL PARCHE DE CONEXIÓN (LO QUE AGREGAMOS PARA QUE LOS BOTONES FUNCIONEN)
+    window.switchTab = switchTab;
+    window.cambiarFecha = cambiarFecha;
+    window.renderCalendario = renderCalendario;
+    window.addTask = addTask;
+    window.addNota = addNota;
+    window.guardarIdea = guardarIdea;
+    window.editarIdea = editarIdea;
+    window.eliminarIdea = eliminarIdea;
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+    window.guardarTemaCentralAuto = guardarTemaCentralAuto;
+    window.saveStrategyExtras = saveStrategyExtras;
+    window.saveFunnel = saveFunnel;
+    window.guardarEstrategia = guardarEstrategia;
+    window.saveStarFormats = saveStarFormats;
+    window.updateLivePrompt = updateLivePrompt;
+    window.copyPrompt = copyPrompt;
+    window.copyToClipboardElement = copyToClipboardElement;
+    window.copyToClipboardData = copyToClipboardData;
+    window.guardarYProcesarTabla = guardarYProcesarTabla;
+    window.enviarARepositorio = enviarARepositorio;
+    window.dragTask = dragTask;
+    window.dropTask = dropTask;
+    window.dragNota = dragNota;
+    window.dropNota = dropNota;
+    window.editTask = editTask;
+    window.saveEditedTask = saveEditedTask;
+    window.copyTaskText = copyTaskText;
+    window.archiveTask = archiveTask;
+    window.restoreTask = restoreTask;
+    window.deleteHistoryTask = deleteHistoryTask;
+    window.editNota = editNota;
+    window.saveEditedNota = saveEditedNota;
+    window.copyNotaText = copyNotaText;
+    window.archiveNota = archiveNota;
+    window.restoreNota = restoreNota;
+    window.deleteHistoryNota = deleteHistoryNota;
+    window.toggleDropdownPlataformas = toggleDropdownPlataformas;
+    window.actualizarTextoPlataformas = actualizarTextoPlataformas;
+    window.updateArquetipoDesc = updateArquetipoDesc;
+    window.removeTag = removeTag;
+    window.cancelarEdicion = cancelarEdicion;
+    window.allowDrop = allowDrop;
+
+    // 4. ARRANQUE CORREGIDO
+    window.addEventListener('load', () => {
+        if(window.renderSelectorCuentas) window.renderSelectorCuentas();
+        window.initAppState(); 
+        autoResizeTextareas();
+    });
+</script>
 </body>
 </html>
