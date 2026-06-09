@@ -587,6 +587,8 @@ window.aplicarAuditoria = () => {
                     document.getElementById('sharedCtxEstrategico').innerText = data.tipoEstrategico || 'N/A';
                     document.getElementById('sharedCtxColab').innerText = data.colaboracion || 'N/A';
                     document.getElementById('sharedCtxPub').innerText = data.publicacion || 'N/A';
+                    document.getElementById('sharedCtxPlataformas').innerText = (data.plataformas && data.plataformas.length > 0) ? data.plataformas.join(', ') : 'N/A';
+            document.getElementById('sharedCtxProgreso').innerText = data.progreso || 'Planeación';
                     document.getElementById('sharedCtxFecha').innerText = data.fecha || 'N/A';
                     document.getElementById('sharedCtxHora').innerText = data.hora || 'N/A';
                     document.getElementById('sharedCtxStar').innerText = data.starFormat || 'Ninguno / Formato Libre';
@@ -1666,6 +1668,14 @@ function guardarIdea() {
             document.getElementById('ideaTipoEstrategico').value = idea.tipoEstrategico || '';
             document.getElementById('ideaColaboracion').value = idea.colaboracion || '';
             document.getElementById('ideaPublicacion').value = idea.publicacion || '';
+            // --- INTEGRACIÓN DE NUEVAS VARIABLES MULTISELECCIÓN Y ESTADO ---
+            const plataformasGuardadas = idea.plataformas || [];
+            document.querySelectorAll('.plataforma-cb').forEach(cb => {
+                cb.checked = plataformasGuardadas.includes(cb.value);
+            });
+            document.getElementById('ideaProgreso').value = idea.progreso || 'Planeación';
+            if (typeof window.actualizarTextoPlataformas === 'function') window.actualizarTextoPlataformas();
+            // -
             document.getElementById('ideaFecha').value = idea.fecha || '';
             document.getElementById('ideaHora').value = idea.hora || '';
             document.getElementById('ideaStarFormat').value = idea.starFormat || '';
