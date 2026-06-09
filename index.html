@@ -286,18 +286,27 @@ onAuthStateChanged(auth, (user) => {
         
 window.cerrarSesion = () => signOut(auth).then(() => window.location.reload());
 
-// NUEVA FUNCIÓN: Descarga los datos (guiones, ideas, ajustes) de la nube a tu dispositivo actual
-// 1. DESCARGA SEGURA: Trae los datos de Firebase y los acomoda en su lugar correcto
-window.descargarDatosNube = async () => {
+// NUEVA ARQUITECTURA: Sincronización Bidireccional en Tiempo Real
+let plannerSnapshotUnsubscribe = null;
+
+window.descargarDatosNube = () => {
     if (!window.currentUserUID) return;
     
     const docId = window.currentProfileId === 'default' 
         ? window.currentUserUID 
         : window.currentUserUID + "_" + window.currentProfileId;
     
-    try {
-        const docSnap = await getDoc(doc(window.db, "videoka_planner", docId));
+    // Purgar suscripciones previas para evitar fuga de memoria (Memory Leaks) al cambiar de cuenta
+    if (plannerSnapshotUnsubscribe) {
+        plannerSnapshotUnsubscribe();
+    }
+    
+    // Suscripción al flujo de datos del documento
+    plannerSnapshotUnsubscribe = onSnapshot(doc(window.db, "videoka_planner", docId), (docSnap) => {
         if (docSnap.exists()) {
+            // Activamos la bandera para evitar el bucle de subida en localstorage
+            window.isUpdatingFromCloud = true; 
+            
             const data = docSnap.data();
             const keys = ['contentIdeas', 'ejesTags', 'contentTasks', 'blocNotasTasks', 'historyTasks', 'historyNotas', 'tablaIAGuardada', 'temaCentral', 'descCreador', 'identidadTono', 'nichoContenido', 'publicoObjetivo', 'strat_awareness', 'strat_consideracion', 'strat_conversion', 'strat_fidelizacion', 'arquetiposSeleccionados', 'starFormat1_name', 'starFormat1_desc', 'starFormat2_name', 'starFormat2_desc', 'starFormat3_name', 'starFormat3_desc'];
             
@@ -306,18 +315,23 @@ window.descargarDatosNube = async () => {
             keys.forEach(k => {
                 if (data[k] !== undefined) {
                     const valueToSave = (data[k] === null || data[k] === "null") ? "" : data[k];
-                    
-                    // Si es 'default', guarda en 'contentIdeas'. Si no, en 'contentIdeas_Perfil'
                     const profileKey = window.currentProfileId === 'default' ? k : k + '_' + window.currentProfileId;
                     
                     setItemMethod.call(localStorage, profileKey, valueToSave);
                 }
             });
             
+            // Re-hidratar el DOM local con los nuevos datos recibidos
             if (window.initAppState) window.initAppState();
+            
+            // Desactivar bandera una vez finalizado el renderizado
+            window.isUpdatingFromCloud = false; 
         }
-    } catch (e) { console.error("Error descargando datos:", e); }
+    }, (error) => {
+        console.error("Fallo en la resolución del socket en tiempo real:", error);
+    });
 };
+
 
 // 2. SUBIDA SEGURA: Sabe exactamente de qué llave del localStorage leer según el perfil activo
 window.syncToCloud = async () => {
@@ -369,11 +383,30 @@ let syncTimeout = null;
         const originalSetItem = localStorage.setItem;
         const originalGetItem = localStorage.getItem;
 
-        // Llaves del sistema que no deben dividirse por cliente
+// Llaves del sistema que no deben dividirse por cliente
         const systemKeys = ['videoka_profiles', 'videoka_active_profile'];
+        
+        // BANDERA DE CONTROL DE CONCURRENCIA
+        window.isUpdatingFromCloud = false;
 
-        // Cargar cuál es la cuenta activa, si no hay, usar 'default'
-        window.currentProfileId = originalGetItem.call(localStorage, 'videoka_active_profile') || 'default';
+        // INGENIERÍA DE MULTI-PESTAÑA (Session Isolation)
+        // 1. Prioridad: URL (permite abrir en nueva pestaña con cuenta específica)
+        // 2. Prioridad: sessionStorage (mantiene la cuenta en la pestaña actual tras recargar)
+        // 3. Prioridad: localStorage (última cuenta usada globalmente)
+        const urlParamsProfile = new URLSearchParams(window.location.search);
+        const profileFromUrl = urlParamsProfile.get('cuenta');
+
+        if (profileFromUrl) {
+            sessionStorage.setItem('videoka_tab_profile', profileFromUrl);
+            originalSetItem.call(localStorage, 'videoka_active_profile', profileFromUrl);
+        }
+
+        window.currentProfileId = sessionStorage.getItem('videoka_tab_profile') || 
+                                  originalGetItem.call(localStorage, 'videoka_active_profile') || 
+                                  'default';
+
+        // Anclar el perfil activo a la memoria volátil de esta pestaña específica
+        sessionStorage.setItem('videoka_tab_profile', window.currentProfileId);
         
         // Cargar la lista de cuentas
         let perfilesGuardados = originalGetItem.call(localStorage, 'videoka_profiles');
@@ -398,7 +431,7 @@ let syncTimeout = null;
             return originalGetItem.call(this, profileKey);
         };
 
-        // Interceptar cuando la app GUARDA datos
+// Interceptar cuando la app GUARDA datos
         localStorage.setItem = function(key, value) {
             if (systemKeys.includes(key) || key.startsWith('firebase:')) {
                 originalSetItem.call(this, key, value);
@@ -407,14 +440,20 @@ let syncTimeout = null;
             const profileKey = window.currentProfileId === 'default' ? key : key + '_' + window.currentProfileId;
             originalSetItem.call(this, profileKey, value);
 
-            if (syncTimeout) clearTimeout(syncTimeout);
-            syncTimeout = setTimeout(window.syncToCloud, 1000);
+            // CONTROL DE CONCURRENCIA: 
+            // Solo subir a la nube si el cambio fue originado por una interacción local del usuario.
+            if (!window.isUpdatingFromCloud) {
+                if (syncTimeout) clearTimeout(syncTimeout);
+                syncTimeout = setTimeout(window.syncToCloud, 1000);
+            }
         };
 
         // Funciones para la interfaz
-        window.cambiarCuenta = function(id) {
+window.cambiarCuenta = function(id) {
             originalSetItem.call(localStorage, 'videoka_active_profile', id);
-            window.location.reload(); 
+            sessionStorage.setItem('videoka_tab_profile', id);
+            // Inyectar el ID en la URI para forzar el enrutamiento correcto en la nueva instancia
+            window.location.href = window.location.pathname + "?cuenta=" + id; 
         };
 
         window.abrirModalNuevaCuenta = function() {
