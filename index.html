@@ -246,35 +246,6 @@ onAuthStateChanged(auth, (user) => {
             loginScreen.style.display = 'none';
             loginScreen.classList.add('hidden');
         }
-        
-        // SOLUCIÓN 1: Escuchar en TIEMPO REAL los perfiles desde la nube (evita sobreescritura accidental)
-        const docRef = doc(window.db, "videoka_master", user.uid);
-        onSnapshot(docRef, (docSnap) => {
-            if (docSnap.exists() && docSnap.data().profiles) {
-                window.creatorProfiles = docSnap.data().profiles;
-                // Usamos el setItem original para guardar la lista sin accionar la sincronización de guiones
-                const setItemMethod = (typeof originalSetItem !== 'undefined') ? originalSetItem : localStorage.setItem;
-                setItemMethod.call(localStorage, 'videoka_profiles', JSON.stringify(window.creatorProfiles));
-                
-                // Verificar si la cuenta activa actual no fue archivada en otro dispositivo
-                const activeExists = window.creatorProfiles.find(p => p.id === window.currentProfileId && !p.archived);
-                if (!activeExists) {
-                    const firstActive = window.creatorProfiles.find(p => !p.archived);
-                    if (firstActive) {
-                        window.currentProfileId = firstActive.id;
-                        setItemMethod.call(localStorage, 'videoka_active_profile', window.currentProfileId);
-                        window.location.reload(); 
-                    }
-                }
-                if (window.renderSelectorCuentas) window.renderSelectorCuentas();
-            } else {
-                if (window.syncProfilesToCloud) window.syncProfilesToCloud();
-            }
-        });
-
-        // SOLUCIÓN 2: Descargar automáticamente la info de los videos al loguearse
-        if (window.descargarDatosNube) window.descargarDatosNube();
-
     } else {
         window.currentUserUID = null;
         if (loginScreen) {
@@ -284,90 +255,41 @@ onAuthStateChanged(auth, (user) => {
     }
 });
         
-window.cerrarSesion = () => signOut(auth).then(() => window.location.reload());
+        window.cerrarSesion = () => signOut(auth).then(() => window.location.reload());
 
-// NUEVA FUNCIÓN: Descarga los datos (guiones, ideas, ajustes) de la nube a tu dispositivo actual
-// 1. DESCARGA SEGURA EN TIEMPO REAL
-window.descargarDatosNube = () => {
-    if (!window.currentUserUID) return;
-    
-    const docId = window.currentProfileId === 'default' 
-        ? window.currentUserUID 
-        : window.currentUserUID + "_" + window.currentProfileId;
-    
-    // Cambiamos getDoc por onSnapshot para que se actualice solo
-    onSnapshot(doc(window.db, "videoka_planner", docId), (docSnap) => {
-        if (docSnap.exists()) {
-            window.isDownloading = true; // PONER CANDADO: Evita sobreescribir la nube
-
-            const data = docSnap.data();
-            const keys = ['contentIdeas', 'ejesTags', 'contentTasks', 'blocNotasTasks', 'historyTasks', 'historyNotas', 'tablaIAGuardada', 'temaCentral', 'descCreador', 'identidadTono', 'nichoContenido', 'publicoObjetivo', 'strat_awareness', 'strat_consideracion', 'strat_conversion', 'strat_fidelizacion', 'arquetiposSeleccionados', 'starFormat1_name', 'starFormat1_desc', 'starFormat2_name', 'starFormat2_desc', 'starFormat3_name', 'starFormat3_desc'];
-            
-            const setItemMethod = (typeof originalSetItem !== 'undefined') ? originalSetItem : localStorage.setItem;
-            
-            keys.forEach(k => {
-                if (data[k] !== undefined) {
-                    const valueToSave = (data[k] === null || data[k] === "null") ? "" : data[k];
-                    const profileKey = window.currentProfileId === 'default' ? k : k + '_' + window.currentProfileId;
-                    setItemMethod.call(localStorage, profileKey, valueToSave);
-                }
-            });
-            
-            // Recargar la interfaz con los nuevos datos
-            if (window.initAppState) window.initAppState();
-
-            // QUITAR CANDADO después de 500ms para permitir futuras ediciones locales
-            setTimeout(() => { window.isDownloading = false; }, 500);
-        }
-    });
-};
-
-// 2. SUBIDA SEGURA: Sabe exactamente de qué llave del localStorage leer según el perfil activo
-window.syncToCloud = async () => {
-    if (!window.currentUserUID) return;
-    
-    // CORRECCIÓN VITAL: safeGet ahora sabe si debe buscar con prefijo o no
-    const safeGet = (key) => {
-        const profileKey = window.currentProfileId === 'default' ? key : key + '_' + window.currentProfileId;
-        const val = localStorage.getItem(profileKey);
-        return (val === "null" || val === null) ? "" : val;
-    };
-
-    const fullData = {
-        contentIdeas: safeGet('contentIdeas'),
-        ejesTags: safeGet('ejesTags'),
-        contentTasks: safeGet('contentTasks'),
-        blocNotasTasks: safeGet('blocNotasTasks'),
-        historyTasks: safeGet('historyTasks'),
-        historyNotas: safeGet('historyNotas'),
-        tablaIAGuardada: safeGet('tablaIAGuardada'),
-        temaCentral: safeGet('temaCentral'),
-        descCreador: safeGet('descCreador'),
-        identidadTono: safeGet('identidadTono'),
-        nichoContenido: safeGet('nichoContenido'),
-        publicoObjetivo: safeGet('publicoObjetivo'),
-        strat_awareness: safeGet('strat_awareness'),
-        strat_consideracion: safeGet('strat_consideracion'),
-        strat_conversion: safeGet('strat_conversion'),
-        strat_fidelizacion: safeGet('strat_fidelizacion'),
-        arquetiposSeleccionados: safeGet('arquetiposSeleccionados')
-    };
-    
-    for(let i=1; i<=3; i++) {
-        fullData[`starFormat${i}_name`] = safeGet(`starFormat${i}_name`);
-        fullData[`starFormat${i}_desc`] = safeGet(`starFormat${i}_desc`);
-    }
-    
-    try {
-        const docId = window.currentProfileId === 'default' 
-            ? window.currentUserUID 
-            : window.currentUserUID + "_" + window.currentProfileId;
-        await setDoc(doc(window.db, "videoka_planner", docId), fullData);
-    } catch (e) { console.error("Error guardando en la nube:", e); }
-};
-
-let syncTimeout = null;
-window.isDownloading = false; // NUEVO: Candado de sincronización
+        let syncTimeout = null;
+        window.syncToCloud = async () => {
+            if (!window.currentUserUID) return;
+            const fullData = {
+                contentIdeas: localStorage.getItem('contentIdeas'),
+                ejesTags: localStorage.getItem('ejesTags'),
+                contentTasks: localStorage.getItem('contentTasks'),
+                blocNotasTasks: localStorage.getItem('blocNotasTasks'),
+                historyTasks: localStorage.getItem('historyTasks'),
+                historyNotas: localStorage.getItem('historyNotas'),
+                tablaIAGuardada: localStorage.getItem('tablaIAGuardada'),
+                temaCentral: localStorage.getItem('temaCentral'),
+                descCreador: localStorage.getItem('descCreador'),
+                identidadTono: localStorage.getItem('identidadTono'),
+                nichoContenido: localStorage.getItem('nichoContenido'),
+                publicoObjetivo: localStorage.getItem('publicoObjetivo'),
+                strat_awareness: localStorage.getItem('strat_awareness'),
+                strat_consideracion: localStorage.getItem('strat_consideracion'),
+                strat_conversion: localStorage.getItem('strat_conversion'),
+                strat_fidelizacion: localStorage.getItem('strat_fidelizacion'),
+                arquetiposSeleccionados: localStorage.getItem('arquetiposSeleccionados')
+            };
+            for(let i=1; i<=3; i++) {
+                fullData[`starFormat${i}_name`] = localStorage.getItem(`starFormat${i}_name`);
+                fullData[`starFormat${i}_desc`] = localStorage.getItem(`starFormat${i}_desc`);
+            }
+            try {
+                const docId = window.currentProfileId === 'default' 
+    ? window.currentUserUID 
+    : window.currentUserUID + "_" + window.currentProfileId;
+await setDoc(doc(db, "videoka_planner", docId), fullData);
+            } catch (e) { console.error("Error guardando:", e); }
+        };
 
 // --- INICIO LÓGICA MULTI-CUENTA ---
         const originalSetItem = localStorage.setItem;
@@ -383,155 +305,52 @@ window.isDownloading = false; // NUEVO: Candado de sincronización
         let perfilesGuardados = originalGetItem.call(localStorage, 'videoka_profiles');
         window.creatorProfiles = perfilesGuardados ? JSON.parse(perfilesGuardados) : [{id: 'default', name: 'Mi Cuenta Principal'}];
 
-        // Función para sincronizar la estructura de cuentas a Firebase
-        window.syncProfilesToCloud = async () => {
-            if (!window.currentUserUID) return;
-            try {
-                await setDoc(doc(window.db, "videoka_master", window.currentUserUID), {
-                    profiles: window.creatorProfiles
-                }, { merge: true });
-            } catch (e) { console.error("Error guardando perfiles en la nube:", e); }
-        };
-
         // Interceptar cuando la app LEE datos
         localStorage.getItem = function(key) {
             if (systemKeys.includes(key) || key.startsWith('firebase:')) {
                 return originalGetItem.call(this, key);
             }
+            // Si es la cuenta default, usa la llave original para no perder tus datos actuales
             const profileKey = window.currentProfileId === 'default' ? key : key + '_' + window.currentProfileId;
             return originalGetItem.call(this, profileKey);
         };
 
-// Interceptar cuando la app GUARDA datos
-localStorage.setItem = function(key, value) {
-    if (systemKeys.includes(key) || key.startsWith('firebase:')) {
-        originalSetItem.call(this, key, value);
-        return;
-    }
-    const profileKey = window.currentProfileId === 'default' ? key : key + '_' + window.currentProfileId;
-    originalSetItem.call(this, profileKey, value);
+        // Interceptar cuando la app GUARDA datos
+        localStorage.setItem = function(key, value) {
+            if (systemKeys.includes(key) || key.startsWith('firebase:')) {
+                originalSetItem.call(this, key, value);
+                return;
+            }
+            const profileKey = window.currentProfileId === 'default' ? key : key + '_' + window.currentProfileId;
+            originalSetItem.call(this, profileKey, value);
 
-    // NUEVO: Solo subir a la nube si NO estamos en medio de una descarga
-    if (!window.isDownloading) {
-        if (syncTimeout) clearTimeout(syncTimeout);
-        syncTimeout = setTimeout(window.syncToCloud, 1000);
-    }
-};
+            if (syncTimeout) clearTimeout(syncTimeout);
+            syncTimeout = setTimeout(window.syncToCloud, 1000);
+        };
 
         // Funciones para la interfaz
         window.cambiarCuenta = function(id) {
             originalSetItem.call(localStorage, 'videoka_active_profile', id);
-            window.location.reload(); 
+            window.location.reload(); // Recarga la página para refrescar todas las variables limpiamente
         };
 
-        window.abrirModalNuevaCuenta = function() {
-            document.getElementById('accountModalTitle').innerText = "✨ Nueva Cuenta";
-            document.getElementById('accountNameInput').value = "";
-            document.getElementById('accountIdInput').value = "NUEVA";
-            document.getElementById('btnDeleteAccount').classList.add('hidden');
-            document.getElementById('accountModal').classList.replace('hidden', 'flex');
-        };
-
-        window.abrirModalEdicionCuenta = function() {
-            const currentProfile = window.creatorProfiles.find(p => p.id === window.currentProfileId);
-            document.getElementById('accountModalTitle').innerText = "⚙️ Renombrar Cuenta";
-            document.getElementById('accountNameInput').value = currentProfile ? currentProfile.name : "";
-            document.getElementById('accountIdInput').value = window.currentProfileId;
-
-            const cuentasActivas = window.creatorProfiles.filter(p => !p.archived);
-            if (cuentasActivas.length <= 1) {
-                document.getElementById('btnDeleteAccount').classList.add('hidden');
-            } else {
-                document.getElementById('btnDeleteAccount').classList.remove('hidden');
-            }
-            document.getElementById('accountModal').classList.replace('hidden', 'flex');
-        };
-
-        window.cerrarAccountModal = function() {
-            document.getElementById('accountModal').classList.replace('flex', 'hidden');
-        };
-
-        window.guardarAccountModal = function() {
-            const nombre = document.getElementById('accountNameInput').value.trim();
-            const id = document.getElementById('accountIdInput').value;
-            
-            if (!nombre) return alert("⚠️ El nombre no puede estar vacío.");
-
-            if (id === "NUEVA") {
-                const newId = 'perfil_' + Date.now();
-                window.creatorProfiles.push({ id: newId, name: nombre, archived: false });
-                originalSetItem.call(localStorage, 'videoka_profiles', JSON.stringify(window.creatorProfiles));
-                window.syncProfilesToCloud(); 
-                window.cambiarCuenta(newId);
-            } else {
-                const idx = window.creatorProfiles.findIndex(p => p.id === id);
-                if (idx > -1) {
-                    window.creatorProfiles[idx].name = nombre;
-                    originalSetItem.call(localStorage, 'videoka_profiles', JSON.stringify(window.creatorProfiles));
-                    window.syncProfilesToCloud(); 
-                    window.renderSelectorCuentas();
-                    window.cerrarAccountModal();
-                }
-            }
-        };
-
-        window.eliminarAccountModal = function() {
-            const id = document.getElementById('accountIdInput').value;
-            if (confirm("⚠️ ¿Estás seguro de archivar esta cuenta? Pasará a la bandeja de archivados y ya no será visible en la lista principal.")) {
-                const idx = window.creatorProfiles.findIndex(p => p.id === id);
-                if (idx > -1) {
-                    window.creatorProfiles[idx].archived = true;
-                    originalSetItem.call(localStorage, 'videoka_profiles', JSON.stringify(window.creatorProfiles));
-                    window.syncProfilesToCloud(); 
-                    
-                    const cuentasActivas = window.creatorProfiles.filter(p => !p.archived);
-                    window.cambiarCuenta(cuentasActivas[0].id);
-                }
-            }
-        };
-
-        window.abrirModalArchivados = function() {
-            const listContainer = document.getElementById('archivedList');
-            const archivadas = window.creatorProfiles.filter(p => p.archived);
-            
-            if (archivadas.length === 0) {
-                listContainer.innerHTML = '<p class="text-sm text-gray-400 italic text-center p-4">No hay cuentas archivadas.</p>';
-            } else {
-                listContainer.innerHTML = archivadas.map(p => `
-                    <div class="flex justify-between items-center p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                        <span class="font-bold text-slate-700">${p.name}</span>
-                        <button onclick="restaurarCuenta('${p.id}')" class="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1.5 rounded font-bold transition shadow-sm">↺ Restaurar</button>
-                    </div>
-                `).join('');
-            }
-            document.getElementById('archivedAccountsModal').classList.replace('hidden', 'flex');
-        };
-
-        window.cerrarModalArchivados = function() {
-            document.getElementById('archivedAccountsModal').classList.replace('flex', 'hidden');
-        };
-
-        window.restaurarCuenta = function(id) {
-            const idx = window.creatorProfiles.findIndex(p => p.id === id);
-            if (idx > -1) {
-                window.creatorProfiles[idx].archived = false;
-                originalSetItem.call(localStorage, 'videoka_profiles', JSON.stringify(window.creatorProfiles));
-                window.syncProfilesToCloud();
-                window.renderSelectorCuentas();
-                window.abrirModalArchivados(); 
-                alert("✅ Cuenta restaurada con éxito. Ya puedes seleccionarla en el menú.");
-            }
+        window.crearNuevaCuenta = function() {
+            const nombre = prompt("Ingresa el nombre del nuevo creador o marca:");
+            if (!nombre || nombre.trim() === '') return;
+            const newId = 'perfil_' + Date.now();
+            window.creatorProfiles.push({ id: newId, name: nombre.trim() });
+            originalSetItem.call(localStorage, 'videoka_profiles', JSON.stringify(window.creatorProfiles));
+            window.cambiarCuenta(newId);
         };
 
         window.renderSelectorCuentas = function() {
             const selector = document.getElementById('selectorCuentas');
             if(!selector) return;
-            const cuentasActivas = window.creatorProfiles.filter(p => !p.archived);
-            selector.innerHTML = cuentasActivas.map(p =>
+            selector.innerHTML = window.creatorProfiles.map(p =>
                 `<option value="${p.id}" ${p.id === window.currentProfileId ? 'selected' : ''}>${p.name}</option>`
             ).join('');
         };
-// --- FIN LÓGICA MULTI-CUENTA ---
+        // --- FIN LÓGICA MULTI-CUENTA ---
 
        // --- LÓGICA DE AUDITORÍA Y COMPARACIÓN AMPLIADA ---
         
@@ -1011,43 +830,14 @@ window.generarEnlaceColaborativo = async () => {
             </button>
         </div>
 
-<div id="modalOverlay" onclick="closeModal(event)">
+        <div id="modalOverlay" onclick="closeModal(event)">
             <div class="modal-card shadow-2xl custom-scroll" onclick="event.stopPropagation()">
                 <button onclick="closeModal(null)" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
                 <div id="modalContent"></div>
             </div>
         </div>
 
-        <div id="accountModal" class="hidden fixed inset-0 bg-slate-900/60 z-[3000] items-center justify-center backdrop-blur-sm">
-            <div class="bg-white rounded-xl shadow-2xl p-6 w-11/12 max-w-md border border-indigo-100">
-                <h3 class="font-bold text-xl mb-4 text-indigo-900 flex items-center gap-2" id="accountModalTitle">⚙️ Gestionar Cuenta</h3>
-                <label class="block text-sm font-semibold text-gray-600 mb-2">Nombre del Creador o Marca</label>
-                <input type="text" id="accountNameInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mb-4 text-slate-700" placeholder="Ej. Mi Cuenta Principal">
-                <input type="hidden" id="accountIdInput">
-                <div class="flex justify-between items-center mt-6 pt-4 border-t border-gray-100">
-                    <button id="btnDeleteAccount" onclick="eliminarAccountModal()" class="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg text-sm font-bold transition">🗑️ Archivar</button>
-                    <div class="flex gap-2">
-                        <button onclick="cerrarAccountModal()" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-bold transition">Cancelar</button>
-                        <button onclick="guardarAccountModal()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-lg transition">Guardar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div id="archivedAccountsModal" class="hidden fixed inset-0 bg-slate-900/60 z-[3000] items-center justify-center backdrop-blur-sm">
-            <div class="bg-white rounded-xl shadow-2xl p-6 w-11/12 max-w-md border border-indigo-100 max-h-[80vh] flex flex-col">
-                <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
-                    <h3 class="font-bold text-xl text-indigo-900 flex items-center gap-2">📥 Bandeja de Archivados</h3>
-                    <button onclick="cerrarModalArchivados()" class="text-gray-400 hover:text-gray-600 font-bold text-xl transition">&times;</button>
-                </div>
-                <p class="text-xs text-gray-500 mb-4 bg-indigo-50 p-2 rounded-lg">Las cuentas aquí no aparecerán en tu selector principal. Puedes restaurarlas para recuperar el acceso a sus datos.</p>
-                <div id="archivedList" class="overflow-y-auto custom-scroll flex-1 space-y-2 max-h-60">
-                    </div>
-                <div class="mt-6 pt-4 border-t border-gray-100 flex justify-end">
-                    <button onclick="cerrarModalArchivados()" class="px-6 py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-lg font-bold transition">Cerrar</button>
-                </div>
-            </div>
-        </div>
-                <div class="flex flex-col md:flex-row h-screen overflow-hidden">
+        <div class="flex flex-col md:flex-row h-screen overflow-hidden">
             
             <aside class="w-full md:w-64 bg-slate-900 text-white flex flex-col shadow-lg flex-shrink-0 z-20">
                 <div class="p-4 md:p-6 flex justify-between items-center">
@@ -1057,15 +847,11 @@ window.generarEnlaceColaborativo = async () => {
                         <button onclick="cerrarSesion()" class="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded">Salir</button>
                     </div>
                 </div>
-<div class="px-4 pb-4 md:px-6 border-b border-slate-700 mb-2">
+                <div class="px-4 pb-4 md:px-6 border-b border-slate-700 mb-2">
                     <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Perfil de Creador / Cliente</label>
-                    <div class="flex gap-2 mb-2">
-                        <select id="selectorCuentas" onchange="cambiarCuenta(this.value)" class="flex-1 p-2 bg-slate-800 text-sm text-white rounded outline-none border border-slate-700 focus:ring-1 focus:ring-indigo-500 cursor-pointer">
-                        </select>
-                        <button onclick="abrirModalEdicionCuenta()" class="bg-slate-700 hover:bg-slate-600 px-3 rounded-lg text-white transition shadow-sm" title="Ajustes de cuenta actual">⚙️</button>
-                    </div>
-                    <button onclick="abrirModalNuevaCuenta()" class="w-full text-xs bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg transition font-bold shadow-md">+ Agregar Cuenta</button>
-<button onclick="abrirModalArchivados()" class="w-full mt-2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 rounded-lg transition font-medium border border-slate-700 flex items-center justify-center gap-2">📥 Cuentas Archivadas</button>
+                    <select id="selectorCuentas" onchange="cambiarCuenta(this.value)" class="w-full p-2 bg-slate-800 text-sm text-white rounded outline-none border border-slate-700 mb-2 focus:ring-1 focus:ring-indigo-500 cursor-pointer">
+                    </select>
+                    <button onclick="crearNuevaCuenta()" class="w-full text-xs bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded transition font-bold shadow-md">+ Agregar Cuenta</button>
                 </div>
                 <nav class="flex md:flex-col overflow-x-auto md:overflow-visible px-4 pb-4 md:pb-0 space-x-2 md:space-x-0 md:space-y-2 custom-scroll flex-1">
                     <button onclick="switchTab('estrategia')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition" id="btn-estrategia">1. Estrategia y Marca</button>
