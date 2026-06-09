@@ -400,7 +400,7 @@ content.innerHTML = `
                 </div>
 
                 <div>
-                    <h4 class="font-bold text-amber-700 border-b border-amber-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2"><span>📌</span> Observaciones de Colaboración</h4>
+                    <h4 class="font-bold text-amber-700 border-b border-amber-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2"><span>📌</span> Observaciones / Pendientes de la Colaboración</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="flex flex-col"><label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label><div class="audit-text-container bg-amber-50/30">${deletedObs}</div></div>
                         <div class="flex flex-col"><label class="block text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Versión Nube (Editable ✏️)</label><div id="auditObsFinal" class="audit-text-container border-amber-200 bg-amber-50 cursor-text focus:ring-2 focus:ring-amber-400 outline-none transition-all" contenteditable="true">${addedObs}</div></div>
@@ -736,7 +736,7 @@ window.aplicarAuditoria = () => {
                 </div>
                 <div class="mt-4">
                     <label class="block text-sm font-bold text-amber-700 mb-2 flex items-center gap-2">
-                        <span>📌</span> Observaciones / Pendientes de Colaboración
+                        <span>📌</span> Observaciones / Pendientes de la Colaboración
                     </label>
                     <textarea id="sharedObservacionesTextarea" class="w-full p-4 border border-amber-300 bg-amber-50 rounded-lg outline-none focus:ring-2 focus:ring-amber-500 text-amber-900 text-sm leading-relaxed custom-scroll shadow-inner min-h-[100px] overflow-hidden" placeholder="Escribe aquí las instrucciones de edición, notas para el colaborador o tareas pendientes..."></textarea>
                 </div>
@@ -1021,6 +1021,8 @@ window.aplicarAuditoria = () => {
                                 <select id="ideaFormato" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
                                     <option value="Short Content">Short Content</option>
                                     <option value="Long Content">Long Content</option>
+                                    <option value="Estático">Estático</option>
+                                    <option value="Storie">Storie</option>
                                     <option value="Podcast">Podcast</option>
                                     <option value="Infografías">Infografías</option>
                                     <option value="Fotos">Fotos</option>
@@ -1173,7 +1175,7 @@ window.aplicarAuditoria = () => {
 </div>
                     <div class="mb-4 bg-amber-50 p-4 rounded-lg border border-amber-100">
     <label class="block text-sm font-semibold text-amber-700 mb-1 flex items-center gap-2">
-        <span>📌</span> Observaciones / Pendientes de Colaboración <span class="text-xs text-amber-500 font-normal">(Opcional)</span>
+        <span>📌</span> Observaciones / Pendientes de la Colaboración <span class="text-xs text-amber-500 font-normal">(Opcional)</span>
     </label>
     <div class="text-[10px] text-amber-600 mb-3 leading-tight">
         🔑 <b>Notas para el equipo:</b> Instrucciones de edición, feedback o tareas pendientes para la colaboración.
@@ -1856,7 +1858,7 @@ FUNNEL:
 - Reconocimiento: ${aw} | Consideración: ${co} | Conversión: ${cv} | Fidelización: ${fi}
 ${seccionInsumos}
 TAREA: 
-1. Genera calendario completo de 31 días (una idea/día), bien detallado y con información precisa (de fuentes oficiales) y entregalo en una tabla en cualquiera de los 3 siguientes formatos: Markdown/Pipeline, Tab-Separated o CSV. Combina mi autoridad (tema central) con mis ejes transversales, mis formatos estrella y considerando los detalles descritos anteriormente. La tabla debe tener las columnas: Día | Tipo (Presencia, Marca o Valor) | Tema (Tema Central o Eje transversal) | Tipo de Formato (Estrella o Libre) | Gancho/hook (Máx 15 palabras) | Contenido (Mensaje Principal) | Guión base | Llamado a la acción (CTA)
+1. Genera calendario completo de 31 días (una idea/día), bien detallado y con información precisa (de fuentes oficiales) y entregalo en una tabla en cualquiera de los 3 siguientes formatos: Markdown/Pipeline, Tab-Separated o CSV. Combina mi autoridad (tema central) con mis ejes transversales, mis formatos estrella y considerando los detalles descritos anteriormente. La tabla debe tener las columnas: Día | Tipo (Presencia, Marca o Valor) | Tema (Tema Central o Eje transversal) | Naturaleza (Formato Estrella o Libre) | Gancho/hook (Máx 15 palabras) | Contenido (Mensaje Principal) | Guión base | Llamado a la acción (CTA)
 2. Al finalizar el calendario, genera una sección titulada "Narrativa de Contenido" siguiendo este formato exacto:
    "Yo soy ${creador}, con mi tema principal ${tema} y mis ejes transversales ${ejes.join(', ')}. Por ello, mi narrativa de contenido es: [Aquí define para cada eje cómo se cruza con tu tema de autoridad de forma única, rápida y accionable, que sea lógico y coherente con narrativas de contenido contemporáneas.
 
@@ -1972,9 +1974,9 @@ ENTREGABLES ADICIONALES (Debajo del guion):
                         <button onclick="editarIdea(${idea.id}); closeModal(null)" class="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-lg text-xs font-bold border border-indigo-200">✏️ EDITAR</button>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-y-3 gap-x-4 text-[11px] border-b pb-4 mt-4">
-                        <div><span class="text-gray-400 font-bold uppercase block">📅 Publicación:</span> ${idea.fecha} | ${idea.hora}</div>
+                        <div><span class="text-gray-400 font-bold uppercase block">📅 Fecha de Publicación:</span> ${idea.fecha} | ${idea.hora}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">📱 Formato:</span> ${idea.formato}</div>
-                        <div><span class="text-gray-400 font-bold uppercase block">📂 Tipo:</span> ${idea.tipo}</div>
+                        <div><span class="text-gray-400 font-bold uppercase block">📂 Tipo de Contenido:</span> ${idea.tipo}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">🎯 Objetivo:</span> ${idea.objetivo}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">⚡ Estrategia:</span> ${idea.tipoEstrategico}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">🤝 Colaboración:</span> ${idea.colaboracion}</div>
@@ -2011,7 +2013,7 @@ ENTREGABLES ADICIONALES (Debajo del guion):
                     ` : ''}
                     ${idea.observaciones ? `
 <div>
-    <label class="block text-[10px] font-bold text-amber-600 uppercase mb-1 flex items-center gap-1"><span>📌</span> Observaciones</label>
+    <label class="block text-[10px] font-bold text-amber-600 uppercase mb-1 flex items-center gap-1"><span>📌</span> Observaciones / Pendientes de la Colaboración</label>
     <div class="p-4 bg-amber-50 rounded-lg text-sm border border-amber-200 text-amber-900 whitespace-pre-wrap leading-relaxed">${idea.observaciones}</div>
 </div>
 ` : ''}
