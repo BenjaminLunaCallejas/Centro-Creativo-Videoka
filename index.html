@@ -332,15 +332,15 @@ window.descargarDatosNube = () => {
     });
 };
 
-
-// 2. SUBIDA SEGURA: Sabe exactamente de qué llave del localStorage leer según el perfil activo
+// 2. SUBIDA SEGURA: Sincronización corregida para evitar doble sufijo
 window.syncToCloud = async () => {
     if (!window.currentUserUID) return;
     
-    // CORRECCIÓN VITAL: safeGet ahora sabe si debe buscar con prefijo o no
+    // CORRECCIÓN VITAL: Utilizar originalGetItem para evitar la doble concatenación del interceptor
     const safeGet = (key) => {
         const profileKey = window.currentProfileId === 'default' ? key : key + '_' + window.currentProfileId;
-        const val = localStorage.getItem(profileKey);
+        // Se invoca el método original para leer con rigor la clave exacta
+        const val = originalGetItem.call(localStorage, profileKey);
         return (val === "null" || val === null) ? "" : val;
     };
 
@@ -376,8 +376,6 @@ window.syncToCloud = async () => {
         await setDoc(doc(window.db, "videoka_planner", docId), fullData);
     } catch (e) { console.error("Error guardando en la nube:", e); }
 };
-
-let syncTimeout = null;
 
 // --- INICIO LÓGICA MULTI-CUENTA ---
         const originalSetItem = localStorage.setItem;
