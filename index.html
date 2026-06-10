@@ -287,8 +287,11 @@ onAuthStateChanged(auth, (user) => {
     }
 });
         
-window.cerrarSesion = () => signOut(auth).then(() => window.location.reload());
-
+window.cerrarSesion = () => signOut(auth).then(() => {
+    localStorage.removeItem('contentIdeas_loaded');
+    window.location.reload();
+});
+        
 // NUEVA ARQUITECTURA: Sincronización Bidireccional en Tiempo Real
 let plannerSnapshotUnsubscribe = null;
 
@@ -299,15 +302,12 @@ window.descargarDatosNube = () => {
         ? window.currentUserUID 
         : window.currentUserUID + "_" + window.currentProfileId;
     
-    // Purgar suscripciones previas para evitar fuga de memoria (Memory Leaks) al cambiar de cuenta
     if (plannerSnapshotUnsubscribe) {
         plannerSnapshotUnsubscribe();
     }
     
-// Suscripción al flujo de datos del documento
     plannerSnapshotUnsubscribe = onSnapshot(doc(window.db, "videoka_planner", docId), (docSnap) => {
         if (docSnap.exists()) {
-            // Activamos la bandera para evitar el bucle de subida en localstorage
             window.isUpdatingFromCloud = true; 
             
             const data = docSnap.data();
@@ -319,23 +319,32 @@ window.descargarDatosNube = () => {
                 if (data[k] !== undefined) {
                     const valueToSave = (data[k] === null || data[k] === "null") ? "" : data[k];
                     const profileKey = window.currentProfileId === 'default' ? k : k + '_' + window.currentProfileId;
-                    
                     setItemMethod.call(localStorage, profileKey, valueToSave);
                 }
             });
             
-            // Re-hidratar el DOM local con los nuevos datos recibidos
-            if (window.initAppState) window.initAppState();
-            
-            // Desactivar bandera una vez finalizado el renderizado
+            // Guardamos la bandera de que ya cargó
             window.isUpdatingFromCloud = false; 
-            window.dataLoadedFromCloud = true; // <-- NUEVO: Desbloqueamos la subida de datos
+            
+            // Si el dispositivo estaba totalmente vacío, forzamos un refresco limpio para pintar todo el DOM de golpe
+            if (!window.dataLoadedFromCloud && !localStorage.getItem('contentIdeas_loaded')) {
+                localStorage.setItem('contentIdeas_loaded', 'true');
+                window.dataLoadedFromCloud = true;
+                setTimeout(() => { window.location.reload(); }, 200);
+                return;
+            }
+
+            window.dataLoadedFromCloud = true;
+
+            // Re-hidratar el DOM con un pequeño delay seguro para evitar colisiones con elementos ocultos
+            setTimeout(() => {
+                if (window.initAppState) window.initAppState();
+            }, 100);
         } else {
-            // Si el doc no existe, es un usuario nuevo, le quitamos el candado
-            window.dataLoadedFromCloud = true; // <-- NUEVO
+            window.dataLoadedFromCloud = true; 
         }
     }, (error) => {
-        console.error("Fallo en la resolución del socket en tiempo real:", error);
+        console.error("Fallo en tiempo real:", error);
     });
 };
 // 2. SUBIDA SEGURA: Sincronización corregida para evitar doble sufijo
