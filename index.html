@@ -2198,65 +2198,72 @@ function cambiarFecha(offset) {
     renderCalendario();
 }
 
-        function renderEstrategiaResumen() {
-            const container = document.getElementById('resumenContent');
-            const promptArea = document.getElementById('aiPromptArea');
-            
-            const tema = localStorage.getItem('temaCentral') || 'No definido';
-            const nicho = localStorage.getItem('nichoContenido') || 'No definido';
-            const publico = localStorage.getItem('publicoObjetivo') || 'No definido';
-            const creador = localStorage.getItem('descCreador') || 'No definido';
-            const tono = localStorage.getItem('identidadTono') || 'Tono no definido';
-            const arq = JSON.parse(localStorage.getItem('arquetiposSeleccionados')) || [];
-            const ejes = JSON.parse(localStorage.getItem('ejesTags')) || [];
+function renderEstrategiaResumen() {
+    const container = document.getElementById('resumenContent');
+    const promptArea = document.getElementById('aiPromptArea');
+    
+    const tema = localStorage.getItem('temaCentral') || 'No definido';
+    const nicho = localStorage.getItem('nichoContenido') || 'No definido';
+    const publico = localStorage.getItem('publicoObjetivo') || 'No definido';
+    const creador = localStorage.getItem('descCreador') || 'No definido';
+    const tono = localStorage.getItem('identidadTono') || 'Tono no definido';
+    
+    // --- SOLUCIÓN ANTI-CRASHEOS ---
+    let arq = [];
+    try { const val = localStorage.getItem('arquetiposSeleccionados'); if(val) arq = JSON.parse(val); } catch(e) {}
+    
+    let ejes = [];
+    try { const val = localStorage.getItem('ejesTags'); if(val) ejes = JSON.parse(val); } catch(e) {}
 
-            let lineasFormatos = [];
-            for(let i=1; i<=3; i++) {
-                const fn = localStorage.getItem(`starFormat${i}_name`);
-                const fd = localStorage.getItem(`starFormat${i}_desc`);
-                if(fn) lineasFormatos.push(`- Formato "${fn}": ${fd}`);
-            }
-            const seccionFormatos = lineasFormatos.length > 0 ? `\nMIS FORMATOS ESTRELLA (Úsalos para generar las ideas):\n${lineasFormatos.join('\n')}\n` : "";
-            
-            const notasActuales = JSON.parse(localStorage.getItem('contentTasks')) || { ideas: [], audios: [], tendencias: [], proximos: [] };
-            
-            let lineasInsumos = [];
-            if (notasActuales.ideas?.length) lineasInsumos.push(`- Ideas específicas: ${notasActuales.ideas.map(t => t.text).join(', ')}`);
-            if (notasActuales.audios?.length) lineasInsumos.push(`- Audios/Referencias: ${notasActuales.audios.map(t => t.text).join(', ')}`);
-            if (notasActuales.tendencias?.length) lineasInsumos.push(`- Tendencias: ${notasActuales.tendencias.map(t => t.text).join(', ')}`);
-            if (notasActuales.proximos?.length) lineasInsumos.push(`- Próximos: ${notasActuales.proximos.map(t => t.text).join(', ')}`);
+    let lineasFormatos = [];
+    for(let i=1; i<=3; i++) {
+        const fn = localStorage.getItem(`starFormat${i}_name`);
+        const fd = localStorage.getItem(`starFormat${i}_desc`);
+        if(fn) lineasFormatos.push(`- Formato "${fn}": ${fd}`);
+    }
+    const seccionFormatos = lineasFormatos.length > 0 ? `\nMIS FORMATOS ESTRELLA (Úsalos para generar las ideas):\n${lineasFormatos.join('\n')}\n` : "";
+    
+    // --- SOLUCIÓN ANTI-CRASHEOS ---
+    let notasActuales = { ideas: [], audios: [], tendencias: [], proximos: [] };
+    try { const val = localStorage.getItem('contentTasks'); if(val) notasActuales = JSON.parse(val); } catch(e) {}
+    
+    let lineasInsumos = [];
+    if (notasActuales.ideas?.length) lineasInsumos.push(`- Ideas específicas: ${notasActuales.ideas.map(t => t.text).join(', ')}`);
+    if (notasActuales.audios?.length) lineasInsumos.push(`- Audios/Referencias: ${notasActuales.audios.map(t => t.text).join(', ')}`);
+    if (notasActuales.tendencias?.length) lineasInsumos.push(`- Tendencias: ${notasActuales.tendencias.map(t => t.text).join(', ')}`);
+    if (notasActuales.proximos?.length) lineasInsumos.push(`- Próximos: ${notasActuales.proximos.map(t => t.text).join(', ')}`);
 
-            const seccionInsumos = lineasInsumos.length > 0 ? `\nDATOS DEL PANEL "IDEAS Y TENDENCIAS":\n${lineasInsumos.join('\n')}\n` : "";
+    const seccionInsumos = lineasInsumos.length > 0 ? `\nDATOS DEL PANEL "IDEAS Y TENDENCIAS":\n${lineasInsumos.join('\n')}\n` : "";
 
-            const aw = localStorage.getItem('strat_awareness') || 'Generar visibilidad masiva.';
-            const co = localStorage.getItem('strat_consideracion') || 'Establecer autoridad y confianza.';
-            const cv = localStorage.getItem('strat_conversion') || 'Llamado a la acción directa.';
-            const fi = localStorage.getItem('strat_fidelizacion') || 'Mantener a la comunidad activa.';
+    const aw = localStorage.getItem('strat_awareness') || 'Generar visibilidad masiva.';
+    const co = localStorage.getItem('strat_consideracion') || 'Establecer autoridad y confianza.';
+    const cv = localStorage.getItem('strat_conversion') || 'Llamado a la acción directa.';
+    const fi = localStorage.getItem('strat_fidelizacion') || 'Mantener a la comunidad activa.';
 
-            if (container) {
-                container.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div class="p-4 bg-slate-50 rounded-lg border">
-                            <h4 class="text-xs font-bold text-gray-400 uppercase">Perfil de Creador</h4>
-                            <p class="text-lg font-bold text-slate-800">${tema}</p>
-                            <p class="text-sm text-indigo-600 font-medium">${nicho} • ${arq.join(' + ')}</p>
-                        </div>
-                        <div class="p-4 bg-slate-50 rounded-lg border">
-                            <h4 class="text-xs font-bold text-gray-400 uppercase">Audiencia Clave</h4>
-                            <p class="text-sm text-slate-700 mt-1">${publico}</p>
-                        </div>
-                        <div class="p-4 bg-slate-50 rounded-lg border md:col-span-2">
-                            <h4 class="text-xs font-bold text-gray-400 uppercase">Nombre y descripción del Creador (Talentos, Hobbies)</h4>
-                            <p class="text-sm text-slate-700 mt-1">${creador}</p>
-                        </div>
-                        <div class="p-4 bg-slate-50 rounded-lg border md:col-span-2">
-                            <h4 class="text-xs font-bold text-gray-400 uppercase">Identidad y Tono de Comunicación</h4>
-                            <p class="text-sm text-slate-700 mt-1">${tono}</p>
-                        </div>
-                    </div>`;
-            }
+    if (container) {
+        container.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="p-4 bg-slate-50 rounded-lg border">
+                    <h4 class="text-xs font-bold text-gray-400 uppercase">Perfil de Creador</h4>
+                    <p class="text-lg font-bold text-slate-800">${tema}</p>
+                    <p class="text-sm text-indigo-600 font-medium">${nicho} • ${arq.join(' + ')}</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-lg border">
+                    <h4 class="text-xs font-bold text-gray-400 uppercase">Audiencia Clave</h4>
+                    <p class="text-sm text-slate-700 mt-1">${publico}</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-lg border md:col-span-2">
+                    <h4 class="text-xs font-bold text-gray-400 uppercase">Nombre y descripción del Creador (Talentos, Hobbies)</h4>
+                    <p class="text-sm text-slate-700 mt-1">${creador}</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-lg border md:col-span-2">
+                    <h4 class="text-xs font-bold text-gray-400 uppercase">Identidad y Tono de Comunicación</h4>
+                    <p class="text-sm text-slate-700 mt-1">${tono}</p>
+                </div>
+            </div>`;
+    }
 
-            const prompt = `Actúa como un estratega de contenido profesional que es un creador de contenido con millones de seguidores y un gran engagement.
+    const prompt = `Actúa como un estratega de contenido profesional que es un creador de contenido con millones de seguidores y un gran engagement.
 CONTEXTO:
 - Nicho: ${nicho} | Tema de autoridad: ${tema}
 - Nombre y descripción del Creador: ${creador}
@@ -2283,8 +2290,8 @@ REGLAS CRÍTICAS:
 6. Distribución: Por Tipo (70% de valor, 20% de marca, 10% de presencia). Por formato (70% formato estrella, 30% libre). Por tema (50% tema de autoridad: ${tema}, 50% ejes transversales cruzados con el tema de autoridad: ${tema}).
 7. El guión base debe entregar información oficial, precisa y útil. Prioriza la densidad de información.
 8. TONO: Coherente con los arquetipos ${arq.join(' y ')}. Aplica estrictamente el tono descrito en CONTEXTO.`;
-            if (promptArea) promptArea.value = prompt;
-        }
+    if (promptArea) promptArea.value = prompt;
+}
 
         function updateLivePrompt() {
             const area = document.getElementById('aiScriptPromptArea');
