@@ -2780,16 +2780,24 @@ ${idea.copy || 'N/A'}`;
             renderHistoryNotas();
         }
 
-        window.initAppState = () => {
-            ideas = JSON.parse(localStorage.getItem('contentIdeas')) || [];
-            ejesTags = JSON.parse(localStorage.getItem('ejesTags')) || [];
-            tasks = JSON.parse(localStorage.getItem('contentTasks')) || { ideas: [], audios: [], tendencias: [], proximos: [] };
-            blocNotas = JSON.parse(localStorage.getItem('blocNotasTasks')) || { rapidas: [], borradores: [], recursos: [], personales: [] };
+window.initAppState = () => {
+            // FUNCIÓN SALVAVIDAS: Evita que el JSON.parse crashee si recibe un texto vacío ("") de la nube
+            const parseSeguro = (llave, valorPorDefecto) => {
+                const valor = localStorage.getItem(llave);
+                if (!valor || valor === "" || valor === "null") return valorPorDefecto;
+                try { return JSON.parse(valor); } catch(e) { return valorPorDefecto; }
+            };
+
+            // Usamos el parse seguro para que no explote la app
+            ideas = parseSeguro('contentIdeas', []);
+            ejesTags = parseSeguro('ejesTags', []);
+            tasks = parseSeguro('contentTasks', { ideas: [], audios: [], tendencias: [], proximos: [] });
+            blocNotas = parseSeguro('blocNotasTasks', { rapidas: [], borradores: [], recursos: [], personales: [] });
             window.tasks = tasks;
-    window.blocNotas = blocNotas;
-            historyTasks = JSON.parse(localStorage.getItem('historyTasks')) || [];
-            historyNotas = JSON.parse(localStorage.getItem('historyNotas')) || [];
-            tablaIAParsed = JSON.parse(localStorage.getItem('tablaIAGuardada')) || [];
+            window.blocNotas = blocNotas;
+            historyTasks = parseSeguro('historyTasks', []);
+            historyNotas = parseSeguro('historyNotas', []);
+            tablaIAParsed = parseSeguro('tablaIAGuardada', []);
 
             initArquetipos();
             document.getElementById('temaCentral').value = localStorage.getItem('temaCentral') || '';
