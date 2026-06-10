@@ -2293,44 +2293,50 @@ REGLAS CRÍTICAS:
     if (promptArea) promptArea.value = prompt;
 }
 
-        function updateLivePrompt() {
-            const area = document.getElementById('aiScriptPromptArea');
-            if (!area) return;
-            
-            const formato = document.getElementById('ideaFormato').value;
-            const tipo = document.getElementById('ideaTipo').value;
-            const obj = document.getElementById('ideaObjetivo').value;
-            const est = document.getElementById('ideaTipoEstrategico').value;
-            const col = document.getElementById('ideaColaboracion').value;
-            const pub = document.getElementById('ideaPublicacion').value;
-            const starFormatSelect = document.getElementById('ideaStarFormat').value;
-            const hook = document.getElementById('ideaHook').value || "[INSERTAR GANCHO AQUÍ]";
-            const enlaces = document.getElementById('ideaEnlaces').value.trim();
-            const guionBase = document.getElementById('ideaGuionBase').value.trim();
+       function updateLivePrompt() {
+    const area = document.getElementById('aiScriptPromptArea');
+    if (!area) return;
+    
+    const formato = document.getElementById('ideaFormato').value;
+    const tipo = document.getElementById('ideaTipo').value;
+    const obj = document.getElementById('ideaObjetivo').value;
+    const est = document.getElementById('ideaTipoEstrategico').value;
+    const col = document.getElementById('ideaColaboracion').value;
+    const pub = document.getElementById('ideaPublicacion').value;
+    const starFormatSelect = document.getElementById('ideaStarFormat').value;
+    const hook = document.getElementById('ideaHook').value || "[INSERTAR GANCHO AQUÍ]";
+    const enlaces = document.getElementById('ideaEnlaces').value.trim();
+    const guionBase = document.getElementById('ideaGuionBase').value.trim();
 
-            let especificacionesOpcionales = "";
-            if (enlaces) especificacionesOpcionales += `\n- ENLACES CON INFORMACIÓN RELEVANTE DE SOPORTE:\n${enlaces}`;
-            if (guionBase) especificacionesOpcionales += `\n- IDEA INICIAL / ESTRUCTURA BASE DESEADA:\n${guionBase}`;
-            if (starFormatSelect) {
-                for (let i = 1; i <= 3; i++) {
-                    const name = localStorage.getItem(`starFormat${i}_name`);
-                    const desc = localStorage.getItem(`starFormat${i}_desc`);
-                    if (name && name.trim() === starFormatSelect.trim() && desc) {
-                        especificacionesOpcionales += `\n- REGLA DE ESTRUCTURA OBLIGATORIA (Formato Estrella): Este video debe estructurarse siguiendo fielmente el formato institucional "${name.trim()}", el cual consiste en: ${desc.trim()}`;
-                        break;
-                    }
-                }
+    let especificacionesOpcionales = "";
+    if (enlaces) especificacionesOpcionales += `\n- ENLACES CON INFORMACIÓN RELEVANTE DE SOPORTE:\n${enlaces}`;
+    if (guionBase) especificacionesOpcionales += `\n- IDEA INICIAL / ESTRUCTURA BASE DESEADA:\n${guionBase}`;
+    if (starFormatSelect) {
+        for (let i = 1; i <= 3; i++) {
+            const name = localStorage.getItem(`starFormat${i}_name`);
+            const desc = localStorage.getItem(`starFormat${i}_desc`);
+            if (name && name.trim() === starFormatSelect.trim() && desc) {
+                especificacionesOpcionales += `\n- REGLA DE ESTRUCTURA OBLIGATORIA (Formato Estrella): Este video debe estructurarse siguiendo fielmente el formato institucional "${name.trim()}", el cual consiste en: ${desc.trim()}`;
+                break;
             }
-            
-            const tema = localStorage.getItem('temaCentral') || "mi pilar de autoridad";
-            const creador = localStorage.getItem('descCreador') || "No definido";
-            const nicho = localStorage.getItem('nichoContenido') || "No definido";
-            const publico = localStorage.getItem('publicoObjetivo') || "mi audiencia objetivo";
-            const arq = JSON.parse(localStorage.getItem('arquetiposSeleccionados')) || ["El Sabio"];
-            const ejes = JSON.parse(localStorage.getItem('ejesTags')) || ["mis temas secundarios"];
-            const tono = localStorage.getItem('identidadTono') || "Tono profesional y adecuado al nicho";
-            
-            area.value = `Actúa como un creador de contenido en redes sociales con millones de seguidores y un gran engagement.
+        }
+    }
+    
+    const tema = localStorage.getItem('temaCentral') || "mi pilar de autoridad";
+    const creador = localStorage.getItem('descCreador') || "No definido";
+    const nicho = localStorage.getItem('nichoContenido') || "No definido";
+    const publico = localStorage.getItem('publicoObjetivo') || "mi audiencia objetivo";
+    
+    // --- SOLUCIÓN ANTI-CRASHEOS ---
+    let arq = ["El Sabio"];
+    try { const val = localStorage.getItem('arquetiposSeleccionados'); if(val) { const parsed = JSON.parse(val); if(parsed.length) arq = parsed; } } catch(e) {}
+    
+    let ejes = ["mis temas secundarios"];
+    try { const val = localStorage.getItem('ejesTags'); if(val) { const parsed = JSON.parse(val); if(parsed.length) ejes = parsed; } } catch(e) {}
+    
+    const tono = localStorage.getItem('identidadTono') || "Tono profesional y adecuado al nicho";
+    
+    area.value = `Actúa como un creador de contenido en redes sociales con millones de seguidores y un gran engagement.
 MI PERFIL ESTRATÉGICO:
 - Tema central (Autoridad): ${tema}
 - Nombre y descripción del Creador: ${creador}
@@ -2367,8 +2373,7 @@ ENTREGABLES ADICIONALES (Debajo del guion):
 - SEO: Palabras clave.
 - HASHTAGS (5): #1 Formato, #2 y #3 Tema, #4 y #5 Nicho.
 - FUENTES: 4 enlaces con fuentes oficiales/teóricas.`;
-        }
-
+}
         function copyPrompt() {
             copyToClipboardElement('aiPromptArea');
             alert('Prompt estratégico copiado con éxito.');
@@ -2849,15 +2854,6 @@ window.initAppState = () => {
             });
         }
         
-// 2. AQUI SUSTITUYES EL "WINDOW.ADDEVENTLISTENER" POR ESTE:
-    window.addEventListener('load', () => {
-        if(window.renderSelectorCuentas) window.renderSelectorCuentas();
-        
-        // Esta línea ahora sí buscará la función correctamente
-        window.initAppState(); 
-        
-        autoResizeTextareas();
-    });
         // --- LÓGICA PARA EL MENÚ DESPLEGABLE DE PLATAFORMAS ---
 function toggleDropdownPlataformas() {
     const menu = document.getElementById('menuPlataformas');
