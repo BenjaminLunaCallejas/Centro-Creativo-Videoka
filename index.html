@@ -247,7 +247,7 @@ onAuthStateChanged(auth, (user) => {
             loginScreen.classList.add('hidden');
         }
         
-        // SOLUCIÓN 1: Escuchar en TIEMPO REAL los perfiles desde la nube
+        // Escuchar en TIEMPO REAL los perfiles desde la nube
         const docRef = doc(window.db, "videoka_master", user.uid);
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists() && docSnap.data().profiles) {
@@ -262,11 +262,11 @@ onAuthStateChanged(auth, (user) => {
                     if (firstActive) {
                         window.currentProfileId = firstActive.id;
                         setItemMethod.call(localStorage, 'videoka_active_profile', window.currentProfileId);
-                        
-                        // 👇 LA LÍNEA MÁGICA QUE EVITA EL CRASHEO DEL BUCLE INFINITO
                         sessionStorage.setItem('videoka_tab_profile', window.currentProfileId); 
                         
-                        window.location.reload(); 
+                        // PARCHE ANTI-BUCLE: Pintamos los cambios visualmente SIN recargar la página
+                        if (window.renderSelectorCuentas) window.renderSelectorCuentas();
+                        if (window.descargarDatosNube) window.descargarDatosNube();
                     }
                 }
                 if (window.renderSelectorCuentas) window.renderSelectorCuentas();
@@ -275,7 +275,6 @@ onAuthStateChanged(auth, (user) => {
             }
         });
 
-        // SOLUCIÓN 2: Descargar automáticamente la info de los videos al loguearse
         if (window.descargarDatosNube) window.descargarDatosNube();
 
     } else {
@@ -323,23 +322,20 @@ window.descargarDatosNube = () => {
                 }
             });
             
-            // Guardamos la bandera de que ya cargó
             window.isUpdatingFromCloud = false; 
-            
-            // Si el dispositivo estaba totalmente vacío, forzamos un refresco limpio para pintar todo el DOM de golpe
-            if (!window.dataLoadedFromCloud && !localStorage.getItem('contentIdeas_loaded')) {
-                localStorage.setItem('contentIdeas_loaded', 'true');
-                window.dataLoadedFromCloud = true;
-                setTimeout(() => { window.location.reload(); }, 200);
-                return;
-            }
-
             window.dataLoadedFromCloud = true;
 
-            // Re-hidratar el DOM con un pequeño delay seguro para evitar colisiones con elementos ocultos
+            // ADIÓS AL BUCLE INFINITO: Re-hidratamos el DOM directo sin usar window.location.reload()
             setTimeout(() => {
-                if (window.initAppState) window.initAppState();
+                if (typeof window.initAppState === 'function') {
+                    window.initAppState();
+                } else {
+                    document.addEventListener('DOMContentLoaded', () => {
+                        if (typeof window.initAppState === 'function') window.initAppState();
+                    });
+                }
             }, 100);
+            
         } else {
             window.dataLoadedFromCloud = true; 
         }
@@ -347,6 +343,7 @@ window.descargarDatosNube = () => {
         console.error("Fallo en tiempo real:", error);
     });
 };
+        
 // 2. SUBIDA SEGURA: Sincronización corregida para evitar doble sufijo
 window.syncToCloud = async () => {
     if (!window.currentUserUID) return;
@@ -2926,10 +2923,10 @@ document.addEventListener('click', function(event) {
     window.cancelarEdicion = cancelarEdicion;
     window.allowDrop = allowDrop;
 
-    // 4. ARRANQUE CORREGIDO
+// 4. ARRANQUE CORREGIDO
     window.addEventListener('load', () => {
         if(window.renderSelectorCuentas) window.renderSelectorCuentas();
-        window.initAppState(); 
+        if(typeof window.initAppState === 'function') window.initAppState(); 
         autoResizeTextareas();
     });
 </script>
