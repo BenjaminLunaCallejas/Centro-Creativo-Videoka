@@ -2930,17 +2930,16 @@ document.addEventListener('click', function(event) {
     window.allowDrop = allowDrop;
     window.compartirCalendario = compartirCalendario;
 
-    // --- INICIO: FUNCIÓN PARA COMPARTIR CALENDARIO ---
+// --- INICIO: FUNCIÓN PARA COMPARTIR CALENDARIO ---
 function compartirCalendario() {
-    // IMPORTANTE: Aquí debes poner el ID o la clase del contenedor de tu tabla generada.
-    // Si tu tabla no tiene ID, agrégale uno en el HTML original o usa el selector correcto.
-    const tablaCalendario = document.querySelector('table'); // Cambia 'table' por el ID específico si tienes varias tablas (ej. '#mi-tabla')
+    const tablaCalendario = document.querySelector('table'); 
     
     if (!tablaCalendario) {
         alert("Primero debes generar el calendario de contenido.");
         return;
     }
 
+    // FÍJATE AQUÍ: Agregamos "\" a los </script> para que no rompan tu código
     const htmlContent = `
     <!DOCTYPE html>
     <html lang="es">
@@ -2948,7 +2947,7 @@ function compartirCalendario() {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Calendario de Contenido Compartido</title>
-        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://cdn.tailwindcss.com"><\/script>
         <style>
             table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
             th, td { border: 1px solid #e5e7eb; padding: 12px; text-align: left; font-size: 0.875rem; }
@@ -2985,14 +2984,12 @@ function compartirCalendario() {
                     const columnas = filas[i].querySelectorAll('td, th');
 
                     for (let j = 0; j < columnas.length; j++) {
-                        // Limpiar saltos de línea y comillas para evitar errores en Excel
                         let texto = columnas[j].innerText.replace(/(\\r\\n|\\n|\\r)/gm, ' ').replace(/"/g, '""');
                         fila.push('"' + texto + '"');
                     }
                     csv.push(fila.join(','));
                 }
 
-                // Agregamos \\uFEFF (BOM) para que Excel lea correctamente acentos y la letra ñ
                 const csvContent = "\\uFEFF" + csv.join('\\n');
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const url = URL.createObjectURL(blob);
@@ -3004,7 +3001,7 @@ function compartirCalendario() {
                 link.click();
                 document.body.removeChild(link);
             }
-        </script>
+        <\/script>
     </body>
     </html>
     `;
