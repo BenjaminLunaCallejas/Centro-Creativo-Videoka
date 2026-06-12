@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planificador Estratégico de Contenido - Core Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -232,11 +233,17 @@ onAuthStateChanged(auth, (user) => {
     // Verificamos si la URL trae un parámetro de edición compartida
     const urlParams = new URLSearchParams(window.location.search);
     const sharedId = urlParams.get('shared');
+    const sharedTablaId = urlParams.get('shared_tabla'); // NUEVO INTERCEPTOR
 
     // Si estamos en modo compartido, saltamos la validación de login
     if (sharedId) {
         window.initSharedMode(sharedId);
         return; 
+    }
+    // NUEVO: Si es tabla compartida, saltar validación e iniciar modo solo lectura
+    if (sharedTablaId) {
+        window.initSharedTablaMode(sharedTablaId);
+        return;
     }
 
     const loginScreen = document.getElementById('loginScreen');
@@ -934,7 +941,87 @@ window.generarEnlaceColaborativo = async () => {
                 });
             });
         };
+// ====== LÓGICA DE TABLA COMPARTIDA ======
+window.compartirTablaCalendario = async (event) => {
+    if(!window.db) return alert("Debes iniciar sesión para generar un enlace vivo.");
+    if(!window.tablaIAParsed || window.tablaIAParsed.length === 0) return alert("No hay datos en la tabla para compartir.");
 
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "⏳ Generando...";
+    btn.disabled = true;
+
+    // Generamos un ID único para esta tabla
+    const uniqueId = "tabla_" + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    
+    const payload = {
+        datos: window.tablaIAParsed,
+        createdAt: window.serverTimestamp(),
+        creadorId: window.currentUserUID || 'anonimo'
+    };
+
+    try {
+        const docRef = doc(window.db, "shared_tablas", uniqueId);
+        await setDoc(docRef, payload);
+
+        const shareUrl = window.location.origin + window.location.pathname + "?shared_tabla=" + uniqueId;
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            alert(`¡Enlace generado y copiado!\nCompártelo con cualquier persona (No requiere iniciar sesión).`);
+        });
+    } catch (error) {
+        console.error("Error al compartir tabla:", error);
+        alert("Fallo al conectar con la nube.");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+};
+
+window.initSharedTablaMode = function(id) {
+    const loginScreen = document.getElementById('loginScreen');
+    if (loginScreen) { loginScreen.style.display = 'none'; loginScreen.classList.add('hidden'); }
+    document.getElementById('mainAppContainer').style.display = 'none';
+
+    const sharedScreen = document.getElementById('sharedTablaScreen');
+    sharedScreen.classList.remove('hidden');
+    sharedScreen.classList.add('flex');
+
+    const docRef = doc(db, "shared_tablas", id);
+
+    // Solo lectura, con un getDoc normal
+    getDoc(docRef).then((snap) => {
+        if (snap.exists()) {
+            const data = snap.data();
+            window.tablaIAParsed = data.datos || []; // Lo cargamos a la variable global para las descargas
+            document.getElementById('sharedTablaStatus').classList.add('hidden');
+            document.getElementById('sharedTablaContent').classList.remove('hidden');
+            
+            const tbody = document.getElementById('sharedTablaBody');
+            tbody.innerHTML = '';
+            
+            window.tablaIAParsed.forEach((item) => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-700 align-top">${item.dia}</td>
+                    <td class="p-3 text-slate-600 align-top">${item.tipo}</td>
+                    <td class="p-3 font-medium text-indigo-700 align-top">${item.tema}</td>
+                    <td class="p-3 text-slate-600 text-[10px] uppercase font-bold align-top">${item.formato}</td>
+                    <td class="p-3 text-gray-800 align-top italic">${item.hook}</td>
+                    <td class="p-3 text-gray-600 align-top">${item.contenido}</td>
+                    <td class="p-3 text-gray-700 align-top">${item.guionBase}</td>
+                    <td class="p-3 text-indigo-600 font-semibold align-top">${item.cta}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } else {
+            document.getElementById('sharedTablaStatus').innerText = "La tabla compartida ya no existe en la nube.";
+        }
+    }).catch(err => {
+        console.error(err);
+        document.getElementById('sharedTablaStatus').innerText = "Error de permisos o conexión. Revisa las reglas de Firebase.";
+    });
+};
     </script>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased">
@@ -1049,7 +1136,30 @@ window.generarEnlaceColaborativo = async () => {
             </div>
         </div>
     </div>
-
+<div id="sharedTablaScreen" class="fixed inset-0 bg-slate-100 z-[3000] hidden flex-col overflow-y-auto">
+        <div class="p-4 bg-slate-800 text-white flex justify-between items-center shadow-md sticky top-0 z-20">
+            <h1 class="text-xl font-bold text-indigo-400 flex items-center gap-2">📊 Videoka - Calendario Compartido</h1>
+            <div class="flex gap-2">
+                <button onclick="descargarTablaCSV()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-xs font-bold transition shadow-lg">📄 CSV</button>
+                <button onclick="descargarTablaXLSX()" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded text-xs font-bold transition shadow-lg">📊 Excel</button>
+                <button onclick="window.location.href=window.location.pathname" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-xs font-bold transition shadow-lg">Ir a la App</button>
+            </div>
+        </div>
+        <div class="p-4 md:p-8 max-w-7xl mx-auto w-full">
+            <div id="sharedTablaStatus" class="text-center text-lg text-gray-600 font-bold mt-10">⏳ Cargando tabla compartida...</div>
+            <div id="sharedTablaContent" class="hidden overflow-x-auto custom-scroll border rounded-lg shadow-sm relative bg-white">
+                <table class="w-full text-left text-xs border-collapse min-w-[1200px]">
+                    <thead>
+                        <tr class="bg-indigo-100 text-indigo-900 border-b-2 border-indigo-200">
+                            <th class="p-3">Día</th><th class="p-3">Tipo</th><th class="p-3">Tema</th><th class="p-3">Formato</th>
+                            <th class="p-3">Gancho (Hook)</th><th class="p-3">Contenido</th><th class="p-3">Guion base</th><th class="p-3">CTA</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sharedTablaBody" class="bg-white"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
     <div id="mainAppContainer">
         <div id="loginScreen" class="fixed inset-0 bg-slate-900 z-[2000] flex flex-col items-center justify-center text-white">
             <h1 class="text-4xl font-bold text-indigo-400 mb-6 text-center">Centro Creativo<br>Videoka</h1>
@@ -1327,6 +1437,11 @@ window.generarEnlaceColaborativo = async () => {
                             Generar y Guardar Tabla
                         </button>
                         <div id="calendarioTablaContainer" class="mt-6 hidden">
+                            <div class="flex flex-wrap gap-3 mb-4 justify-end">
+        <button onclick="descargarTablaCSV()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-700 transition shadow-sm flex items-center gap-2">📄 Descargar CSV</button>
+        <button onclick="descargarTablaXLSX()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-emerald-700 transition shadow-sm flex items-center gap-2">📊 Descargar Excel</button>
+        <button onclick="compartirTablaCalendario(event)" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition shadow-sm flex items-center gap-2">🔗 Compartir Tabla</button>
+    </div>
                             <div class="overflow-x-auto custom-scroll border rounded-lg shadow-sm relative">
                                 <table class="w-full text-left text-xs border-collapse min-w-[1200px]">
                                     <thead>
@@ -2672,6 +2787,7 @@ ${idea.copy || 'N/A'}`;
     });
 
     localStorage.setItem('tablaIAGuardada', JSON.stringify(tablaIAParsed));
+    window.tablaIAParsed = tablaIAParsed;
     textarea.value = '';
     renderTablaCalendario();
     alert("✅ Tabla procesada y guardada con éxito.");
@@ -2807,6 +2923,7 @@ window.initAppState = () => {
             historyTasks = parseSeguro('historyTasks', []);
             historyNotas = parseSeguro('historyNotas', []);
             tablaIAParsed = parseSeguro('tablaIAGuardada', []);
+            window.tablaIAParsed = tablaIAParsed;
 
             initArquetipos();
             document.getElementById('temaCentral').value = localStorage.getItem('temaCentral') || '';
@@ -2881,6 +2998,44 @@ document.addEventListener('click', function(event) {
         menu.classList.add('hidden');
     }
 });
+        window.descargarTablaCSV = function() {
+    // Usamos el arreglo global (sirve tanto para el creador como para el invitado)
+    const data = window.tablaIAParsed || (typeof tablaIAParsed !== 'undefined' ? tablaIAParsed : []);
+    if (!data || data.length === 0) return alert("No hay datos para descargar.");
+    
+    let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // \uFEFF fuerza formato UTF-8 para evitar caracteres raros (tildes)
+    csvContent += "Día,Tipo,Tema,Formato,Gancho,Contenido,Guion Base,CTA\n";
+    
+    data.forEach(row => {
+        let r = [row.dia, row.tipo, row.tema, row.formato, row.hook, row.contenido, row.guionBase, row.cta];
+        // Escapar comillas dobles y comas para formato CSV estricto
+        let formattedRow = r.map(field => `"${(field || '').replace(/"/g, '""')}"`).join(",");
+        csvContent += formattedRow + "\n";
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "Calendario_Estrategico.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
+window.descargarTablaXLSX = function() {
+    const data = window.tablaIAParsed || (typeof tablaIAParsed !== 'undefined' ? tablaIAParsed : []);
+    if (!data || data.length === 0) return alert("No hay datos para descargar.");
+    
+    const wsData = [["Día", "Tipo", "Tema", "Formato", "Gancho", "Contenido", "Guion Base", "CTA"]];
+    data.forEach(row => {
+        wsData.push([row.dia, row.tipo, row.tema, row.formato, row.hook, row.contenido, row.guionBase, row.cta]);
+    });
+    
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Planificador");
+    XLSX.writeFile(wb, "Calendario_Estrategico.xlsx");
+};
         // 3. EL PARCHE DE CONEXIÓN (LO QUE AGREGAMOS PARA QUE LOS BOTONES FUNCIONEN)
     window.switchTab = switchTab;
     window.cambiarFecha = cambiarFecha;
@@ -2925,6 +3080,8 @@ document.addEventListener('click', function(event) {
     window.removeTag = removeTag;
     window.cancelarEdicion = cancelarEdicion;
     window.allowDrop = allowDrop;
+    window.descargarTablaCSV = descargarTablaCSV;
+    window.descargarTablaXLSX = descargarTablaXLSX;
 
 // 4. ARRANQUE CORREGIDO
     window.addEventListener('load', () => {
