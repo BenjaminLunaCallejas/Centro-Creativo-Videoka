@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planificador Estratégico de Contenido - Core Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <style>
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -3026,13 +3026,84 @@ window.descargarTablaXLSX = function() {
     const data = window.tablaIAParsed || (typeof tablaIAParsed !== 'undefined' ? tablaIAParsed : []);
     if (!data || data.length === 0) return alert("No hay datos para descargar.");
     
-    const wsData = [["Día", "Tipo", "Tema", "Formato", "Gancho", "Contenido", "Guion Base", "CTA"]];
+    // 1. Crear el libro y definir encabezados
+    const wb = XLSX.utils.book_new();
+    const headers = ["Día", "Tipo", "Tema", "Formato", "Gancho", "Contenido", "Guion Base", "CTA"];
+    const wsData = [headers];
+    
     data.forEach(row => {
         wsData.push([row.dia, row.tipo, row.tema, row.formato, row.hook, row.contenido, row.guionBase, row.cta]);
     });
     
     const ws = XLSX.utils.aoa_to_sheet(wsData);
-    const wb = XLSX.utils.book_new();
+    
+    // 2. Estilos para el Encabezado (Color índigo, texto blanco, centrado)
+    const headerStyle = {
+        font: { bold: true, color: { rgb: "FFFFFF" }, sz: 12 },
+        fill: { fgColor: { rgb: "4F46E5" } }, // Fondo Indigo
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: {
+            top: { style: "thin", color: { rgb: "CBD5E1" } },
+            bottom: { style: "thin", color: { rgb: "CBD5E1" } },
+            left: { style: "thin", color: { rgb: "CBD5E1" } },
+            right: { style: "thin", color: { rgb: "CBD5E1" } }
+        }
+    };
+
+    // 3. Aplicar estilos celda por celda
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+            const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+            if (!ws[cellRef]) continue;
+
+            if (R === 0) {
+                // Aplicar estilo de encabezado a la fila 0
+                ws[cellRef].s = headerStyle;
+            } else {
+                // Estilo base para los datos (texto ajustado arriba)
+                let cellStyle = {
+                    alignment: { vertical: "top", wrapText: true },
+                    font: { sz: 11, color: { rgb: "334155" } },
+                    border: {
+                        top: { style: "thin", color: { rgb: "E2E8F0" } },
+                        bottom: { style: "thin", color: { rgb: "E2E8F0" } },
+                        left: { style: "thin", color: { rgb: "E2E8F0" } },
+                        right: { style: "thin", color: { rgb: "E2E8F0" } }
+                    }
+                };
+
+                // Darle color a columnas específicas para que parezca a la web
+                if (C === 0) { // Columna Día
+                    cellStyle.font = { bold: true, sz: 11, color: { rgb: "334155" } };
+                    cellStyle.alignment = { vertical: "top", horizontal: "center", wrapText: true };
+                } else if (C === 2) { // Columna Tema
+                    cellStyle.font = { bold: true, sz: 11, color: { rgb: "4338CA" } }; // Índigo
+                } else if (C === 7) { // Columna CTA
+                    cellStyle.font = { bold: true, sz: 11, color: { rgb: "4F46E5" } }; // Índigo
+                }
+
+                ws[cellRef].s = cellStyle;
+            }
+        }
+    }
+
+    // 4. Establecer el ancho de las columnas
+    ws['!cols'] = [
+        { wch: 8 },   // Día
+        { wch: 15 },  // Tipo
+        { wch: 25 },  // Tema
+        { wch: 15 },  // Formato
+        { wch: 30 },  // Gancho
+        { wch: 35 },  // Contenido
+        { wch: 45 },  // Guion base
+        { wch: 20 }   // CTA
+    ];
+
+    // 5. Hacer que la fila de encabezado sea un poco más alta
+    ws['!rows'] = [{ hpt: 30 }];
+
+    // 6. Generar el archivo final
     XLSX.utils.book_append_sheet(wb, ws, "Planificador");
     XLSX.writeFile(wb, "Calendario_Estrategico.xlsx");
 };
