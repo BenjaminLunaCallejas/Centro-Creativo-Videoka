@@ -951,7 +951,6 @@ window.compartirTablaCalendario = async (event) => {
     btn.innerHTML = "⏳ Generando...";
     btn.disabled = true;
 
-    // Generamos un ID único para esta tabla
     const uniqueId = "tabla_" + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
     
     const payload = {
@@ -963,6 +962,10 @@ window.compartirTablaCalendario = async (event) => {
     try {
         const docRef = doc(window.db, "shared_tablas", uniqueId);
         await setDoc(docRef, payload);
+
+        localStorage.setItem('sharedTablaActiva', uniqueId);
+        const btnSync = document.getElementById('btnSyncTabla');
+        if(btnSync) { btnSync.classList.remove('hidden'); btnSync.classList.add('flex'); }
 
         const shareUrl = window.location.origin + window.location.pathname + "?shared_tabla=" + uniqueId;
         navigator.clipboard.writeText(shareUrl).then(() => {
@@ -988,29 +991,41 @@ window.initSharedTablaMode = function(id) {
 
     const docRef = doc(db, "shared_tablas", id);
 
-    // Solo lectura, con un getDoc normal
     getDoc(docRef).then((snap) => {
         if (snap.exists()) {
             const data = snap.data();
-            window.tablaIAParsed = data.datos || []; // Lo cargamos a la variable global para las descargas
+            window.tablaIAParsed = data.datos || []; 
             document.getElementById('sharedTablaStatus').classList.add('hidden');
             document.getElementById('sharedTablaContent').classList.remove('hidden');
             
+            const btnGuardar = document.getElementById('btnGuardarTablaCompartida');
+            btnGuardar.classList.remove('hidden');
+            btnGuardar.onclick = () => {
+                btnGuardar.innerText = "⏳ Guardando...";
+                btnGuardar.disabled = true;
+                setDoc(docRef, { datos: window.tablaIAParsed, lastUpdate: window.serverTimestamp() }, { merge: true })
+                    .then(() => {
+                        btnGuardar.innerText = "✅ Guardado";
+                        setTimeout(() => { btnGuardar.innerText = "💾 Guardar Cambios"; btnGuardar.disabled = false; }, 2000);
+                    })
+                    .catch(e => { console.error(e); alert("Error al guardar en Firebase."); btnGuardar.innerText = "💾 Guardar Cambios"; btnGuardar.disabled = false; });
+            };
+
             const tbody = document.getElementById('sharedTablaBody');
             tbody.innerHTML = '';
             
-            window.tablaIAParsed.forEach((item) => {
+            window.tablaIAParsed.forEach((item, index) => {
                 const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-slate-50 transition";
+                tr.className = "border-b hover:bg-slate-50 transition bg-white";
                 tr.innerHTML = `
                     <td class="p-3 font-bold text-slate-700 align-top">${item.dia}</td>
-                    <td class="p-3 text-slate-600 align-top">${item.tipo}</td>
-                    <td class="p-3 font-medium text-indigo-700 align-top">${item.tema}</td>
-                    <td class="p-3 text-slate-600 text-[10px] uppercase font-bold align-top">${item.formato}</td>
-                    <td class="p-3 text-gray-800 align-top italic">${item.hook}</td>
-                    <td class="p-3 text-gray-600 align-top">${item.contenido}</td>
-                    <td class="p-3 text-gray-700 align-top">${item.guionBase}</td>
-                    <td class="p-3 text-indigo-600 font-semibold align-top">${item.cta}</td>
+                    <td class="p-3 text-slate-600 align-top"><div contenteditable="true" onblur="window.actualizarCeldaInvitado(event, ${index}, 'tipo')" class="outline-none focus:bg-indigo-50 p-1 rounded min-h-[20px] transition">${item.tipo}</div></td>
+                    <td class="p-3 font-medium text-indigo-700 align-top"><div contenteditable="true" onblur="window.actualizarCeldaInvitado(event, ${index}, 'tema')" class="outline-none focus:bg-indigo-50 p-1 rounded min-h-[20px] transition">${item.tema}</div></td>
+                    <td class="p-3 text-slate-600 text-[10px] uppercase font-bold align-top"><div contenteditable="true" onblur="window.actualizarCeldaInvitado(event, ${index}, 'formato')" class="outline-none focus:bg-indigo-50 p-1 rounded min-h-[20px] transition">${item.formato}</div></td>
+                    <td class="p-3 text-gray-800 align-top italic"><div contenteditable="true" onblur="window.actualizarCeldaInvitado(event, ${index}, 'hook')" class="outline-none focus:bg-indigo-50 p-1 rounded min-h-[20px] transition">${item.hook}</div></td>
+                    <td class="p-3 text-gray-600 align-top"><div contenteditable="true" onblur="window.actualizarCeldaInvitado(event, ${index}, 'contenido')" class="outline-none focus:bg-indigo-50 p-1 rounded min-h-[20px] transition">${item.contenido}</div></td>
+                    <td class="p-3 text-gray-700 align-top"><div contenteditable="true" onblur="window.actualizarCeldaInvitado(event, ${index}, 'guionBase')" class="outline-none focus:bg-indigo-50 p-1 rounded min-h-[20px] transition">${item.guionBase}</div></td>
+                    <td class="p-3 text-indigo-600 font-semibold align-top"><div contenteditable="true" onblur="window.actualizarCeldaInvitado(event, ${index}, 'cta')" class="outline-none focus:bg-indigo-50 p-1 rounded min-h-[20px] transition">${item.cta}</div></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1019,9 +1034,48 @@ window.initSharedTablaMode = function(id) {
         }
     }).catch(err => {
         console.error(err);
-        document.getElementById('sharedTablaStatus').innerText = "Error de permisos o conexión. Revisa las reglas de Firebase.";
+        document.getElementById('sharedTablaStatus').innerText = "Error de conexión. Revisa las reglas de Firebase.";
     });
 };
+
+window.actualizarCeldaInvitado = function(event, index, campo) {
+    const nuevoValor = event.target.innerText.trim();
+    if (window.tablaIAParsed && window.tablaIAParsed[index]) {
+        window.tablaIAParsed[index][campo] = nuevoValor;
+    }
+};
+
+window.sincronizarTablaDesdeEnlace = async () => {
+    const sharedId = localStorage.getItem('sharedTablaActiva');
+    if (!sharedId) return alert("No hay una tabla compartida activa en este momento.");
+
+    const btn = document.getElementById('btnSyncTabla');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "⏳ Consultando...";
+    btn.disabled = true;
+
+    try {
+        const docSnap = await getDoc(doc(window.db, "shared_tablas", sharedId));
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (confirm("☁️ Se han detectado cambios en la nube.\n\n¿Deseas aceptar los cambios y sobrescribir tu tabla local con la versión del colaborador?")) {
+                window.tablaIAParsed = data.datos;
+                localStorage.setItem('tablaIAGuardada', JSON.stringify(window.tablaIAParsed));
+                if(typeof window.renderTablaCalendario === 'function') window.renderTablaCalendario();
+                alert("✅ Tabla actualizada y sincronizada correctamente.");
+            }
+        } else {
+            alert("La tabla ya no existe en la nube.");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Error al sincronizar con Firebase.");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+};
+        
     </script>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased">
