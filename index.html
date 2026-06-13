@@ -1637,15 +1637,16 @@ window.aplicarAuditoriaTabla = () => {
                         </button>
                         <div id="calendarioTablaContainer" class="mt-6 hidden">
                             
-                            <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 mb-4 rounded-r shadow-sm">
-        <p class="text-sm text-indigo-900 font-bold mb-2">💡 Sácale el máximo provecho a tu calendario generado:</p>
-        <ul class="text-xs text-indigo-800 space-y-1.5">
-            <li><span class="font-bold">✏️ Edición Inteligente:</span> Haz clic directamente en cualquier texto de la tabla para editarlo. Tus cambios se guardarán de forma automática.</li>
-            <li><span class="font-bold">💡 Guardar Gancho:</span> Pasa el cursor sobre la columna de "Gancho (Hook)" y haz clic en el ícono 💡 para enviar esa idea a tu panel de Ideas Crudas de la pestaña Ideas y Tendencias.</li>
-            <li><span class="font-bold">🔗 Compartir y Exportar:</span> Usa los botones superiores para descargar tu calendario en CSV/Excel, o genera un enlace vivo para compartirlo con clientes o tu equipo (no necesitan cuenta para verlo).</li>
-            <li><span class="font-bold">🚀 Producir:</span> El botón de la derecha enviará todos los datos de esa fila a tu Generador de Guiones para que empieces a trabajar en él.</li>
-        </ul>
-    </div>
+<div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 mb-4 rounded-r shadow-sm">
+                                <p class="text-sm text-indigo-900 font-bold mb-2">💡 Sácale el máximo provecho a tu calendario generado:</p>
+                                <ul class="text-xs text-indigo-800 space-y-2">
+                                    <li><span class="font-bold">✏️ Edición Inteligente:</span> Haz clic directamente en cualquier texto de la tabla para editarlo localmente. Tus cambios se guardarán de forma automática en tu navegador.</li>
+                                    <li><span class="font-bold">💡 Guardar Gancho:</span> Pasa el cursor sobre la columna de "Gancho (Hook)" y haz clic en el ícono 💡 para aislar esa idea y enviarla a tu panel de Ideas Crudas.</li>
+                                    <li><span class="font-bold">🔗 Compartir y Colaborar:</span> Genera un "Enlace Vivo" para compartir el calendario. Tus clientes o equipo podrán modificar los textos desde cualquier dispositivo sin necesidad de iniciar sesión.</li>
+                                    <li><span class="font-bold text-amber-700">🔄 Revisión de Cambios (Auditoría):</span> Si compartiste tu calendario y tus invitados hicieron modificaciones, presiona el botón <b class="bg-amber-100 px-1 rounded">⬇️ Revisar Cambios</b>. Se abrirá una interfaz comparativa que resaltará en verde las adiciones y en rojo las eliminaciones antes de que decidas integrarlas a tu base de datos.</li>
+                                    <li><span class="font-bold text-indigo-700">🚀 Producir:</span> El botón de la derecha enviará todos los datos de esa fila específica a tu Generador de Guiones (Pestaña 4) para que inicies el proceso de desarrollo estructural.</li>
+                                </ul>
+                            </div>
 <div class="flex flex-wrap gap-3 mb-4 justify-end">
         <button onclick="descargarTablaCSV()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-700 transition shadow-sm flex items-center gap-2">📄 Descargar CSV</button>
         <button onclick="descargarTablaXLSX()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-emerald-700 transition shadow-sm flex items-center gap-2">📊 Descargar Excel</button>
