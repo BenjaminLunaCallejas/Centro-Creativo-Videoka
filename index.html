@@ -1058,12 +1058,11 @@ window.sincronizarTablaDesdeEnlace = async () => {
         const docSnap = await getDoc(doc(window.db, "shared_tablas", sharedId));
         if (docSnap.exists()) {
             const data = docSnap.data();
-            if (confirm("☁️ Se han detectado cambios en la nube.\n\n¿Deseas aceptar los cambios y sobrescribir tu tabla local con la versión del colaborador?")) {
-                window.tablaIAParsed = data.datos;
-                localStorage.setItem('tablaIAGuardada', JSON.stringify(window.tablaIAParsed));
-                if(typeof window.renderTablaCalendario === 'function') window.renderTablaCalendario();
-                alert("✅ Tabla actualizada y sincronizada correctamente.");
-            }
+            const nubeDatos = data.datos || [];
+            const localDatos = window.tablaIAParsed || [];
+
+            // Invocación del nuevo módulo de auditoría visual
+            window.mostrarAuditoriaTabla(localDatos, nubeDatos);
         } else {
             alert("La tabla ya no existe en la nube.");
         }
@@ -1074,6 +1073,151 @@ window.sincronizarTablaDesdeEnlace = async () => {
         btn.innerHTML = originalText;
         btn.disabled = false;
     }
+};
+
+window.mostrarAuditoriaTabla = (localDatos, nubeDatos) => {
+    const modal = document.getElementById('modalOverlay');
+    const content = document.getElementById('modalContent');
+
+    let htmlContent = `
+        <div class="w-full">
+            <h3 class="font-bold text-2xl mb-2 text-indigo-900 border-b pb-2">Auditoría de Cambios - Calendario</h3>
+            <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 mb-6 rounded-r shadow-sm">
+                <p class="text-sm text-indigo-900 font-bold mb-2">💡 Instrucciones de Revisión</p>
+                <ul class="text-xs text-indigo-800 list-disc ml-5 space-y-1">
+                    <li>Las palabras en <b class="text-emerald-700 bg-emerald-100 px-1 rounded">verde</b> se agregaron en la nube.</li>
+                    <li>Las palabras en <b class="text-red-700 bg-red-100 px-1 rounded line-through">rojo tachado</b> se eliminaron en la nube.</li>
+                    <li><b>¡MODO INTERACTIVO! ✏️:</b> Haga clic dentro de los recuadros de la <b>"Versión Nube"</b> para editar el texto directamente antes de aprobar.</li>
+                </ul>
+            </div>
+            <div class="flex flex-col gap-8">
+    `;
+
+    const maxLength = Math.max(localDatos.length, nubeDatos.length);
+    let diffCount = 0;
+
+    for (let i = 0; i < maxLength; i++) {
+        const localRow = localDatos[i] || { dia: '', tipo: '', tema: '', formato: '', hook: '', contenido: '', guionBase: '', cta: '' };
+        const nubeRow = nubeDatos[i] || { dia: '', tipo: '', tema: '', formato: '', hook: '', contenido: '', guionBase: '', cta: '' };
+
+        const isDiff = JSON.stringify(localRow) !== JSON.stringify(nubeRow);
+        
+        // Escapeo riguroso para asegurar la integridad estructural del HTML generado
+        const escapeHtml = (text) => (text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        if (isDiff) {
+            diffCount++;
+            htmlContent += `
+            <div class="border border-indigo-100 rounded-lg p-4 bg-white shadow-sm mb-4">
+                <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2"><span>📅</span> Día: ${escapeHtml(nubeRow.dia || localRow.dia)}</h4>
+            `;
+
+            const campos = [
+                { key: 'tema', label: 'Tema / Título' },
+                { key: 'hook', label: 'Gancho (Hook)' },
+                { key: 'contenido', label: 'Contenido Central' },
+                { key: 'guionBase', label: 'Guion Base' },
+                { key: 'cta', label: 'Llamado a la Acción (CTA)' }
+            ];
+
+            campos.forEach(campo => {
+                const lText = localRow[campo.key] || '';
+                const nText = nubeRow[campo.key] || '';
+
+                if (lText !== nText) {
+                    const deletedText = window.highlightDeletions(lText, nText);
+                    const addedText = window.highlightAdditions(lText, nText);
+
+                    htmlContent += `
+                    <div class="mb-4">
+                        <h5 class="text-xs font-bold text-slate-600 mb-1">${campo.label}</h5>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="flex flex-col"><label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label><div class="audit-text-container">${deletedText}</div></div>
+                            <div class="flex flex-col"><label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube (Editable ✏️)</label><div id="audit_tabla_${i}_${campo.key}" class="audit-text-container border-emerald-200 bg-emerald-50 cursor-text focus:ring-2 focus:ring-emerald-400 outline-none transition-all" contenteditable="true">${addedText}</div></div>
+                        </div>
+                    </div>
+                    `;
+                } else {
+                    htmlContent += `<textarea id="audit_tabla_${i}_${campo.key}" style="display:none;">${escapeHtml(nText)}</textarea>`;
+                }
+            });
+
+            htmlContent += `<textarea id="audit_tabla_${i}_tipo" style="display:none;">${escapeHtml(nubeRow.tipo)}</textarea>`;
+            htmlContent += `<textarea id="audit_tabla_${i}_formato" style="display:none;">${escapeHtml(nubeRow.formato)}</textarea>`;
+            htmlContent += `<textarea id="audit_tabla_${i}_dia" style="display:none;">${escapeHtml(nubeRow.dia)}</textarea>`;
+
+            htmlContent += `</div>`;
+        } else {
+             // Inyección estática para filas que no presentaron modificaciones
+             htmlContent += `
+                <textarea id="audit_tabla_${i}_dia" style="display:none;">${escapeHtml(nubeRow.dia)}</textarea>
+                <textarea id="audit_tabla_${i}_tipo" style="display:none;">${escapeHtml(nubeRow.tipo)}</textarea>
+                <textarea id="audit_tabla_${i}_tema" style="display:none;">${escapeHtml(nubeRow.tema)}</textarea>
+                <textarea id="audit_tabla_${i}_formato" style="display:none;">${escapeHtml(nubeRow.formato)}</textarea>
+                <textarea id="audit_tabla_${i}_hook" style="display:none;">${escapeHtml(nubeRow.hook)}</textarea>
+                <textarea id="audit_tabla_${i}_contenido" style="display:none;">${escapeHtml(nubeRow.contenido)}</textarea>
+                <textarea id="audit_tabla_${i}_guionBase" style="display:none;">${escapeHtml(nubeRow.guionBase)}</textarea>
+                <textarea id="audit_tabla_${i}_cta" style="display:none;">${escapeHtml(nubeRow.cta)}</textarea>
+             `;
+        }
+    }
+
+    if (diffCount === 0) {
+        htmlContent += `<p class="text-center text-gray-500 italic p-6 border border-dashed rounded-lg bg-gray-50">No se registraron diferencias métricas entre la versión local y la actualización de la nube.</p>`;
+    }
+
+    htmlContent += `<input type="hidden" id="audit_tabla_length" value="${maxLength}">`;
+
+    htmlContent += `
+            </div>
+            <div class="mt-8 flex justify-end gap-3 border-t pt-4 sticky bottom-0 bg-white bg-opacity-95 z-10 pb-2">
+                <button onclick="closeModal(null)" class="px-6 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="window.aplicarAuditoriaTabla()" class="bg-indigo-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-lg transition-colors">Aceptar y Guardar</button>
+            </div>
+        </div>
+    `;
+
+    content.innerHTML = htmlContent;
+    modal.style.display = 'flex';
+};
+
+window.aplicarAuditoriaTabla = () => {
+    const lengthElement = document.getElementById('audit_tabla_length');
+    if (!lengthElement) return;
+    const length = parseInt(lengthElement.value);
+    const nuevaTabla = [];
+
+    for (let i = 0; i < length; i++) {
+        const getText = (key) => {
+            const el = document.getElementById(`audit_tabla_${i}_${key}`);
+            if (!el) return '';
+            // Dependiendo si es un área oculta o un campo editable de la auditoría
+            if (el.tagName.toLowerCase() === 'textarea') {
+                return el.value;
+            }
+            return el.innerText;
+        };
+
+        nuevaTabla.push({
+            dia: getText('dia'),
+            tipo: getText('tipo'),
+            tema: getText('tema'),
+            formato: getText('formato'),
+            hook: getText('hook'),
+            contenido: getText('contenido'),
+            guionBase: getText('guionBase'),
+            cta: getText('cta')
+        });
+    }
+
+    window.tablaIAParsed = nuevaTabla;
+    localStorage.setItem('tablaIAGuardada', JSON.stringify(window.tablaIAParsed));
+    
+    // Forzamos la actualización de la vista y el guardado en la nube
+    if(typeof window.renderTablaCalendario === 'function') window.renderTablaCalendario();
+    
+    if (typeof closeModal === 'function') closeModal(null);
+    alert("✅ Cambios auditados e integrados en su base de datos local satisfactoriamente.");
 };
         
     </script>
