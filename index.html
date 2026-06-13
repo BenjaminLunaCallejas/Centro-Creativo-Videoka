@@ -1140,6 +1140,7 @@ window.initSharedTablaMode = function(id) {
         <div class="p-4 bg-slate-800 text-white flex justify-between items-center shadow-md sticky top-0 z-20">
             <h1 class="text-xl font-bold text-indigo-400 flex items-center gap-2">📊 Videoka - Calendario Compartido</h1>
             <div class="flex gap-2">
+                <button id="btnGuardarTablaCompartida" class="bg-amber-500 hover:bg-amber-600 px-4 py-2 rounded text-xs font-bold transition shadow-lg hidden">💾 Guardar Cambios</button>
                 <button onclick="descargarTablaCSV()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-xs font-bold transition shadow-lg">📄 CSV</button>
                 <button onclick="descargarTablaXLSX()" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded text-xs font-bold transition shadow-lg">📊 Excel</button>
                 <button onclick="window.location.href=window.location.pathname" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-xs font-bold transition shadow-lg">Ir a la App</button>
@@ -1447,10 +1448,11 @@ window.initSharedTablaMode = function(id) {
             <li><span class="font-bold">🚀 Producir:</span> El botón de la derecha enviará todos los datos de esa fila a tu Generador de Guiones para que empieces a trabajar en él.</li>
         </ul>
     </div>
-                            <div class="flex flex-wrap gap-3 mb-4 justify-end">
+<div class="flex flex-wrap gap-3 mb-4 justify-end">
         <button onclick="descargarTablaCSV()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-700 transition shadow-sm flex items-center gap-2">📄 Descargar CSV</button>
         <button onclick="descargarTablaXLSX()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-emerald-700 transition shadow-sm flex items-center gap-2">📊 Descargar Excel</button>
         <button onclick="compartirTablaCalendario(event)" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition shadow-sm flex items-center gap-2">🔗 Compartir Tabla</button>
+        <button id="btnSyncTabla" onclick="sincronizarTablaDesdeEnlace()" class="bg-amber-500 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-amber-600 transition shadow-sm items-center gap-2 hidden">⬇️ Revisar Cambios</button>
     </div>
                             <div class="overflow-x-auto custom-scroll border rounded-lg shadow-sm relative">
                                 <table class="w-full text-left text-xs border-collapse min-w-[1200px]">
@@ -3207,13 +3209,21 @@ window.descargarTablaXLSX = function() {
     window.descargarTablaXLSX = descargarTablaXLSX;
     window.guardarCeldaEditada = guardarCeldaEditada;
     window.trasladarHook = trasladarHook;
+    window.actualizarCeldaInvitado = actualizarCeldaInvitado;
+    window.sincronizarTablaDesdeEnlace = sincronizarTablaDesdeEnlace;
 
 // 4. ARRANQUE CORREGIDO
     window.addEventListener('load', () => {
         if(window.renderSelectorCuentas) window.renderSelectorCuentas();
         if(typeof window.initAppState === 'function') window.initAppState(); 
         autoResizeTextareas();
+        
+        if(localStorage.getItem('sharedTablaActiva')) {
+            const btnSync = document.getElementById('btnSyncTabla');
+            if(btnSync) { btnSync.classList.remove('hidden'); btnSync.classList.add('flex'); }
+        }
     });
+        
 </script>
 </body>
 </html>
