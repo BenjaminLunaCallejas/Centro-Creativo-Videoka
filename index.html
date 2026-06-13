@@ -1407,39 +1407,43 @@ window.aplicarAuditoriaTabla = () => {
         </div>
                 <div class="flex flex-col md:flex-row h-screen overflow-hidden">
             
-            <aside class="w-full md:w-64 bg-slate-900 text-white flex flex-col shadow-lg flex-shrink-0 z-20">
-                <div class="p-4 md:p-6 flex justify-between items-center">
-                    <h1 class="text-xl md:text-2xl font-bold tracking-wider text-indigo-400">Centro Creativo<br class="hidden md:block">Videoka</h1>
+<aside class="w-full md:w-64 bg-slate-900 text-white flex flex-col shadow-lg flex-shrink-0 z-20">
+                <div class="p-4 flex justify-between items-center">
+                    <h1 class="text-lg md:text-xl font-bold tracking-wider text-indigo-400 leading-tight">Centro Creativo<br class="hidden md:block">Videoka</h1>
                     <div class="md:hidden flex items-center gap-2">
                         <img class="user-pic w-8 h-8 rounded-full hidden" src="" alt="Perfil">
                         <button onclick="cerrarSesion()" class="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded">Salir</button>
                     </div>
                 </div>
-<div class="px-4 pb-4 md:px-6 border-b border-slate-700 mb-2">
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Perfil de Creador / Cliente</label>
+
+                <div class="px-4 pb-3 border-b border-slate-700 mb-2">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Perfil Activo</label>
                     <div class="flex gap-2 mb-2">
-                        <select id="selectorCuentas" onchange="cambiarCuenta(this.value)" class="flex-1 p-2 bg-slate-800 text-sm text-white rounded outline-none border border-slate-700 focus:ring-1 focus:ring-indigo-500 cursor-pointer">
+                        <select id="selectorCuentas" onchange="cambiarCuenta(this.value)" class="flex-1 p-1.5 bg-slate-800 text-xs text-white rounded outline-none border border-slate-700 focus:ring-1 focus:ring-indigo-500 cursor-pointer">
                         </select>
-                        <button onclick="abrirModalEdicionCuenta()" class="bg-slate-700 hover:bg-slate-600 px-3 rounded-lg text-white transition shadow-sm" title="Ajustes de cuenta actual">⚙️</button>
+                        <button onclick="abrirModalEdicionCuenta()" class="bg-slate-700 hover:bg-slate-600 px-2.5 rounded-lg text-white transition shadow-sm" title="Ajustes de cuenta actual">⚙️</button>
                     </div>
-                    <button onclick="abrirModalNuevaCuenta()" class="w-full text-xs bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg transition font-bold shadow-md">+ Agregar Cuenta</button>
-<button onclick="abrirModalArchivados()" class="w-full mt-2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 rounded-lg transition font-medium border border-slate-700 flex items-center justify-center gap-2">📥 Cuentas Archivadas</button>
+                    <div class="flex gap-2">
+                        <button onclick="abrirModalNuevaCuenta()" class="flex-1 text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white py-1.5 rounded-lg transition font-bold shadow-md">+ Agregar</button>
+                        <button onclick="abrirModalArchivados()" class="flex-1 text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 rounded-lg transition font-medium border border-slate-700 flex items-center justify-center gap-1">📥 Archivo</button>
+                    </div>
                 </div>
-                <nav class="flex md:flex-col overflow-x-auto md:overflow-y-auto px-4 pb-4 md:pb-0 space-x-2 md:space-x-0 md:space-y-2 custom-scroll flex-1">
-                    <button onclick="switchTab('estrategia')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition" id="btn-estrategia">1. Estrategia y Marca</button>
-                    <button onclick="switchTab('notas')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-notas">2. Ideas y Tendencias</button>
-                    <button onclick="switchTab('estrategia_resumen')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-estrategia_resumen">3. Estrategia de Contenido</button>
-                    <button onclick="switchTab('ideas')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-ideas">4. Repositorio y Guiones</button>
-                    <button onclick="switchTab('planificador')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-planificador">5. Planificador</button>
-                    <button onclick="switchTab('blog_notas')" class="whitespace-nowrap text-left px-4 py-3 rounded-lg hover:bg-slate-700 transition" id="btn-blog_notas">6. Blog de Notas</button>
+
+                <nav class="flex md:flex-col overflow-x-auto md:overflow-y-auto px-4 pb-4 md:pb-0 space-x-2 md:space-x-0 md:space-y-1 custom-scroll flex-1">
+                    <button onclick="switchTab('estrategia')" class="whitespace-nowrap text-left px-3 py-2 rounded-lg text-sm bg-slate-800 hover:bg-slate-700 transition" id="btn-estrategia">1. Estrategia y Marca</button>
+                    <button onclick="switchTab('notas')" class="whitespace-nowrap text-left px-3 py-2 rounded-lg text-sm hover:bg-slate-700 transition" id="btn-notas">2. Ideas y Tendencias</button>
+                    <button onclick="switchTab('estrategia_resumen')" class="whitespace-nowrap text-left px-3 py-2 rounded-lg text-sm hover:bg-slate-700 transition" id="btn-estrategia_resumen">3. Estrategia de Contenido</button>
+                    <button onclick="switchTab('ideas')" class="whitespace-nowrap text-left px-3 py-2 rounded-lg text-sm hover:bg-slate-700 transition" id="btn-ideas">4. Repositorio y Guiones</button>
+                    <button onclick="switchTab('planificador')" class="whitespace-nowrap text-left px-3 py-2 rounded-lg text-sm hover:bg-slate-700 transition" id="btn-planificador">5. Planificador</button>
+                    <button onclick="switchTab('blog_notas')" class="whitespace-nowrap text-left px-3 py-2 rounded-lg text-sm hover:bg-slate-700 transition" id="btn-blog_notas">6. Blog de Notas</button>
                 </nav>
 
-                <div class="hidden md:flex p-4 border-t border-slate-700 items-center justify-between">
+                <div class="hidden md:flex p-3 border-t border-slate-700 items-center justify-between mt-auto">
                     <div class="flex items-center gap-2 overflow-hidden">
-                        <img class="user-pic w-8 h-8 rounded-full hidden" src="" alt="Perfil">
-                        <span id="userNameDesktop" class="text-xs truncate text-slate-300"></span>
+                        <img class="user-pic w-6 h-6 rounded-full hidden" src="" alt="Perfil">
+                        <span id="userNameDesktop" class="text-[11px] truncate text-slate-300"></span>
                     </div>
-                    <button onclick="cerrarSesion()" class="text-xs bg-red-500/20 text-red-400 hover:bg-red-500/40 px-3 py-2 rounded transition">Cerrar Sesión</button>
+                    <button onclick="cerrarSesion()" class="text-[10px] bg-red-500/20 text-red-400 hover:bg-red-500/40 px-2 py-1.5 rounded transition font-bold">Salir</button>
                 </div>
             </aside>
 
