@@ -2802,15 +2802,28 @@ ${idea.copy || 'N/A'}`;
             tablaIAParsed.forEach((item, index) => {
                 const tr = document.createElement('tr');
                 tr.className = "border-b hover:bg-slate-50 transition";
-                tr.innerHTML = `
+tr.innerHTML = `
                     <td class="p-3 font-bold text-slate-700 w-[4%] align-top">${item.dia}</td>
                     <td class="p-3 text-slate-600 w-[6%] align-top break-words">${item.tipo}</td>
-                    <td class="p-3 font-medium text-indigo-700 w-[12%] align-top break-words">${item.tema}</td>
-                    <td class="p-3 text-slate-600 text-[10px] uppercase font-bold w-[8%] align-top break-words">${item.formato}</td>
-                    <td class="p-3 text-gray-800 w-[15%] align-top whitespace-normal break-words italic">${item.hook}</td>
-                    <td class="p-3 text-gray-600 w-[15%] align-top whitespace-normal break-words">${item.contenido}</td>
-                    <td class="p-3 text-gray-700 w-[25%] align-top whitespace-normal break-words leading-relaxed">${item.guionBase}</td>
-                    <td class="p-3 text-indigo-600 w-[10%] align-top whitespace-normal break-words font-semibold">${item.cta}</td>
+                    <td class="p-3 font-medium text-indigo-700 w-[12%] align-top break-words group">
+                        <div contenteditable="true" onblur="guardarCeldaEditada(event, ${index}, 'tema')" class="outline-none focus:bg-indigo-50 hover:bg-slate-50 p-1 -m-1 rounded transition cursor-text border border-transparent focus:border-indigo-300 min-h-[20px]">${item.tema}</div>
+                    </td>
+                    <td class="p-3 text-slate-600 text-[10px] uppercase font-bold w-[8%] align-top break-words group">
+                        <div contenteditable="true" onblur="guardarCeldaEditada(event, ${index}, 'formato')" class="outline-none focus:bg-indigo-50 hover:bg-slate-50 p-1 -m-1 rounded transition cursor-text border border-transparent focus:border-indigo-300 min-h-[20px]">${item.formato}</div>
+                    </td>
+                    <td class="p-3 text-gray-800 w-[15%] align-top whitespace-normal break-words italic relative group">
+                        <div contenteditable="true" onblur="guardarCeldaEditada(event, ${index}, 'hook')" class="outline-none focus:bg-indigo-50 hover:bg-slate-50 p-1 -m-1 rounded transition cursor-text border border-transparent focus:border-indigo-300 min-h-[20px] pr-8">${item.hook}</div>
+                        <button onclick="trasladarHook(${index})" class="absolute top-2 right-2 text-[10px] bg-amber-100 text-amber-700 hover:bg-amber-200 px-1.5 py-1 rounded shadow-sm opacity-0 group-hover:opacity-100 transition-opacity font-bold z-10 flex items-center gap-1" title="Mandar a Ideas Crudas">💡</button>
+                    </td>
+                    <td class="p-3 text-gray-600 w-[15%] align-top whitespace-normal break-words group">
+                        <div contenteditable="true" onblur="guardarCeldaEditada(event, ${index}, 'contenido')" class="outline-none focus:bg-indigo-50 hover:bg-slate-50 p-1 -m-1 rounded transition cursor-text border border-transparent focus:border-indigo-300 min-h-[20px]">${item.contenido}</div>
+                    </td>
+                    <td class="p-3 text-gray-700 w-[25%] align-top whitespace-normal break-words leading-relaxed group">
+                        <div contenteditable="true" onblur="guardarCeldaEditada(event, ${index}, 'guionBase')" class="outline-none focus:bg-indigo-50 hover:bg-slate-50 p-1 -m-1 rounded transition cursor-text border border-transparent focus:border-indigo-300 min-h-[20px]">${item.guionBase}</div>
+                    </td>
+                    <td class="p-3 text-indigo-600 w-[10%] align-top whitespace-normal break-words font-semibold group">
+                        <div contenteditable="true" onblur="guardarCeldaEditada(event, ${index}, 'cta')" class="outline-none focus:bg-indigo-50 hover:bg-slate-50 p-1 -m-1 rounded transition cursor-text border border-transparent focus:border-indigo-300 min-h-[20px]">${item.cta}</div>
+                    </td>
                     <td class="p-3 text-center align-middle sticky right-0 bg-white border-l border-gray-100 shadow-[-5px_0_10px_-5px_rgba(0,0,0,0.1)] z-10 w-[100px]">
                         <button onclick="enviarARepositorio(${index})" class="bg-indigo-600 text-white px-3 py-1.5 rounded text-[10px] font-bold hover:bg-indigo-700 shadow-sm transition whitespace-nowrap">Producir 🚀</button>
                     </td>
@@ -3107,6 +3120,35 @@ window.descargarTablaXLSX = function() {
     XLSX.utils.book_append_sheet(wb, ws, "Planificador");
     XLSX.writeFile(wb, "Calendario_Estrategico.xlsx");
 };
+        function guardarCeldaEditada(event, index, campo) {
+            const nuevoValor = event.target.innerText.trim();
+            if (tablaIAParsed && tablaIAParsed[index]) {
+                tablaIAParsed[index][campo] = nuevoValor;
+                // Guardamos en la caché local al instante
+                localStorage.setItem('tablaIAGuardada', JSON.stringify(tablaIAParsed));
+                window.tablaIAParsed = tablaIAParsed;
+            }
+        }
+
+        function trasladarHook(index) {
+            if (!tablaIAParsed || !tablaIAParsed[index]) return;
+            const hookTexto = tablaIAParsed[index].hook;
+            if (!hookTexto || hookTexto.trim() === '') return alert("⚠️ El gancho está vacío.");
+
+            // Aseguramos que la matriz exista
+            if (!tasks) tasks = { ideas: [], audios: [], tendencias: [], proximos: [] };
+            if (!tasks.ideas) tasks.ideas = [];
+
+            // Añadimos el hook a "Ideas Crudas"
+            tasks.ideas.push({ text: "Gancho IA: " + hookTexto, done: false });
+            localStorage.setItem('contentTasks', JSON.stringify(tasks));
+            
+            // Actualizamos la vista de la Pestaña 2
+            renderTasks();
+            
+            alert("✅ ¡Gancho trasladado con éxito a la lista de Ideas Crudas!");
+        }
+        
         // 3. EL PARCHE DE CONEXIÓN (LO QUE AGREGAMOS PARA QUE LOS BOTONES FUNCIONEN)
     window.switchTab = switchTab;
     window.cambiarFecha = cambiarFecha;
@@ -3153,6 +3195,8 @@ window.descargarTablaXLSX = function() {
     window.allowDrop = allowDrop;
     window.descargarTablaCSV = descargarTablaCSV;
     window.descargarTablaXLSX = descargarTablaXLSX;
+    window.guardarCeldaEditada = guardarCeldaEditada;
+    window.trasladarHook = trasladarHook;
 
 // 4. ARRANQUE CORREGIDO
     window.addEventListener('load', () => {
