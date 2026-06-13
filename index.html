@@ -1381,7 +1381,7 @@ window.initSharedTablaMode = function(id) {
                             </div>
 
                             <div class="flex-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col min-h-[500px]" ondragover="allowDrop(event)" ondrop="dropTask(event, 'proximos')">
-                                <h3 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Próximos Videos</h3>
+                                <h3 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Próximos Contenidos</h3>
                                 <div class="flex gap-2 mb-4">
                                     <input type="text" id="inputTarea_proximos" class="flex-1 p-2 border rounded text-sm" placeholder="Video..." onkeypress="if(event.key === 'Enter') addTask('proximos')">
                                     <button onclick="addTask('proximos')" class="bg-indigo-500 text-white px-3 rounded hover:bg-indigo-600 transition font-bold">+</button>
@@ -1437,6 +1437,16 @@ window.initSharedTablaMode = function(id) {
                             Generar y Guardar Tabla
                         </button>
                         <div id="calendarioTablaContainer" class="mt-6 hidden">
+                            
+                            <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 mb-4 rounded-r shadow-sm">
+        <p class="text-sm text-indigo-900 font-bold mb-2">💡 Sácale el máximo provecho a tu calendario generado:</p>
+        <ul class="text-xs text-indigo-800 space-y-1.5">
+            <li><span class="font-bold">✏️ Edición Inteligente:</span> Haz clic directamente en cualquier texto de la tabla para editarlo. Tus cambios se guardarán de forma automática.</li>
+            <li><span class="font-bold">💡 Guardar Gancho:</span> Pasa el cursor sobre la columna de "Gancho (Hook)" y haz clic en el ícono 💡 para enviar esa idea a tu panel de Ideas Crudas (Pestaña 2).</li>
+            <li><span class="font-bold">🔗 Compartir y Exportar:</span> Usa los botones superiores para descargar tu calendario en CSV/Excel, o genera un enlace vivo para compartirlo con clientes o tu equipo (no necesitan cuenta para verlo).</li>
+            <li><span class="font-bold">🚀 Producir:</span> El botón de la derecha enviará todos los datos de esa fila a tu Generador de Guiones para que empieces a trabajar en él.</li>
+        </ul>
+    </div>
                             <div class="flex flex-wrap gap-3 mb-4 justify-end">
         <button onclick="descargarTablaCSV()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-700 transition shadow-sm flex items-center gap-2">📄 Descargar CSV</button>
         <button onclick="descargarTablaXLSX()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-emerald-700 transition shadow-sm flex items-center gap-2">📊 Descargar Excel</button>
