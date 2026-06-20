@@ -1516,32 +1516,29 @@ window.aplicarAuditoriaTabla = () => {
                     <div class="border-t pt-4 mt-4">
                         <label class="block text-sm font-semibold text-gray-600 mb-1">Identidad de la Marca y Tono de Comunicación</label>
                         <p class="text-xs text-gray-500 mb-2">Define la identidad de tu marca indicando tu personalidad (arquetipos), tu eslogan (opcional), tu propósito, tu valor diferencial, tu tono de voz, y tu estilo de tu comunicación. <br><span class="font-medium">Ejemplo:</span> <em>Mi personalidad mezcla los arquetipos de “El Sabio” y “El Bufón”. Mi eslogan es Revolucionando la forma de hacer ciencia. Tono académico pero accesible, uso lenguaje científico intercalado con referencias de la cultura pop, ritmo rápido y directo. Mi propósito es despertar curiosidad y pensamiento crítico. Mi valor diferencial es combinar la ciencia y la cultura pop. Mi estilo de Comunicación es explicar como a un niño de 10 años.</em></p>
-                        <textarea id="identidadTono" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Mi tono es inspirador..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none overflow-hidden"></textarea>
+                        <textarea id="identidadTono" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Mi tono es inspirador, riguroso y disruptivo..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll"></textarea>
                     </div>
                         <div class="border-t pt-6 mt-6">
                         <h3 class="text-lg font-bold text-gray-800 mb-4">Guía de Identidad Visual</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-               <div>
-    <label class="block text-sm font-semibold text-gray-600 mb-1">Paleta de Colores (Opcional)</label>
-    <input type="text" id="inputColores" placeholder="Ej. #4F46E5 (Enter para agregar)" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mb-2">
-    <div id="listaColores" class="flex flex-wrap"></div>
-</div>
-<div>
-    <label class="block text-sm font-semibold text-gray-600 mb-1">Tipografías (Opcional)</label>
-    <input type="text" id="inputTipografia" placeholder="Ej. Montserrat Bold (Enter para agregar)" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mb-2">
-    <div id="listaTipografia" class="flex flex-wrap"></div>
-</div>
-<div class="md:col-span-2">
-    <label class="block text-sm font-semibold text-gray-600 mb-1">Estilo Visual (Opcional)</label>
-    <input type="text" id="inputEstilo" placeholder="Ej. Minimalista (Enter para agregar)" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mb-2">
-    <div id="listaEstilo" class="flex flex-wrap"></div>
-</div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-600 mb-1">Enlace Público del Logotipo (Opcional)</label>
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Paleta de Colores (Códigos HEX)</label>
+                                <input type="text" id="visualColores" onblur="saveStrategyExtras()" placeholder="Ej. Primario: #4F46E5, Secundario: #10B981" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Tipografías (Títulos y Cuerpo)</label>
+                                <input type="text" id="visualTipografia" onblur="saveStrategyExtras()" placeholder="Ej. Títulos: Montserrat Bold | Cuerpo: Open Sans" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Estilo Visual</label>
+                                <input type="text" id="visualEstilo" onblur="saveStrategyExtras()" placeholder="Ej. Minimalista, alto contraste, editorial, tecnológico..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Enlace Público del Logotipo</label>
                                 <input type="text" id="visualLogoUrl" onblur="saveStrategyExtras()" placeholder="Ej. https://imgur.com/logo.png" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-600 mb-1">Reglas de Logo y Espaciado (Opcional)</label>
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Reglas de Logo y Espaciado</label>
                                 <input type="text" id="visualLogo" onblur="saveStrategyExtras()" placeholder="Ej. Siempre esquina inferior derecha, margen 50px." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                             </div>
                         </div>
@@ -2076,9 +2073,6 @@ window.aplicarAuditoriaTabla = () => {
         let historyTasks = [];
         let historyNotas = [];
         let tablaIAParsed = [];
-        let coloresTags = [];
-        let tipografiaTags = [];
-        let estiloTags = [];
         let editandoId = null;
 let currentCalendarDate = new Date(); // Rastrea la fecha en la que estamos navegando
 let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
@@ -2158,6 +2152,9 @@ let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
             localStorage.setItem('publicoObjetivo', document.getElementById('publicoObjetivo').value);
             localStorage.setItem('descCreador', document.getElementById('descCreador').value);
             localStorage.setItem('identidadTono', document.getElementById('identidadTono').value);
+            localStorage.setItem('visualColores', document.getElementById('visualColores').value);
+            localStorage.setItem('visualTipografia', document.getElementById('visualTipografia').value);
+            localStorage.setItem('visualEstilo', document.getElementById('visualEstilo').value);
             localStorage.setItem('visualLogoUrl', document.getElementById('visualLogoUrl').value);
             localStorage.setItem('visualLogo', document.getElementById('visualLogo').value);
         }
@@ -2213,20 +2210,10 @@ let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
             localStorage.setItem(storageKey, JSON.stringify(arrayVar));
         }
 
-function removeTag(listId, index, storageKey) {
-    // 1. Obtenemos el array correcto directamente de la memoria local
-    let currentArray = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    currentArray.splice(index, 1);
-
-    // 2. Actualizamos la variable global que corresponda
-    if (storageKey === 'ejesTags') ejesTags = currentArray;
-    if (storageKey === 'coloresTags') coloresTags = currentArray;
-    if (storageKey === 'tipografiaTags') tipografiaTags = currentArray;
-    if (storageKey === 'estiloTags') estiloTags = currentArray;
-
-    // 3. Renderizamos y guardamos de forma segura
-    renderTags(listId, currentArray, storageKey);
-}
+        function removeTag(listId, index, storageKey) {
+            ejesTags.splice(index, 1);
+            renderTags(listId, ejesTags, storageKey);
+        }
 
         function addTask(cat) {
             const input = document.getElementById(`inputTarea_${cat}`);
@@ -2607,26 +2594,11 @@ function renderEstrategiaResumen() {
     const publico = localStorage.getItem('publicoObjetivo') || 'No definido';
     const creador = localStorage.getItem('descCreador') || 'No definido';
     const tono = localStorage.getItem('identidadTono') || 'Tono no definido';
-    
-// --- PASO 4: NUEVA LÓGICA DE CONDICIONAMIENTO VISUAL ---
-    let colores = [];
-    try { const val = localStorage.getItem('coloresTags'); if(val) colores = JSON.parse(val); } catch(e) {}
-    let tipo = [];
-    try { const val = localStorage.getItem('tipografiaTags'); if(val) tipo = JSON.parse(val); } catch(e) {}
-    let estilo = [];
-    try { const val = localStorage.getItem('estiloTags'); if(val) estilo = JSON.parse(val); } catch(e) {}
-    const visLogoUrl = localStorage.getItem('visualLogoUrl') || "";
-    const visLogo = localStorage.getItem('visualLogo') || "";
-
-    let strVisual = "";
-    if (colores.length || tipo.length || estilo.length || visLogoUrl || visLogo) {
-        strVisual = `\n- Guía Visual (sólo estáticos): `;
-        if(colores.length) strVisual += `Paleta: ${colores.join(', ')} | `;
-        if(tipo.length) strVisual += `Tipografía: ${tipo.join(', ')} | `;
-        if(estilo.length) strVisual += `Estilo: ${estilo.join(', ')} | `;
-        if(visLogoUrl) strVisual += `Logo: ${visLogoUrl} | `;
-        if(visLogo) strVisual += `Reglas: ${visLogo}`;
-    }
+    const visColores = localStorage.getItem('visualColores') || 'No definido';
+    const visTipo = localStorage.getItem('visualTipografia') || 'No definido';
+    const visEstilo = localStorage.getItem('visualEstilo') || 'No definido';
+    const visLogoUrl = localStorage.getItem('visualLogoUrl') || 'Sin enlace';
+    const visLogo = localStorage.getItem('visualLogo') || 'Sin reglas';
     
     // --- SOLUCIÓN ANTI-CRASHEOS ---
     let arq = [];
@@ -2768,27 +2740,6 @@ REGLAS CRÍTICAS:
     try { const val = localStorage.getItem('ejesTags'); if(val) { const parsed = JSON.parse(val); if(parsed.length) ejes = parsed; } } catch(e) {}
     
     const tono = localStorage.getItem('identidadTono') || "Tono profesional y adecuado al nicho";
-
-           // --- PASO 5: ARREGLO DE CRASH Y VARIABLES VISUALES SEGURAS ---
-    let colores = [];
-    let visColores = [];
-try { const val = localStorage.getItem('coloresTags'); if(val) visColores = JSON.parse(val); } catch(e) {}
-    let tipoVisual = [];
-    try { const val = localStorage.getItem('tipografiaTags'); if(val) { const parsed = JSON.parse(val); if(parsed.length) tipoVisual = parsed; } } catch(e) {}
-    let estilo = [];
-    try { const val = localStorage.getItem('estiloTags'); if(val) { const parsed = JSON.parse(val); if(parsed.length) estilo = parsed; } } catch(e) {}
-    const visLogoUrl = localStorage.getItem('visualLogoUrl') || "";
-    const visLogo = localStorage.getItem('visualLogo') || "";
-
-    let strVisual = "";
- if (visColores.length || tipo.length || estilo.length || visLogoUrl || visLogo) {
-        strVisual = `\n- Guía Visual (sólo estáticos): `;
-        if(colores.length) strVisual += `Paleta: ${colores.join(', ')} | `;
-        if(tipoVisual.length) strVisual += `Tipografía: ${tipoVisual.join(', ')} | `;
-        if(estilo.length) strVisual += `Estilo: ${estilo.join(', ')} | `;
-        if(visLogoUrl) strVisual += `Link Logo: ${visLogoUrl} | `;
-        if(visLogo) strVisual += `Reglas de uso: ${visLogo}`;
-    }
     
     area.value = `Actúa como un creador de contenido en redes sociales con millones de seguidores y un gran engagement.
 MI PERFIL ESTRATÉGICO:
@@ -2799,7 +2750,7 @@ MI PERFIL ESTRATÉGICO:
 - Público Objetivo: ${publico}
 - Ejes Transversales: ${ejes.join(', ')}
 - Identidad y Tono de Comunicación: ${tono}
-- Guía Visual (sólo para contenidos estáticos): ${strVisual}
+- Guía Visual (sólo para contenidos estáticos): Paleta: ${visColores} | Tipografía: ${visTipo} | Estilo: ${visEstilo} | Link Logo: ${visLogoUrl} | Reglas de uso: ${visLogo}
 
 TAREA: Redacta un guión completo para un contenido de tipo "${formato}". El guión debe llamar la atención, generar interés, despertar deseo y entrener. El storytelling debe ser entretenido, memorable, emotivo, interesante y carismático.
 Si utilizas un formato estrella listado arriba, asegúrate que el guión siga  la estructura de ese formato específico.
@@ -3365,18 +3316,6 @@ window.initAppState = () => {
             ideas = parseSeguro('contentIdeas', []);
             ejesTags = parseSeguro('ejesTags', []);
             tasks = parseSeguro('contentTasks', { ideas: [], audios: [], tendencias: [], proximos: [] });
-    coloresTags = parseSeguro('coloresTags', []);
-tipografiaTags = parseSeguro('tipografiaTags', []);
-estiloTags = parseSeguro('estiloTags', []);
-
-renderTags('listaColores', coloresTags, 'coloresTags');
-setupTagsInput('inputColores', 'listaColores', coloresTags, 'coloresTags');
-
-renderTags('listaTipografia', tipografiaTags, 'tipografiaTags');
-setupTagsInput('inputTipografia', 'listaTipografia', tipografiaTags, 'tipografiaTags');
-
-renderTags('listaEstilo', estiloTags, 'estiloTags');
-setupTagsInput('inputEstilo', 'listaEstilo', estiloTags, 'estiloTags');
             blocNotas = parseSeguro('blocNotasTasks', { rapidas: [], borradores: [], recursos: [], personales: [] });
             window.tasks = tasks;
             window.blocNotas = blocNotas;
@@ -3758,6 +3697,7 @@ window.descargarEstrategiaWord = function() {
     window.actualizarCeldaInvitado = actualizarCeldaInvitado;
     window.sincronizarTablaDesdeEnlace = sincronizarTablaDesdeEnlace;
     window.desplazarTablaPrincipal = desplazarTablaPrincipal;
+    window.irAFechaEspecifica = irAFechaEspecifica; // Registrar función en el objeto Window
 
 // 4. ARRANQUE CORREGIDO
     window.addEventListener('load', () => {
