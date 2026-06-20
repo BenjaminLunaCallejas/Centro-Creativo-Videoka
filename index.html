@@ -317,7 +317,7 @@ window.descargarDatosNube = () => {
             window.isUpdatingFromCloud = true; 
             
             const data = docSnap.data();
-            const keys = ['contentIdeas', 'ejesTags', 'contentTasks', 'blocNotasTasks', 'historyTasks', 'historyNotas', 'tablaIAGuardada', 'temaCentral', 'descCreador', 'identidadTono', 'nichoContenido', 'publicoObjetivo', 'strat_awareness', 'strat_consideracion', 'strat_conversion', 'strat_fidelizacion', 'arquetiposSeleccionados', 'starFormat1_name', 'starFormat1_desc', 'starFormat2_name', 'starFormat2_desc', 'starFormat3_name', 'starFormat3_desc'];
+            const keys = ['contentIdeas', 'ejesTags', 'contentTasks', 'blocNotasTasks', 'historyTasks', 'historyNotas', 'tablaIAGuardada', 'temaCentral', 'descCreador', 'identidadTono', 'nichoContenido', 'publicoObjetivo', 'strat_awareness', 'strat_consideracion', 'strat_conversion', 'strat_fidelizacion', 'arquetiposSeleccionados', 'starFormat1_name', 'starFormat1_desc', 'starFormat2_name', 'starFormat2_desc', 'starFormat3_name', 'starFormat3_desc', 'diasPrompt'];
             
             const setItemMethod = (typeof originalSetItem !== 'undefined') ? originalSetItem : localStorage.setItem;
             
@@ -381,6 +381,7 @@ window.syncToCloud = async () => {
         strat_conversion: safeGet('strat_conversion'),
         strat_fidelizacion: safeGet('strat_fidelizacion'),
         arquetiposSeleccionados: safeGet('arquetiposSeleccionados')
+        diasPrompt: safeGet('diasPrompt') 
     };
     
     for(let i=1; i<=3; i++) {
@@ -1628,7 +1629,7 @@ window.aplicarAuditoriaTabla = () => {
                         <p class="text-sm text-gray-500 mb-2">Ajusta los días y copia este prompt para usarlo en tu IA y generar el calendario.</p>
                         <div class="flex items-center gap-3 mb-4">
                             <label for="diasPrompt" class="text-sm font-semibold text-indigo-900">Días de contenido que deseas planear:</label>
-                            <input type="number" id="diasPrompt" value="31" min="1" max="365" oninput="renderEstrategiaResumen()" class="w-20 p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-bold text-center">
+                            <input type="number" id="diasPrompt" value="31" min="1" max="365" oninput="window.guardarDiasPrompt()" class="w-20 p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-bold text-center">
                         </div>
                         <div class="relative">
                             <textarea id="aiPromptArea" rows="12" class="w-full p-4 bg-slate-900 text-indigo-200 font-mono text-xs rounded-lg border border-slate-700 leading-relaxed custom-scroll" readonly></textarea>
@@ -2144,6 +2145,13 @@ let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
             }
             renderEstrategiaResumen();
         }
+
+        window.guardarDiasPrompt = function() {
+            // Guardamos localmente (esto disparará el interceptor de perfiles y subirá a Firebase)
+            localStorage.setItem('diasPrompt', document.getElementById('diasPrompt').value);
+            // Actualizamos la caja de texto del prompt
+            renderEstrategiaResumen(); 
+        };
 
         function setupTagsInput(inputId, listId, arrayVar, storageKey) {
             const input = document.getElementById(inputId);
