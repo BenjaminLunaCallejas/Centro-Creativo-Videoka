@@ -2649,13 +2649,28 @@ const aw = localStorage.getItem('strat_awareness') || 'Generar visibilidad masiv
     const inputDias = document.getElementById('diasPrompt');
     const diasGenerar = inputDias ? inputDias.value || 31 : 31;
 
-   if (container) {
+  // Evaluación condicional de la Guía Visual
+    const hasVisualIdentity = visColores || visTipo || visEstilo || visLogoUrl || visLogo;
+    const visualIdentityHTML = hasVisualIdentity ? `
+        <div class="p-4 bg-slate-50 rounded-lg border md:col-span-2 border-indigo-200">
+            <h4 class="text-xs font-bold text-indigo-500 uppercase mb-2">🎨 Guía de Identidad Visual</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-slate-700">
+                ${visColores ? `<p><b>Paleta:</b> ${visColores}</p>` : ''}
+                ${visTipo ? `<p><b>Tipografía:</b> ${visTipo}</p>` : ''}
+                ${visEstilo ? `<p><b>Estilo:</b> ${visEstilo}</p>` : ''}
+                ${visLogoUrl ? `<p><b>Enlace Logo:</b> <a href="${visLogoUrl}" target="_blank" class="text-indigo-600 hover:underline break-all">${visLogoUrl}</a></p>` : ''}
+                ${visLogo ? `<p class="sm:col-span-2"><b>Reglas Logo:</b> ${visLogo}</p>` : ''}
+            </div>
+        </div>` : '';
+
+    if (container) {
         container.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div class="p-4 bg-slate-50 rounded-lg border">
                     <h4 class="text-xs font-bold text-gray-400 uppercase">Perfil de Creador</h4>
                     <p class="text-lg font-bold text-slate-800">${tema}</p>
-                    <p class="text-sm text-indigo-600 font-medium">${nicho} • ${arq.join(' + ')}</p>
+                    <p class="text-sm text-indigo-600 font-medium mb-1">${nicho} • ${arq.join(' + ')}</p>
+                    <p class="text-xs text-emerald-700 font-bold">Ejes Transversales: <span class="font-normal text-slate-600">${ejes.length > 0 ? ejes.join(', ') : 'No definidos'}</span></p>
                 </div>
                 <div class="p-4 bg-slate-50 rounded-lg border">
                     <h4 class="text-xs font-bold text-gray-400 uppercase">Audiencia Clave</h4>
@@ -2669,16 +2684,7 @@ const aw = localStorage.getItem('strat_awareness') || 'Generar visibilidad masiv
                     <h4 class="text-xs font-bold text-gray-400 uppercase">Identidad y Tono de Comunicación</h4>
                     <p class="text-sm text-slate-700 mt-1">${tono}</p>
                 </div>
-                <div class="p-4 bg-slate-50 rounded-lg border md:col-span-2 border-indigo-200">
-                    <h4 class="text-xs font-bold text-indigo-500 uppercase mb-2">🎨 Guía de Identidad Visual</h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-slate-700">
-                        <p><b>Paleta:</b> ${visColores}</p>
-                        <p><b>Tipografía:</b> ${visTipo}</p>
-                        <p><b>Estilo:</b> ${visEstilo}</p>
-                        <p><b>Enlace Logo:</b> <a href="${visLogoUrl}" target="_blank" class="text-indigo-600 hover:underline break-all">${visLogoUrl}</a></p>
-                        <p class="sm:col-span-2"><b>Reglas Logo:</b> ${visLogo}</p>
-                    </div>
-                </div>
+                ${visualIdentityHTML}
             </div>`;
     }
 
@@ -3575,7 +3581,21 @@ window.descargarTablaXLSX = function() {
             }
         };
 
-        window.copiarEstrategiaResumen = function() {
+       window.copiarEstrategiaResumen = function() {
+    let ejes = [];
+    try { const val = localStorage.getItem('ejesTags'); if(val) ejes = JSON.parse(val); } catch(e) {}
+    const ejesTexto = ejes.length > 0 ? ejes.join(', ') : 'N/A';
+
+    const visColores = localStorage.getItem('visualColores');
+    const visTipo = localStorage.getItem('visualTipografia');
+    const visEstilo = localStorage.getItem('visualEstilo');
+    const visLogoUrl = localStorage.getItem('visualLogoUrl');
+    const visLogo = localStorage.getItem('visualLogo');
+
+    let visualSection = '';
+    if (visColores || visTipo || visEstilo || visLogoUrl || visLogo) {
+        visualSection = `\n🎨 IDENTIDAD VISUAL:\n${visColores ? `• Paleta de Colores: ${visColores}\n` : ''}${visTipo ? `• Tipografías: ${visTipo}\n` : ''}${visEstilo ? `• Estilo Visual: ${visEstilo}\n` : ''}${visLogoUrl ? `• Enlace del Logo: ${visLogoUrl}\n` : ''}${visLogo ? `• Reglas de Espaciado: ${visLogo}\n` : ''}`;
+    }
     const text = `📌 ESTRATEGIA DE CONTENIDO
 
 PERFIL:
@@ -3605,6 +3625,28 @@ FUNNEL DE OBJETIVOS:
 };
 
 window.descargarEstrategiaWord = function() {
+    let ejes = [];
+    try { const val = localStorage.getItem('ejesTags'); if(val) ejes = JSON.parse(val); } catch(e) {}
+    const ejesTexto = ejes.length > 0 ? ejes.join(', ') : 'N/A';
+
+    const visColores = localStorage.getItem('visualColores');
+    const visTipo = localStorage.getItem('visualTipografia');
+    const visEstilo = localStorage.getItem('visualEstilo');
+    const visLogoUrl = localStorage.getItem('visualLogoUrl');
+    const visLogo = localStorage.getItem('visualLogo');
+
+    let visualSection = '';
+    if (visColores || visTipo || visEstilo || visLogoUrl || visLogo) {
+        visualSection = `<h2>🎨 IDENTIDAD VISUAL</h2>
+        <ul>
+            ${visColores ? `<li><span class="strong">Paleta de Colores:</span> ${visColores}</li>` : ''}
+            ${visTipo ? `<li><span class="strong">Tipografías:</span> ${visTipo}</li>` : ''}
+            ${visEstilo ? `<li><span class="strong">Estilo Visual:</span> ${visEstilo}</li>` : ''}
+            ${visLogoUrl ? `<li><span class="strong">Enlace del Logo:</span> <a href="${visLogoUrl}">${visLogoUrl}</a></li>` : ''}
+            ${visLogo ? `<li><span class="strong">Reglas de Espaciado:</span> ${visLogo}</li>` : ''}
+        </ul>`;
+    }
+
     let html = `
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
     <head>
@@ -3624,6 +3666,7 @@ window.descargarEstrategiaWord = function() {
         <h2>👤 PERFIL DEL CREADOR</h2>
         <ul>
             <li><span class="strong">Tema Central:</span> ${localStorage.getItem('temaCentral') || 'N/A'}</li>
+            <li><span class="strong">Ejes Transversales:</span> ${ejesTexto}</li>
             <li><span class="strong">Nicho:</span> ${localStorage.getItem('nichoContenido') || 'N/A'}</li>
             <li><span class="strong">Arquetipos:</span> ${JSON.parse(localStorage.getItem('arquetiposSeleccionados') || '[]').join(' + ')}</li>
             <li><span class="strong">Público Objetivo:</span> ${localStorage.getItem('publicoObjetivo') || 'N/A'}</li>
@@ -3633,14 +3676,7 @@ window.descargarEstrategiaWord = function() {
         <p><span class="strong">Descripción:</span> ${localStorage.getItem('descCreador') || 'N/A'}</p>
         <p><span class="strong">Tono de comunicación:</span> ${localStorage.getItem('identidadTono') || 'N/A'}</p>
 
-        <h2>🎨 IDENTIDAD VISUAL</h2>
-        <ul>
-            <li><span class="strong">Paleta de Colores:</span> ${localStorage.getItem('visualColores') || 'N/A'}</li>
-            <li><span class="strong">Tipografías:</span> ${localStorage.getItem('visualTipografia') || 'N/A'}</li>
-            <li><span class="strong">Estilo Visual:</span> ${localStorage.getItem('visualEstilo') || 'N/A'}</li>
-            <li><span class="strong">Enlace del Logo:</span> <a href="${localStorage.getItem('visualLogoUrl') || '#'}">${localStorage.getItem('visualLogoUrl') || 'N/A'}</a></li>
-            <li><span class="strong">Reglas de Espaciado:</span> ${localStorage.getItem('visualLogo') || 'N/A'}</li>
-        </ul>
+        ${visualSection}
 
         <h2>🎯 FUNNEL DE OBJETIVOS</h2>
         <ul>
