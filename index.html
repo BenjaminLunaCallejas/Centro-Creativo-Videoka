@@ -1655,7 +1655,7 @@ window.aplicarAuditoriaTabla = () => {
                                     <li><span class="font-bold text-indigo-700">🚀 Producir:</span> El botón de la derecha enviará todos los datos de esa fila específica a tu Generador de Guiones (Pestaña 4) para que inicies el proceso de desarrollo estructural.</li>
                                 </ul>
                             </div>
-<div class="flex flex-wrap gap-3 mb-4 justify-between items-center w-full">
+<div class="flex flex-wrap gap-3 mb-4 justify-between items-center w-full sticky top-0 z-30 bg-white py-3 border-b border-gray-100 shadow-sm px-2 rounded-lg">
     <div class="hidden md:flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">
         <span class="text-xs text-indigo-900 font-bold mr-1">Desplazar Tabla:</span>
         <button onclick="desplazarTablaPrincipal(-300)" class="bg-white text-indigo-700 hover:bg-indigo-600 hover:text-white border border-indigo-200 px-3 py-1 rounded shadow-sm font-bold transition text-xs flex items-center">◀ Atrás</button>
@@ -1668,9 +1668,9 @@ window.aplicarAuditoriaTabla = () => {
         <button id="btnSyncTabla" onclick="sincronizarTablaDesdeEnlace()" class="bg-amber-500 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-amber-600 transition shadow-sm items-center gap-2 hidden">⬇️ Revisar Cambios</button>
     </div>
 </div>
-                            <div id="contenedorTablaPrincipalScroll" class="overflow-x-auto custom-scroll border rounded-lg shadow-sm relative scroll-smooth">
+                            <div id="contenedorTablaPrincipalScroll" class="overflow-x-auto overflow-y-auto max-h-[70vh] custom-scroll border rounded-lg shadow-sm relative scroll-smooth bg-white">
                                 <table class="w-full text-left text-xs border-collapse min-w-[1200px]">
-                                    <thead>
+                                    <thead class="sticky top-0 z-20 shadow-sm">
                                         <tr class="bg-indigo-100 text-indigo-900 border-b-2 border-indigo-200">
                                             <th class="p-3">Día</th>
                                             <th class="p-3">Tipo</th>
@@ -1929,15 +1929,16 @@ window.aplicarAuditoriaTabla = () => {
 
                 <section id="planificador" class="tab-content max-w-6xl mx-auto">
                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-    <div class="flex flex-col">
-        <h2 class="text-3xl font-bold text-gray-800">Planificador Cronológico</h2>
-        <div class="flex items-center gap-2 mt-2">
-            <button onclick="cambiarFecha(-1)" class="p-1 hover:bg-gray-200 rounded text-gray-600 transition" title="Anterior">◀</button>
-            <button onclick="cambiarFecha(0)" class="text-xs px-3 py-1 bg-indigo-50 text-indigo-600 rounded border border-indigo-200 hover:bg-indigo-100 transition font-bold shadow-sm">HOY</button>
-            <button onclick="cambiarFecha(1)" class="p-1 hover:bg-gray-200 rounded text-gray-600 transition" title="Siguiente">▶</button>
-            <p id="calendarHeader" class="text-sm text-indigo-600 font-bold uppercase ml-2"></p>
-        </div>
+   <div class="flex flex-col">
+    <h2 class="text-3xl font-bold text-gray-800">Planificador Cronológico</h2>
+    <div class="flex items-center gap-2 mt-2">
+        <button onclick="cambiarFecha(-1)" class="p-1 hover:bg-gray-200 rounded text-gray-600 transition" title="Anterior">◀</button>
+        <button onclick="cambiarFecha(0)" class="text-xs px-3 py-1 bg-indigo-50 text-indigo-600 rounded border border-indigo-200 hover:bg-indigo-100 transition font-bold shadow-sm">HOY</button>
+        <button onclick="cambiarFecha(1)" class="p-1 hover:bg-gray-200 rounded text-gray-600 transition" title="Siguiente">▶</button>
+        <input type="date" id="selectorFechaCalendario" onchange="irAFechaEspecifica(this.value)" class="text-xs p-1.5 border border-indigo-200 rounded outline-none focus:ring-2 focus:ring-indigo-400 text-indigo-700 font-bold cursor-pointer bg-white shadow-sm ml-2" title="Ir a una fecha específica">
+        <p id="calendarHeader" class="text-sm text-indigo-600 font-bold uppercase ml-2"></p>
     </div>
+</div>
                         <div class="flex bg-gray-200 p-1 rounded-lg gap-1">
                             <button onclick="renderCalendario('dia')" class="px-4 py-1 rounded hover:bg-white transition text-xs font-bold" id="view-dia">Día</button>
                             <button onclick="renderCalendario('semana')" class="px-4 py-1 rounded hover:bg-white transition text-xs font-bold" id="view-semana">Semana</button>
@@ -3432,9 +3433,18 @@ window.descargarTablaXLSX = function() {
     window.descargarTablaXLSX = descargarTablaXLSX;
     window.guardarCeldaEditada = guardarCeldaEditada;
     window.trasladarHook = trasladarHook;
+    window.irAFechaEspecifica = function(fecha) {
+        if(!fecha) return;
+        const partes = fecha.split('-'); // Extrae [YYYY, MM, DD]
+        // Muta la variable de estado principal respetando el huso horario local (Meses en JS van de 0 a 11)
+        currentCalendarDate = new Date(partes[0], partes[1] - 1, partes[2]);
+        renderCalendario(); 
+    };
+
     window.actualizarCeldaInvitado = actualizarCeldaInvitado;
     window.sincronizarTablaDesdeEnlace = sincronizarTablaDesdeEnlace;
     window.desplazarTablaPrincipal = desplazarTablaPrincipal;
+    window.irAFechaEspecifica = irAFechaEspecifica; // Registrar función en el objeto Window
 
 // 4. ARRANQUE CORREGIDO
     window.addEventListener('load', () => {
