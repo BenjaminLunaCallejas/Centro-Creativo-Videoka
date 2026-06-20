@@ -2759,10 +2759,9 @@ REGLAS CRÍTICAS:
     let ejes = ["mis temas secundarios"];
     try { const val = localStorage.getItem('ejesTags'); if(val) { const parsed = JSON.parse(val); if(parsed.length) ejes = parsed; } } catch(e) {}
     
-    const tono = localStorage.getItem('identidadTono') || "Tono profesional y adecuado al nicho";
-           
+    const tono = localStorage.getItem('identidadTono') || "Tono profesional y adecuado al nicho";   
     
-    // --- LÓGICA DE GUÍA VISUAL OPCIONAL Y CORRECCIÓN DE BUG ---
+// --- LÓGICA DE GUÍA VISUAL OPCIONAL (Oculta campos vacíos) ---
     const visColores = localStorage.getItem('visualColores') || "";
     const visTipo = localStorage.getItem('visualTipografia') || "";
     const visEstilo = localStorage.getItem('visualEstilo') || "";
@@ -2771,10 +2770,29 @@ REGLAS CRÍTICAS:
 
     let guiaVisualPrompt = "";
     if (visColores || visTipo || visEstilo || visLogoUrl || visLogo) {
-        guiaVisualPrompt = `\n- Guía Visual (sólo para estáticos jpg): Paleta: ${visColores} | Tipografía: ${visTipo} | Estilo: ${visEstilo} | Link Logo: ${visLogoUrl} | Reglas: ${visLogo}`;
+        let detallesVisuales = [];
+        if (visColores) detallesVisuales.push(`Paleta: ${visColores}`);
+        if (visTipo) detallesVisuales.push(`Tipografía: ${visTipo}`);
+        if (visEstilo) detallesVisuales.push(`Estilo: ${visEstilo}`);
+        if (visLogoUrl) detallesVisuales.push(`Link Logo: ${visLogoUrl}`);
+        if (visLogo) detallesVisuales.push(`Reglas: ${visLogo}`);
+        guiaVisualPrompt = `\n- Guía Visual (sólo si aplica imagen): ` + detallesVisuales.join(' | ');
     }
-    // -----------------------------------------------------------
-    
+
+    // --- LÓGICA INTELIGENTE DE FORMATO DIGITAL (Duración/Estructura) ---
+    let reglaFormato = "Duración: 45-60 segundos."; // Por defecto (Short Content)
+    if (["Long Content", "Podcast", "Videoblogs", "Ponencias", "Entrevistas", "Gameplays"].includes(formato)) {
+        reglaFormato = "Duración: Formato largo (más de 3 minutos), desarrolla la información a profundidad.";
+    } else if (["Estático", "Fotos", "Memes", "Infografías", "Carruseles"].includes(formato)) {
+        reglaFormato = "Estructura: Lectura visual/estática. (NO uses palabras de video como 'en este video te explico', usa formato texto para leer).";
+    } else if (formato === "Blogs") {
+        reglaFormato = "Estructura: Artículo de blog bien estructurado con subtítulos y párrafos para lectura web.";
+    } else if (formato === "Storie") {
+        reglaFormato = "Duración: 15-30 segundos (rápido, ágil, interactivo y al grano).";
+    } else if (formato === "Lives") {
+        reglaFormato = "Estructura: Escaleta de puntos clave/guía para sostener una transmisión en vivo.";
+    }
+  
     area.value = `Actúa como un creador de contenido en redes sociales con millones de seguidores y un gran engagement.
 MI PERFIL ESTRATÉGICO:
 - Tema central (Autoridad): ${tema}
@@ -2801,7 +2819,7 @@ INSTRUCCIONES DE REDACCIÓN:
 2. CALIDAD: Entrega información de valor, precisa, confiable, útil y oficial. Evita lo superficial.
 3. ESTRUCTURA: Diseña el guion en UN SOLO PÁRRAFO. Debe incluir: Hook verbal interesante (incluye promesa del video) + Frase breve de refuerzo + Desarrollo dinámico + Llamado a la acción (CTA).
 4. RESTRICCIONES: No especifiques las partes en el video. Evita figuras retóricas. PROHIBIDO PRESENTARSE.
-5. ELEMENTOS ADICIONALES: Incluye un CTA potente. Duración: 45-60 segundos.
+5. ELEMENTOS ADICIONALES: Incluye un CTA potente. ${reglaFormato}
 6. Aplica 100% el estilo coloquial, rápido y conversacional de un creador de contenido.
 7. Prohibido usar jerga, términos específicos o complejos, a menos que el video trate específicamente de eso. Usa analogías de la vida cotidiana.
 8. Si se incluye un hook propuesto, este se debe respetar al 100% en el guión generado.
@@ -3600,6 +3618,7 @@ window.descargarTablaXLSX = function() {
 
 PERFIL:
 • Tema Central: ${localStorage.getItem('temaCentral') || 'N/A'}
+• Ejes Transversales: ${ejesTexto}
 • Nicho: ${localStorage.getItem('nichoContenido') || 'N/A'}
 • Arquetipos: ${JSON.parse(localStorage.getItem('arquetiposSeleccionados') || '[]').join(' + ')}
 • Público: ${localStorage.getItem('publicoObjetivo') || 'N/A'}
