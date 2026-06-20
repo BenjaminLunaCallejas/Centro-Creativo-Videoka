@@ -317,8 +317,7 @@ window.descargarDatosNube = () => {
             window.isUpdatingFromCloud = true; 
             
             const data = docSnap.data();
-            const keys = ['contentIdeas', 'ejesTags', 'contentTasks', 'blocNotasTasks', 'historyTasks', 'historyNotas', 'tablaIAGuardada', 'temaCentral', 'descCreador', 'identidadTono', 'nichoContenido', 'publicoObjetivo', 'strat_awareness', 'strat_consideracion', 'strat_conversion', 'strat_fidelizacion', 'arquetiposSeleccionados', 'starFormat1_name', 'starFormat1_desc', 'starFormat2_name', 'starFormat2_desc', 'starFormat3_name', 'starFormat3_desc', 'diasPrompt'];
-            
+            const keys = ['contentIdeas', 'ejesTags', 'contentTasks', 'blocNotasTasks', 'historyTasks', 'historyNotas', 'tablaIAGuardada', 'temaCentral', 'descCreador', 'identidadTono', 'nichoContenido', 'publicoObjetivo', 'strat_awareness', 'strat_consideracion', 'strat_conversion', 'strat_fidelizacion', 'arquetiposSeleccionados', 'starFormat1_name', 'starFormat1_desc', 'starFormat2_name', 'starFormat2_desc', 'starFormat3_name', 'starFormat3_desc', 'diasPrompt', 'visualColores', 'visualTipografia', 'visualEstilo', 'visualLogoUrl', 'visualLogo'];
             const setItemMethod = (typeof originalSetItem !== 'undefined') ? originalSetItem : localStorage.setItem;
             
             keys.forEach(k => {
@@ -381,7 +380,12 @@ window.syncToCloud = async () => {
         strat_conversion: safeGet('strat_conversion'),
         strat_fidelizacion: safeGet('strat_fidelizacion'),
         arquetiposSeleccionados: safeGet('arquetiposSeleccionados'),
-        diasPrompt: safeGet('diasPrompt') 
+        diasPrompt: safeGet('diasPrompt'),
+        visualColores: safeGet('visualColores'),
+        visualTipografia: safeGet('visualTipografia'),
+        visualEstilo: safeGet('visualEstilo'),
+        visualLogoUrl: safeGet('visualLogoUrl'),
+        visualLogo: safeGet('visualLogo')
     };
     
     for(let i=1; i<=3; i++) {
@@ -1514,7 +1518,31 @@ window.aplicarAuditoriaTabla = () => {
                         <p class="text-xs text-gray-500 mb-2">Define la identidad de tu marca indicando tu personalidad (arquetipos), tu eslogan (opcional), tu propósito, tu valor diferencial, tu tono de voz, y tu estilo de tu comunicación. <br><span class="font-medium">Ejemplo:</span> <em>Mi personalidad mezcla los arquetipos de “El Sabio” y “El Bufón”. Mi eslogan es Revolucionando la forma de hacer ciencia. Tono académico pero accesible, uso lenguaje científico intercalado con referencias de la cultura pop, ritmo rápido y directo. Mi propósito es despertar curiosidad y pensamiento crítico. Mi valor diferencial es combinar la ciencia y la cultura pop. Mi estilo de Comunicación es explicar como a un niño de 10 años.</em></p>
                         <textarea id="identidadTono" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Mi tono es inspirador, riguroso y disruptivo..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll"></textarea>
                     </div>
-                        
+                        <div class="border-t pt-6 mt-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Guía de Identidad Visual</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Paleta de Colores (Códigos HEX)</label>
+                                <input type="text" id="visualColores" onblur="saveStrategyExtras()" placeholder="Ej. Primario: #4F46E5, Secundario: #10B981" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Tipografías (Títulos y Cuerpo)</label>
+                                <input type="text" id="visualTipografia" onblur="saveStrategyExtras()" placeholder="Ej. Títulos: Montserrat Bold | Cuerpo: Open Sans" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Estilo Visual</label>
+                                <input type="text" id="visualEstilo" onblur="saveStrategyExtras()" placeholder="Ej. Minimalista, alto contraste, editorial, tecnológico..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Enlace Público del Logotipo</label>
+                                <input type="text" id="visualLogoUrl" onblur="saveStrategyExtras()" placeholder="Ej. https://imgur.com/logo.png" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Reglas de Logo y Espaciado</label>
+                                <input type="text" id="visualLogo" onblur="saveStrategyExtras()" placeholder="Ej. Siempre esquina inferior derecha, margen 50px." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                        </div>
+                    </div>
                     <div class="mb-6 border-t pt-6">
                         <label class="block text-sm font-semibold text-gray-800 mb-4 bg-slate-100 p-2 rounded">Objetivos del Contenido (Redacción obligatoria)</label>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1623,6 +1651,10 @@ window.aplicarAuditoriaTabla = () => {
                                 <textarea id="starFormat3_desc" onblur="saveStarFormats()" placeholder="Descripción del formato estrella 3..." class="w-full p-3 border rounded-lg text-xs md:col-span-2 shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
                             </div>
                         </div>
+                    </div>
+                    <div class="mt-6 flex flex-col sm:flex-row gap-3">
+                        <button onclick="window.copiarEstrategiaResumen()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-md flex items-center justify-center gap-2">📋 Copiar Estrategia</button>
+                        <button onclick="window.descargarEstrategiaWord()" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition shadow-md flex items-center justify-center gap-2">📄 Descargar en Word</button>
                     </div>
                     <div class="mt-8 border-t pt-6">
                        <h3 class="text-xl font-bold mb-4 text-gray-800">AI Prompt Generator</h3>
@@ -2120,6 +2152,11 @@ let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
             localStorage.setItem('publicoObjetivo', document.getElementById('publicoObjetivo').value);
             localStorage.setItem('descCreador', document.getElementById('descCreador').value);
             localStorage.setItem('identidadTono', document.getElementById('identidadTono').value);
+            localStorage.setItem('visualColores', document.getElementById('visualColores').value);
+            localStorage.setItem('visualTipografia', document.getElementById('visualTipografia').value);
+            localStorage.setItem('visualEstilo', document.getElementById('visualEstilo').value);
+            localStorage.setItem('visualLogoUrl', document.getElementById('visualLogoUrl').value);
+            localStorage.setItem('visualLogo', document.getElementById('visualLogo').value);
         }
 
         function saveFunnel() {
@@ -2557,6 +2594,11 @@ function renderEstrategiaResumen() {
     const publico = localStorage.getItem('publicoObjetivo') || 'No definido';
     const creador = localStorage.getItem('descCreador') || 'No definido';
     const tono = localStorage.getItem('identidadTono') || 'Tono no definido';
+    const visColores = localStorage.getItem('visualColores') || 'No definido';
+    const visTipo = localStorage.getItem('visualTipografia') || 'No definido';
+    const visEstilo = localStorage.getItem('visualEstilo') || 'No definido';
+    const visLogoUrl = localStorage.getItem('visualLogoUrl') || 'Sin enlace';
+    const visLogo = localStorage.getItem('visualLogo') || 'Sin reglas';
     
     // --- SOLUCIÓN ANTI-CRASHEOS ---
     let arq = [];
@@ -2593,7 +2635,7 @@ const aw = localStorage.getItem('strat_awareness') || 'Generar visibilidad masiv
     const inputDias = document.getElementById('diasPrompt');
     const diasGenerar = inputDias ? inputDias.value || 31 : 31;
 
-    if (container) {
+   if (container) {
         container.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div class="p-4 bg-slate-50 rounded-lg border">
@@ -2612,6 +2654,16 @@ const aw = localStorage.getItem('strat_awareness') || 'Generar visibilidad masiv
                 <div class="p-4 bg-slate-50 rounded-lg border md:col-span-2">
                     <h4 class="text-xs font-bold text-gray-400 uppercase">Identidad y Tono de Comunicación</h4>
                     <p class="text-sm text-slate-700 mt-1">${tono}</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-lg border md:col-span-2 border-indigo-200">
+                    <h4 class="text-xs font-bold text-indigo-500 uppercase mb-2">🎨 Guía de Identidad Visual</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-slate-700">
+                        <p><b>Paleta:</b> ${visColores}</p>
+                        <p><b>Tipografía:</b> ${visTipo}</p>
+                        <p><b>Estilo:</b> ${visEstilo}</p>
+                        <p><b>Enlace Logo:</b> <a href="${visLogoUrl}" target="_blank" class="text-indigo-600 hover:underline break-all">${visLogoUrl}</a></p>
+                        <p class="sm:col-span-2"><b>Reglas Logo:</b> ${visLogo}</p>
+                    </div>
                 </div>
             </div>`;
     }
@@ -2698,6 +2750,7 @@ MI PERFIL ESTRATÉGICO:
 - Público Objetivo: ${publico}
 - Ejes Transversales: ${ejes.join(', ')}
 - Identidad y Tono de Comunicación: ${tono}
+- Guía Visual (sólo para contenidos estáticos): Paleta: ${visColores} | Tipografía: ${visTipo} | Estilo: ${visEstilo} | Link Logo: ${visLogoUrl} | Reglas de uso: ${visLogo}
 
 TAREA: Redacta un guión completo para un contenido de tipo "${formato}". El guión debe llamar la atención, generar interés, despertar deseo y entrener. El storytelling debe ser entretenido, memorable, emotivo, interesante y carismático.
 Si utilizas un formato estrella listado arriba, asegúrate que el guión siga  la estructura de ese formato específico.
@@ -3281,6 +3334,11 @@ window.initAppState = () => {
             document.getElementById('strat_consideracion').value = localStorage.getItem('strat_consideracion') || '';
             document.getElementById('strat_conversion').value = localStorage.getItem('strat_conversion') || '';
             document.getElementById('strat_fidelizacion').value = localStorage.getItem('strat_fidelizacion') || '';
+            document.getElementById('visualColores').value = localStorage.getItem('visualColores') || '';
+            document.getElementById('visualTipografia').value = localStorage.getItem('visualTipografia') || '';
+            document.getElementById('visualEstilo').value = localStorage.getItem('visualEstilo') || '';
+            document.getElementById('visualLogoUrl').value = localStorage.getItem('visualLogoUrl') || '';
+            document.getElementById('visualLogo').value = localStorage.getItem('visualLogo') || '';
     /* --- NUEVO: Cargar los días del prompt --- */
             document.getElementById('diasPrompt').value = localStorage.getItem('diasPrompt') || '31';
             
@@ -3489,6 +3547,93 @@ window.descargarTablaXLSX = function() {
                 contenedor.scrollBy({ left: cantidad, behavior: 'smooth' });
             }
         };
+
+        window.copiarEstrategiaResumen = function() {
+    const text = `📌 ESTRATEGIA DE CONTENIDO
+
+PERFIL:
+• Tema Central: ${localStorage.getItem('temaCentral') || 'N/A'}
+• Nicho: ${localStorage.getItem('nichoContenido') || 'N/A'}
+• Arquetipos: ${JSON.parse(localStorage.getItem('arquetiposSeleccionados') || '[]').join(' + ')}
+• Público: ${localStorage.getItem('publicoObjetivo') || 'N/A'}
+
+IDENTIDAD Y TONO:
+• Descripción del creador: ${localStorage.getItem('descCreador') || 'N/A'}
+• Tono de comunicación: ${localStorage.getItem('identidadTono') || 'N/A'}
+
+🎨 IDENTIDAD VISUAL:
+• Paleta de Colores: ${localStorage.getItem('visualColores') || 'N/A'}
+• Tipografías: ${localStorage.getItem('visualTipografia') || 'N/A'}
+• Estilo Visual: ${localStorage.getItem('visualEstilo') || 'N/A'}
+• Enlace del Logo: ${localStorage.getItem('visualLogoUrl') || 'N/A'}
+• Reglas de Espaciado: ${localStorage.getItem('visualLogo') || 'N/A'}
+
+FUNNEL DE OBJETIVOS:
+• Reconocimiento: ${localStorage.getItem('strat_awareness') || 'N/A'}
+• Consideración: ${localStorage.getItem('strat_consideracion') || 'N/A'}
+• Conversión: ${localStorage.getItem('strat_conversion') || 'N/A'}
+• Fidelización: ${localStorage.getItem('strat_fidelizacion') || 'N/A'}
+`;
+    navigator.clipboard.writeText(text).then(() => alert('¡Estrategia copiada al portapapeles!'));
+};
+
+window.descargarEstrategiaWord = function() {
+    let html = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+        <meta charset='utf-8'>
+        <title>Estrategia de Contenido</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; color: #333; }
+            h1 { color: #4F46E5; font-size: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;}
+            h2 { color: #4338CA; font-size: 18px; margin-top: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px; }
+            p, li { font-size: 14px; line-height: 1.6; }
+            .strong { font-weight: bold; color: #1e293b; }
+        </style>
+    </head>
+    <body>
+        <h1>📌 ESTRATEGIA DE CONTENIDO</h1>
+        
+        <h2>👤 PERFIL DEL CREADOR</h2>
+        <ul>
+            <li><span class="strong">Tema Central:</span> ${localStorage.getItem('temaCentral') || 'N/A'}</li>
+            <li><span class="strong">Nicho:</span> ${localStorage.getItem('nichoContenido') || 'N/A'}</li>
+            <li><span class="strong">Arquetipos:</span> ${JSON.parse(localStorage.getItem('arquetiposSeleccionados') || '[]').join(' + ')}</li>
+            <li><span class="strong">Público Objetivo:</span> ${localStorage.getItem('publicoObjetivo') || 'N/A'}</li>
+        </ul>
+
+        <h2>🗣️ IDENTIDAD Y TONO</h2>
+        <p><span class="strong">Descripción:</span> ${localStorage.getItem('descCreador') || 'N/A'}</p>
+        <p><span class="strong">Tono de comunicación:</span> ${localStorage.getItem('identidadTono') || 'N/A'}</p>
+
+        <h2>🎨 IDENTIDAD VISUAL</h2>
+        <ul>
+            <li><span class="strong">Paleta de Colores:</span> ${localStorage.getItem('visualColores') || 'N/A'}</li>
+            <li><span class="strong">Tipografías:</span> ${localStorage.getItem('visualTipografia') || 'N/A'}</li>
+            <li><span class="strong">Estilo Visual:</span> ${localStorage.getItem('visualEstilo') || 'N/A'}</li>
+            <li><span class="strong">Enlace del Logo:</span> <a href="${localStorage.getItem('visualLogoUrl') || '#'}">${localStorage.getItem('visualLogoUrl') || 'N/A'}</a></li>
+            <li><span class="strong">Reglas de Espaciado:</span> ${localStorage.getItem('visualLogo') || 'N/A'}</li>
+        </ul>
+
+        <h2>🎯 FUNNEL DE OBJETIVOS</h2>
+        <ul>
+            <li><span class="strong">Reconocimiento:</span> ${localStorage.getItem('strat_awareness') || 'N/A'}</li>
+            <li><span class="strong">Consideración:</span> ${localStorage.getItem('strat_consideracion') || 'N/A'}</li>
+            <li><span class="strong">Conversión:</span> ${localStorage.getItem('strat_conversion') || 'N/A'}</li>
+            <li><span class="strong">Fidelización:</span> ${localStorage.getItem('strat_fidelizacion') || 'N/A'}</li>
+        </ul>
+    </body></html>`;
+
+    const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Estrategia_Marca_${Date.now()}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
         
         // 3. EL PARCHE DE CONEXIÓN (LO QUE AGREGAMOS PARA QUE LOS BOTONES FUNCIONEN)
     window.switchTab = switchTab;
@@ -3539,6 +3684,8 @@ window.descargarTablaXLSX = function() {
     window.descargarTablaXLSX = descargarTablaXLSX;
     window.guardarCeldaEditada = guardarCeldaEditada;
     window.trasladarHook = trasladarHook;
+    window.copiarEstrategiaResumen = copiarEstrategiaResumen;
+    window.descargarEstrategiaWord = descargarEstrategiaWord;
     window.irAFechaEspecifica = function(fecha) {
         if(!fecha) return;
         const partes = fecha.split('-'); // Extrae [YYYY, MM, DD]
