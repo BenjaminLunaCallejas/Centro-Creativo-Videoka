@@ -1522,17 +1522,20 @@ window.aplicarAuditoriaTabla = () => {
     <h3 class="text-lg font-bold text-gray-800 mb-1">Guía de Identidad Visual <span class="text-sm font-normal text-gray-500">(Opcional)</span></h3>
     <p class="text-xs text-gray-500 mb-4">Puedes agregar varias opciones por línea presionando Enter. Los recuadros se ajustarán automáticamente.</p>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
+<div>
             <label class="block text-sm font-semibold text-gray-600 mb-1">Paleta de Colores (Códigos HEX)</label>
-            <textarea id="visualColores" onblur="saveStrategyExtras()" rows="2" placeholder="Ej.&#10;Primarios: #4F46E5, #10B981&#10;Secundarios: #FFFFFF, #000000" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll resize-y overflow-hidden"></textarea>
+            <input type="text" id="inputColores" placeholder="Ej. #4F46E5 (Presiona Enter)" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mb-2">
+            <div id="listaColores" class="flex flex-wrap gap-1"></div>
         </div>
         <div>
             <label class="block text-sm font-semibold text-gray-600 mb-1">Tipografías (Títulos y Cuerpo)</label>
-            <textarea id="visualTipografia" onblur="saveStrategyExtras()" rows="2" placeholder="Ej.&#10;Títulos: Montserrat Bold&#10;Cuerpo: Open Sans, Roboto" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll resize-y overflow-hidden"></textarea>
+            <input type="text" id="inputTipografia" placeholder="Ej. Montserrat (Presiona Enter)" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mb-2">
+            <div id="listaTipografia" class="flex flex-wrap gap-1"></div>
         </div>
         <div class="md:col-span-2">
             <label class="block text-sm font-semibold text-gray-600 mb-1">Estilo Visual</label>
-            <textarea id="visualEstilo" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Minimalista, alto contraste, editorial, tecnológico..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll resize-y overflow-hidden"></textarea>
+            <input type="text" id="inputEstilo" placeholder="Ej. Minimalista (Presiona Enter)" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mb-2">
+            <div id="listaEstilo" class="flex flex-wrap gap-1"></div>
         </div>
         <div>
             <label class="block text-sm font-semibold text-gray-600 mb-1">Enlace Público del Logotipo</label>
@@ -2153,9 +2156,6 @@ let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
             localStorage.setItem('publicoObjetivo', document.getElementById('publicoObjetivo').value);
             localStorage.setItem('descCreador', document.getElementById('descCreador').value);
             localStorage.setItem('identidadTono', document.getElementById('identidadTono').value);
-            localStorage.setItem('visualColores', document.getElementById('visualColores').value);
-            localStorage.setItem('visualTipografia', document.getElementById('visualTipografia').value);
-            localStorage.setItem('visualEstilo', document.getElementById('visualEstilo').value);
             localStorage.setItem('visualLogoUrl', document.getElementById('visualLogoUrl').value);
             localStorage.setItem('visualLogo', document.getElementById('visualLogo').value);
         }
@@ -3317,6 +3317,37 @@ tr.innerHTML = `
             localStorage.setItem('historyNotas', JSON.stringify(historyNotas));
             renderHistoryNotas();
         }
+
+        window.setupGenericTagsInput = function(inputId, listId, arrayObj, storageKey) {
+            const input = document.getElementById(inputId);
+            input.addEventListener('keypress', (e) => {
+                if(e.key === 'Enter' && input.value.trim() !== '') {
+                    e.preventDefault();
+                    arrayObj.push(input.value.trim());
+                    input.value = '';
+                    window.renderGenericTags(listId, arrayObj, storageKey);
+                }
+            });
+        };
+
+        window.renderGenericTags = function(listId, arrayObj, storageKey) {
+            const container = document.getElementById(listId);
+            container.innerHTML = '';
+            arrayObj.forEach((tag, index) => {
+                container.innerHTML += `<div class="tag bg-indigo-100 text-indigo-800">${tag}<button type="button" onclick="window.removeGenericTag('${listId}', ${index}, '${storageKey}')">×</button></div>`;
+            });
+            localStorage.setItem(storageKey, JSON.stringify(arrayObj));
+            if(typeof renderEstrategiaResumen === 'function') renderEstrategiaResumen();
+        };
+
+        window.removeGenericTag = function(listId, index, storageKey) {
+            let arr = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            arr.splice(index, 1);
+            if(storageKey === 'visualColoresArr') window.visualColoresArr = arr;
+            if(storageKey === 'visualTipoArr') window.visualTipoArr = arr;
+            if(storageKey === 'visualEstiloArr') window.visualEstiloArr = arr;
+            window.renderGenericTags(listId, arr, storageKey);
+        };
 
 window.initAppState = () => {
             // FUNCIÓN SALVAVIDAS: Evita que el JSON.parse crashee si recibe un texto vacío ("") de la nube
