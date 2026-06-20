@@ -1516,7 +1516,7 @@ window.aplicarAuditoriaTabla = () => {
                     <div class="border-t pt-4 mt-4">
                         <label class="block text-sm font-semibold text-gray-600 mb-1">Identidad de la Marca y Tono de Comunicación</label>
                         <p class="text-xs text-gray-500 mb-2">Define la identidad de tu marca indicando tu personalidad (arquetipos), tu eslogan (opcional), tu propósito, tu valor diferencial, tu tono de voz, y tu estilo de tu comunicación. <br><span class="font-medium">Ejemplo:</span> <em>Mi personalidad mezcla los arquetipos de “El Sabio” y “El Bufón”. Mi eslogan es Revolucionando la forma de hacer ciencia. Tono académico pero accesible, uso lenguaje científico intercalado con referencias de la cultura pop, ritmo rápido y directo. Mi propósito es despertar curiosidad y pensamiento crítico. Mi valor diferencial es combinar la ciencia y la cultura pop. Mi estilo de Comunicación es explicar como a un niño de 10 años.</em></p>
-                        <textarea id="identidadTono" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Mi tono es inspirador, riguroso y disruptivo..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll"></textarea>
+                        <textarea id="identidadTono" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Mi tono es inspirador..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none overflow-hidden"></textarea>
                     </div>
                         <div class="border-t pt-6 mt-6">
                         <h3 class="text-lg font-bold text-gray-800 mb-4">Guía de Identidad Visual</h3>
@@ -2213,10 +2213,20 @@ let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
             localStorage.setItem(storageKey, JSON.stringify(arrayVar));
         }
 
-        function removeTag(listId, index, storageKey) {
-            ejesTags.splice(index, 1);
-            renderTags(listId, ejesTags, storageKey);
-        }
+function removeTag(listId, index, storageKey) {
+    // 1. Obtenemos el array correcto directamente de la memoria local
+    let currentArray = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    currentArray.splice(index, 1);
+
+    // 2. Actualizamos la variable global que corresponda
+    if (storageKey === 'ejesTags') ejesTags = currentArray;
+    if (storageKey === 'coloresTags') coloresTags = currentArray;
+    if (storageKey === 'tipografiaTags') tipografiaTags = currentArray;
+    if (storageKey === 'estiloTags') estiloTags = currentArray;
+
+    // 3. Renderizamos y guardamos de forma segura
+    renderTags(listId, currentArray, storageKey);
+}
 
         function addTask(cat) {
             const input = document.getElementById(`inputTarea_${cat}`);
@@ -2761,7 +2771,8 @@ REGLAS CRÍTICAS:
 
            // --- PASO 5: ARREGLO DE CRASH Y VARIABLES VISUALES SEGURAS ---
     let colores = [];
-    try { const val = localStorage.getItem('coloresTags'); if(val) { const parsed = JSON.parse(val); if(parsed.length) colores = parsed; } } catch(e) {}
+    let visColores = [];
+try { const val = localStorage.getItem('coloresTags'); if(val) visColores = JSON.parse(val); } catch(e) {}
     let tipoVisual = [];
     try { const val = localStorage.getItem('tipografiaTags'); if(val) { const parsed = JSON.parse(val); if(parsed.length) tipoVisual = parsed; } } catch(e) {}
     let estilo = [];
@@ -2770,7 +2781,7 @@ REGLAS CRÍTICAS:
     const visLogo = localStorage.getItem('visualLogo') || "";
 
     let strVisual = "";
-    if (colores.length || tipoVisual.length || estilo.length || visLogoUrl || visLogo) {
+ if (visColores.length || tipo.length || estilo.length || visLogoUrl || visLogo) {
         strVisual = `\n- Guía Visual (sólo estáticos): `;
         if(colores.length) strVisual += `Paleta: ${colores.join(', ')} | `;
         if(tipoVisual.length) strVisual += `Tipografía: ${tipoVisual.join(', ')} | `;
