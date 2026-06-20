@@ -1518,32 +1518,32 @@ window.aplicarAuditoriaTabla = () => {
                         <p class="text-xs text-gray-500 mb-2">Define la identidad de tu marca indicando tu personalidad (arquetipos), tu eslogan (opcional), tu propósito, tu valor diferencial, tu tono de voz, y tu estilo de tu comunicación. <br><span class="font-medium">Ejemplo:</span> <em>Mi personalidad mezcla los arquetipos de “El Sabio” y “El Bufón”. Mi eslogan es Revolucionando la forma de hacer ciencia. Tono académico pero accesible, uso lenguaje científico intercalado con referencias de la cultura pop, ritmo rápido y directo. Mi propósito es despertar curiosidad y pensamiento crítico. Mi valor diferencial es combinar la ciencia y la cultura pop. Mi estilo de Comunicación es explicar como a un niño de 10 años.</em></p>
                         <textarea id="identidadTono" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Mi tono es inspirador..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none overflow-hidden"></textarea>
                     </div>
-                    <div class="border-t pt-6 mt-6">
-    <h3 class="text-lg font-bold text-gray-800 mb-1">Guía de Identidad Visual <span class="text-sm font-normal text-gray-500">(Opcional)</span></h3>
-    <p class="text-xs text-gray-500 mb-4">Puedes agregar varias opciones por línea presionando Enter. Los recuadros se ajustarán automáticamente.</p>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-            <label class="block text-sm font-semibold text-gray-600 mb-1">Paleta de Colores (Códigos HEX)</label>
-            <textarea id="visualColores" onblur="saveStrategyExtras()" rows="2" placeholder="Ej.&#10;Primarios: #4F46E5, #10B981&#10;Secundarios: #FFFFFF, #000000" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll resize-y overflow-hidden"></textarea>
-        </div>
-        <div>
-            <label class="block text-sm font-semibold text-gray-600 mb-1">Tipografías (Títulos y Cuerpo)</label>
-            <textarea id="visualTipografia" onblur="saveStrategyExtras()" rows="2" placeholder="Ej.&#10;Títulos: Montserrat Bold&#10;Cuerpo: Open Sans, Roboto" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll resize-y overflow-hidden"></textarea>
-        </div>
-        <div class="md:col-span-2">
-            <label class="block text-sm font-semibold text-gray-600 mb-1">Estilo Visual</label>
-            <textarea id="visualEstilo" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Minimalista, alto contraste, editorial, tecnológico..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll resize-y overflow-hidden"></textarea>
-        </div>
-        <div>
-            <label class="block text-sm font-semibold text-gray-600 mb-1">Enlace Público del Logotipo</label>
-            <textarea id="visualLogoUrl" onblur="saveStrategyExtras()" rows="1" placeholder="Ej. https://imgur.com/logo.png" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll resize-y overflow-hidden"></textarea>
-        </div>
-        <div>
-            <label class="block text-sm font-semibold text-gray-600 mb-1">Reglas de Logo y Espaciado</label>
-            <textarea id="visualLogo" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Siempre esquina inferior derecha, margen 50px." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll resize-y overflow-hidden"></textarea>
-        </div>
-    </div>
-</div>
+                   <div class="border-t pt-6 mt-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-1">Guía de Identidad Visual <span class="text-sm font-normal text-gray-500">(Opcional)</span></h3>
+                        <p class="text-xs text-gray-500 mb-4">Ingresa tus datos separados por una coma. El cuadro de texto se ajustará automáticamente. Si dejas un campo vacío, se omitirá en el resumen y en la IA.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Paleta de Colores</label>
+                                <textarea id="visualColores" onblur="saveStrategyExtras()" rows="1" placeholder="Ej: #4F46E5, #10B981, #FFFFFF" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll overflow-hidden auto-grow"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Tipografías</label>
+                                <textarea id="visualTipografia" onblur="saveStrategyExtras()" rows="1" placeholder="Ej: Montserrat Bold, Open Sans, Roboto" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll overflow-hidden auto-grow"></textarea>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Estilo Visual</label>
+                                <textarea id="visualEstilo" onblur="saveStrategyExtras()" rows="1" placeholder="Ej: Minimalista, alto contraste, editorial, tecnológico" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll overflow-hidden auto-grow"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Enlace del Logotipo</label>
+                                <textarea id="visualLogoUrl" onblur="saveStrategyExtras()" rows="1" placeholder="Ej: https://imgur.com/logo.png" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll overflow-hidden auto-grow"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Reglas de Logo y Espaciado</label>
+                                <textarea id="visualLogo" onblur="saveStrategyExtras()" rows="1" placeholder="Ej: Siempre esquina inferior derecha, margen 50px" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll overflow-hidden auto-grow"></textarea>
+                            </div>
+                        </div>
+                    </div>
                     <div class="mb-6 border-t pt-6">
                         <label class="block text-sm font-semibold text-gray-800 mb-4 bg-slate-100 p-2 rounded">Objetivos del Contenido (Redacción obligatoria)</label>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2595,11 +2595,12 @@ function renderEstrategiaResumen() {
     const publico = localStorage.getItem('publicoObjetivo') || 'No definido';
     const creador = localStorage.getItem('descCreador') || 'No definido';
     const tono = localStorage.getItem('identidadTono') || 'Tono no definido';
-    const visColores = localStorage.getItem('visualColores') || 'No definido';
-    const visTipo = localStorage.getItem('visualTipografia') || 'No definido';
-    const visEstilo = localStorage.getItem('visualEstilo') || 'No definido';
-    const visLogoUrl = localStorage.getItem('visualLogoUrl') || 'Sin enlace';
-    const visLogo = localStorage.getItem('visualLogo') || 'Sin reglas';
+    // Dejamos vacío por defecto si no hay nada
+    const visColores = localStorage.getItem('visualColores') || '';
+    const visTipo = localStorage.getItem('visualTipografia') || '';
+    const visEstilo = localStorage.getItem('visualEstilo') || '';
+    const visLogoUrl = localStorage.getItem('visualLogoUrl') || '';
+    const visLogo = localStorage.getItem('visualLogo') || '';
     
     // --- SOLUCIÓN ANTI-CRASHEOS ---
     let arq = [];
