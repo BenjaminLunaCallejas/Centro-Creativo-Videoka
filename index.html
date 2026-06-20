@@ -2762,7 +2762,11 @@ ENTREGABLES ADICIONALES (Debajo del guion):
                         <div><span class="text-gray-400 font-bold uppercase block">⭐ Formato Estrella:</span> ${idea.starFormat || 'Ninguno'}</div>
                     </div>
                     ${idea.hook ? `<div class="mt-4 p-3 bg-indigo-50 border-l-4 border-indigo-500 text-xs italic"><b>Gancho:</b> "${idea.hook}"</div>` : ''}
-                    ${idea.enlaces ? `<div class="mt-2 p-3 bg-slate-50 border border-gray-200 rounded-lg text-xs font-mono text-gray-600"><b>Enlaces de Referencia:</b><br>${idea.enlaces.replace(/\n/g, '<br>')}</div>` : ''}
+                   ${idea.enlaces ? `
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 mt-3">Enlaces de Referencia</label>
+                        <div class="p-4 bg-slate-50 border border-gray-200 rounded-lg text-sm text-gray-700 whitespace-pre-wrap break-words leading-relaxed">${linkify(idea.enlaces)}</div>
+                    </div>` : ''}
                     ${idea.guionBase ? `<div class="mt-2 p-3 bg-indigo-50/30 border border-indigo-100 rounded-lg text-xs text-gray-700"><b>Idea Inicial / Guion Base:</b><br>${idea.guionBase}</div>` : ''}
                 </div>
                 <div class="space-y-6">
@@ -2782,25 +2786,27 @@ ENTREGABLES ADICIONALES (Debajo del guion):
                     </div>
                     ` : ''}
                     
-                    ${idea.enlaceCarpeta ? `
+                   ${idea.enlaceCarpeta ? `
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Carpeta de Recursos</label>
-                        <div class="p-4 bg-slate-50 rounded-lg text-sm border border-slate-200 flex items-center gap-2">
-                            <span>📁</span>
-                            <a href="${idea.enlaceCarpeta}" target="_blank" class="text-indigo-600 hover:text-indigo-800 underline font-medium break-all">${idea.enlaceCarpeta}</a>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 mt-3">Carpeta de Recursos</label>
+                        <div class="p-4 bg-slate-50 rounded-lg text-sm border border-slate-200 whitespace-pre-wrap break-words leading-relaxed">
+                            <span class="mr-1">📁</span> ${linkify(idea.enlaceCarpeta)}
                         </div>
                     </div>
                     ` : ''}
+                    
                     ${idea.observaciones ? `
 <div>
     <label class="block text-[10px] font-bold text-amber-600 uppercase mb-1 flex items-center gap-1"><span>📌</span> Observaciones / Pendientes de la Colaboración</label>
     <div class="p-4 bg-amber-50 rounded-lg text-sm border border-amber-200 text-amber-900 whitespace-pre-wrap leading-relaxed">${idea.observaciones}</div>
 </div>
 ` : ''}
-                </div>
-                <div class="flex flex-col sm:flex-row gap-3 mt-8">
+<div class="flex flex-col sm:flex-row gap-3 mt-8">
+                    <button onclick="descargarWordData(${idea.id})" class="bg-blue-600 text-white py-3 px-6 rounded-xl hover:bg-blue-700 transition font-bold text-sm shadow-lg shadow-blue-100 flex items-center justify-center gap-2">
+                        📄 Descargar Word
+                    </button>
                     <button onclick="copyToClipboardData(${idea.id})" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 transition font-bold text-sm shadow-lg shadow-indigo-100">
-                        Copiar Información Completa
+                        📋 Copiar Info
                     </button>
                     <button onclick="closeModal(null)" class="bg-gray-100 text-gray-500 py-3 px-6 rounded-xl hover:bg-gray-200 transition font-bold text-sm">Cerrar</button>
                 </div>
@@ -2856,6 +2862,95 @@ ${idea.copy || 'N/A'}`;
         }
 
         navigator.clipboard.writeText(text).then(() => alert('¡Información completa copiada al portapapeles!'));
+    }
+        function descargarWordData(id) {
+        const idea = ideas.find(i => i.id == id);
+        if (!idea) return;
+
+        const plataformasTexto = (idea.plataformas && idea.plataformas.length > 0) ? idea.plataformas.join(', ') : 'N/A';
+        const progresoTexto = idea.progreso || 'Planeación';
+
+        // 1. Construir la plantilla HTML que Word interpretará
+        let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>${idea.titulo}</title>
+            <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; color: #333; }
+                h1 { color: #4F46E5; font-size: 22px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 20px;}
+                h2 { color: #4338CA; font-size: 16px; margin-top: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px; }
+                p { font-size: 13px; line-height: 1.6; margin-bottom: 10px; }
+                ul { margin-top: 5px; margin-bottom: 15px; }
+                li { font-size: 13px; margin-bottom: 5px; }
+                .strong { font-weight: bold; color: #1e293b; }
+                .highlight { background-color: #f8fafc; padding: 12px; border-left: 4px solid #4F46E5; margin-bottom: 15px; }
+                .quote { font-style: italic; color: #475569; }
+            </style>
+        </head>
+        <body>
+            <h1>📌 TÍTULO DEL GUIÓN: ${idea.titulo}</h1>
+
+            <h2>📊 DETALLES GENERALES:</h2>
+            <ul>
+                <li><span class="strong">Formato Digital:</span> ${idea.formato || 'N/A'}</li>
+                <li><span class="strong">Tipo de Contenido:</span> ${idea.tipo || 'N/A'}</li>
+                <li><span class="strong">Objetivo:</span> ${idea.objetivo || 'N/A'}</li>
+                <li><span class="strong">Tipo Estratégico:</span> ${idea.tipoEstrategico || 'N/A'}</li>
+                <li><span class="strong">Colaboración:</span> ${idea.colaboracion || 'N/A'}</li>
+                <li><span class="strong">Tipo de Publicación:</span> ${idea.publicacion || 'N/A'}</li>
+                <li><span class="strong">Plataformas:</span> ${plataformasTexto}</li>
+                <li><span class="strong">Formato Estrella:</span> ${idea.starFormat || 'Ninguno'}</li>
+                <li><span class="strong">Progreso:</span> ${progresoTexto}</li>
+                <li><span class="strong">Fecha y Hora:</span> ${idea.fecha || 'N/A'} | ${idea.hora || 'N/A'}</li>
+            </ul>
+
+            <h2>🔥 GANCHO (HOOK):</h2>
+            <div class="highlight"><p>${(idea.hook || 'N/A').replace(/\n/g, '<br>')}</p></div>
+
+            <h2>🎬 GUIÓN ESTRUCTURADO:</h2>
+            <p>${(idea.guion || 'N/A').replace(/\n/g, '<br>')}</p>
+
+            <h2>✍️ COPYWRITING:</h2>
+            <p class="quote">${(idea.copy || 'N/A').replace(/\n/g, '<br>')}</p>
+        `;
+
+        // Añadir elementos opcionales
+        if (idea.hashtags && idea.hashtags.trim() !== '') {
+            html += `<h2>🏷️ HASHTAGS:</h2><p>${idea.hashtags}</p>`;
+        }
+        if (idea.enlaces && idea.enlaces.trim() !== '') {
+            let enlacesHtml = idea.enlaces.replace(/\n/g, '<br>');
+            html += `<h2>🔗 ENLACES DE REFERENCIA:</h2><p>${enlacesHtml}</p>`;
+        }
+        if (idea.enlaceCarpeta && idea.enlaceCarpeta.trim() !== '') {
+            let carpetaHtml = idea.enlaceCarpeta.replace(/\n/g, '<br>');
+            html += `<h2>📁 CARPETA DE RECURSOS:</h2><p>${carpetaHtml}</p>`;
+        }
+        if (idea.observaciones && idea.observaciones.trim() !== '') {
+            html += `<h2>⚠️ OBSERVACIONES:</h2><p>${idea.observaciones.replace(/\n/g, '<br>')}</p>`;
+        }
+
+        html += `</body></html>`;
+
+        // 2. Crear el Blob con el tipo MIME correcto para Word (\ufeff = asegura UTF-8 para tildes)
+        const blob = new Blob(['\ufeff', html], {
+            type: 'application/msword'
+        });
+
+        // 3. Forzar la descarga
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        
+        // Formatear el nombre del archivo para que se vea limpio
+        let nombreSeguro = idea.titulo.replace(/[^a-z0-9]/gi, '_').substring(0, 30);
+        link.download = `Guion_${nombreSeguro}.doc`;
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     }
  function allowDrop(ev) { ev.preventDefault(); }
 
@@ -3415,6 +3510,7 @@ window.descargarTablaXLSX = function() {
     window.copyPrompt = copyPrompt;
     window.copyToClipboardElement = copyToClipboardElement;
     window.copyToClipboardData = copyToClipboardData;
+    window.descargarWordData = descargarWordData;
     window.guardarYProcesarTabla = guardarYProcesarTabla;
     window.enviarARepositorio = enviarARepositorio;
     window.dragTask = dragTask;
