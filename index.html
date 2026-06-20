@@ -2675,8 +2675,7 @@ CONTEXTO:
 - Nombre y descripción del Creador: ${creador}
 - Personalidad (Arquetipos): ${arq.join(', ')} | Público: ${publico}
 - Ejes Transversales: ${ejes.join(', ')}
-- Identidad y Tono de Comunicación: ${tono}
-- Guía Visual (sólo para contenidos jpg): ${guiaVisualPrompt}
+- Identidad y Tono de Comunicación: ${tono}${guiaVisualPrompt}
 ${seccionFormatos}
 FUNNEL:
 - Reconocimiento: ${aw} | Consideración: ${co} | Conversión: ${cv} | Fidelización: ${fi}
@@ -2742,7 +2741,7 @@ REGLAS CRÍTICAS:
     try { const val = localStorage.getItem('ejesTags'); if(val) { const parsed = JSON.parse(val); if(parsed.length) ejes = parsed; } } catch(e) {}
     
     const tono = localStorage.getItem('identidadTono') || "Tono profesional y adecuado al nicho";
-           const tono = localStorage.getItem('identidadTono') || "Tono profesional y adecuado al nicho";
+           
     
     // --- LÓGICA DE GUÍA VISUAL OPCIONAL Y CORRECCIÓN DE BUG ---
     const visColores = localStorage.getItem('visualColores') || "";
@@ -2753,7 +2752,7 @@ REGLAS CRÍTICAS:
 
     let guiaVisualPrompt = "";
     if (visColores || visTipo || visEstilo || visLogoUrl || visLogo) {
-        guiaVisualPrompt = `\n- Guía Visual (sólo para estáticos): Paleta: ${visColores} | Tipografía: ${visTipo} | Estilo: ${visEstilo} | Link Logo: ${visLogoUrl} | Reglas: ${visLogo}`;
+        guiaVisualPrompt = `\n- Guía Visual (sólo para estáticos jpg): Paleta: ${visColores} | Tipografía: ${visTipo} | Estilo: ${visEstilo} | Link Logo: ${visLogoUrl} | Reglas: ${visLogo}`;
     }
     // -----------------------------------------------------------
     
@@ -2765,8 +2764,7 @@ MI PERFIL ESTRATÉGICO:
 - Personalidad (Arquetipos): ${arq.join(', ')} 
 - Público Objetivo: ${publico}
 - Ejes Transversales: ${ejes.join(', ')}
-- Identidad y Tono de Comunicación: ${tono}
-- Guía Visual (sólo para contenidos estáticos): Paleta: ${visColores} | Tipografía: ${visTipo} | Estilo: ${visEstilo} | Link Logo: ${visLogoUrl} | Reglas de uso: ${visLogo}
+- Identidad y Tono de Comunicación: ${tono}${guiaVisualPrompt}
 
 TAREA: Redacta un guión completo para un contenido de tipo "${formato}". El guión debe llamar la atención, generar interés, despertar deseo y entrener. El storytelling debe ser entretenido, memorable, emotivo, interesante y carismático.
 Si utilizas un formato estrella listado arriba, asegúrate que el guión siga  la estructura de ese formato específico.
