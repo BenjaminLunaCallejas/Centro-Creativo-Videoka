@@ -468,12 +468,15 @@ let syncTimeout = null;
             const profileKey = window.currentProfileId === 'default' ? key : key + '_' + window.currentProfileId;
             originalSetItem.call(this, profileKey, value);
 
-            // CONTROL DE CONCURRENCIA: 
+// CONTROL DE CONCURRENCIA SEGURO: 
             if (!window.isUpdatingFromCloud && window.dataLoadedFromCloud) { 
-                if (syncTimeout !== null) {
-                    clearTimeout(syncTimeout);
+                if (window.syncTimeout) {
+                    clearTimeout(window.syncTimeout);
                 }
-                syncTimeout = setTimeout(window.syncToCloud, 1000);
+                window.syncTimeout = setTimeout(() => {
+                    window.syncToCloud();
+                    window.syncTimeout = null;
+                }, 1500); // 1.5s es más seguro para evitar saturar las escrituras de Firebase
             }
         };
 
@@ -1047,6 +1050,8 @@ window.actualizarCeldaInvitado = function(event, index, campo) {
     const nuevoValor = event.target.innerText.trim();
     if (window.tablaIAParsed && window.tablaIAParsed[index]) {
         window.tablaIAParsed[index][campo] = nuevoValor;
+        // ✔️ FUERZA EL GUARDADO LOCAL TEMPORAL
+        localStorage.setItem('sharedTablaTemp', JSON.stringify(window.tablaIAParsed));
     }
 };
 
@@ -3712,7 +3717,6 @@ window.descargarEstrategiaWord = function() {
     window.actualizarCeldaInvitado = actualizarCeldaInvitado;
     window.sincronizarTablaDesdeEnlace = sincronizarTablaDesdeEnlace;
     window.desplazarTablaPrincipal = desplazarTablaPrincipal;
-    window.irAFechaEspecifica = irAFechaEspecifica; // Registrar función en el objeto Window
 
 // 4. ARRANQUE CORREGIDO
     window.addEventListener('load', () => {
