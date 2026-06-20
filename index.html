@@ -1624,8 +1624,12 @@ window.aplicarAuditoriaTabla = () => {
                         </div>
                     </div>
                     <div class="mt-8 border-t pt-6">
-                        <h3 class="text-xl font-bold mb-4 text-gray-800">AI Prompt Generator</h3>
-                        <p class="text-sm text-gray-500 mb-4">Copia este prompt para usarlo en ChatGPT, Claude o Gemini y generar tu calendario de 30 días.</p>
+                       <h3 class="text-xl font-bold mb-4 text-gray-800">AI Prompt Generator</h3>
+                        <p class="text-sm text-gray-500 mb-2">Ajusta los días y copia este prompt para usarlo en tu IA y generar el calendario.</p>
+                        <div class="flex items-center gap-3 mb-4">
+                            <label for="diasPrompt" class="text-sm font-semibold text-indigo-900">Días a cubrir en el calendario:</label>
+                            <input type="number" id="diasPrompt" value="30" min="1" max="365" oninput="renderEstrategiaResumen()" class="w-20 p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-bold text-center">
+                        </div>
                         <div class="relative">
                             <textarea id="aiPromptArea" rows="12" class="w-full p-4 bg-slate-900 text-indigo-200 font-mono text-xs rounded-lg border border-slate-700 leading-relaxed custom-scroll" readonly></textarea>
                             <button onclick="copyPrompt()" class="absolute top-2 right-2 bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-500 transition">Copiar Prompt</button>
@@ -1651,13 +1655,20 @@ window.aplicarAuditoriaTabla = () => {
                                     <li><span class="font-bold text-indigo-700">🚀 Producir:</span> El botón de la derecha enviará todos los datos de esa fila específica a tu Generador de Guiones (Pestaña 4) para que inicies el proceso de desarrollo estructural.</li>
                                 </ul>
                             </div>
-<div class="flex flex-wrap gap-3 mb-4 justify-end">
+<div class="flex flex-wrap gap-3 mb-4 justify-between items-center w-full">
+    <div class="hidden md:flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">
+        <span class="text-xs text-indigo-900 font-bold mr-1">Desplazar Tabla:</span>
+        <button onclick="desplazarTablaPrincipal(-300)" class="bg-white text-indigo-700 hover:bg-indigo-600 hover:text-white border border-indigo-200 px-3 py-1 rounded shadow-sm font-bold transition text-xs flex items-center">◀ Atrás</button>
+        <button onclick="desplazarTablaPrincipal(300)" class="bg-white text-indigo-700 hover:bg-indigo-600 hover:text-white border border-indigo-200 px-3 py-1 rounded shadow-sm font-bold transition text-xs flex items-center">Adelante ▶</button>
+    </div>
+    <div class="flex flex-wrap gap-3 justify-end ml-auto">
         <button onclick="descargarTablaCSV()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-700 transition shadow-sm flex items-center gap-2">📄 Descargar CSV</button>
         <button onclick="descargarTablaXLSX()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-emerald-700 transition shadow-sm flex items-center gap-2">📊 Descargar Excel</button>
         <button onclick="compartirTablaCalendario(event)" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition shadow-sm flex items-center gap-2">🔗 Compartir Tabla</button>
         <button id="btnSyncTabla" onclick="sincronizarTablaDesdeEnlace()" class="bg-amber-500 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-amber-600 transition shadow-sm items-center gap-2 hidden">⬇️ Revisar Cambios</button>
     </div>
-                            <div class="overflow-x-auto custom-scroll border rounded-lg shadow-sm relative">
+</div>
+                            <div id="contenedorTablaPrincipalScroll" class="overflow-x-auto custom-scroll border rounded-lg shadow-sm relative scroll-smooth">
                                 <table class="w-full text-left text-xs border-collapse min-w-[1200px]">
                                     <thead>
                                         <tr class="bg-indigo-100 text-indigo-900 border-b-2 border-indigo-200">
@@ -2565,10 +2576,13 @@ function renderEstrategiaResumen() {
 
     const seccionInsumos = lineasInsumos.length > 0 ? `\nDATOS DEL PANEL "IDEAS Y TENDENCIAS":\n${lineasInsumos.join('\n')}\n` : "";
 
-    const aw = localStorage.getItem('strat_awareness') || 'Generar visibilidad masiva.';
+const aw = localStorage.getItem('strat_awareness') || 'Generar visibilidad masiva.';
     const co = localStorage.getItem('strat_consideracion') || 'Establecer autoridad y confianza.';
     const cv = localStorage.getItem('strat_conversion') || 'Llamado a la acción directa.';
     const fi = localStorage.getItem('strat_fidelizacion') || 'Mantener a la comunidad activa.';
+
+    const inputDias = document.getElementById('diasPrompt');
+    const diasGenerar = inputDias ? inputDias.value || 30 : 30;
 
     if (container) {
         container.innerHTML = `
@@ -2606,7 +2620,7 @@ FUNNEL:
 ${seccionInsumos}
 
 TAREA: 
-1. Genera calendario completo de 31 días (una idea/día), bien detallado y con información precisa (de fuentes oficiales) y entregalo en una tabla en cualquiera de los 3 siguientes formatos: Tab-Separated, Markdown/Pipeline, o CSV. Combina mi autoridad (tema central) con mis ejes transversales, mis formatos estrella y considerando los detalles descritos anteriormente. La tabla debe tener las columnas: Día | Tipo (Presencia, Marca o Valor) | Tema (Tema Central o Eje transversal) | Formato (Estrella o Libre) | Gancho/hook (Máx 15 palabras) | Contenido (Mensaje Principal) | Guión base | Llamado a la acción (CTA)
+1. Genera calendario completo de ${diasGenerar} días (una idea/día), bien detallado y con información precisa (de fuentes oficiales) y entregalo en una tabla en cualquiera de los 3 siguientes formatos: Tab-Separated, Markdown/Pipeline, o CSV. Combina mi autoridad (tema central) con mis ejes transversales, mis formatos estrella y considerando los detalles descritos anteriormente. La tabla debe tener las columnas: Día | Tipo (Presencia, Marca o Valor) | Tema (Tema Central o Eje transversal) | Formato (Estrella o Libre) | Gancho/hook (Máx 15 palabras) | Contenido (Mensaje Principal) | Guión base | Llamado a la acción (CTA)
 2. REGLA DE COPIADO OBLIGATORIA: Independientemente del formato que elijas para la tabla (Markdown, CSV o Tab-Separated), debes meter TODA la tabla estrictamente dentro de un bloque de código (usando triple acento grave, al inicio y al final). No la dejes suelta en el chat. Esto es indispensable para que la interfaz me muestre la pestaña con el botón nativo de "Copiar".
 3. Al finalizar el calendario, genera una sección titulada "Narrativa de Contenido" siguiendo este formato exacto:
    "Yo soy ${creador}, con mi tema principal ${tema} y mis ejes transversales ${ejes.join(', ')}. Por ello, mi narrativa de contenido es: [Aquí define para cada eje cómo se cruza con tu tema de autoridad de forma única, rápida y accionable, que sea lógico y coherente con narrativas de contenido contemporáneas.
@@ -3363,6 +3377,12 @@ window.descargarTablaXLSX = function() {
             
             alert("✅ ¡Gancho trasladado con éxito a la lista de Ideas Crudas!");
         }
+        window.desplazarTablaPrincipal = function(cantidad) {
+            const contenedor = document.getElementById('contenedorTablaPrincipalScroll');
+            if (contenedor) {
+                contenedor.scrollBy({ left: cantidad, behavior: 'smooth' });
+            }
+        };
         
         // 3. EL PARCHE DE CONEXIÓN (LO QUE AGREGAMOS PARA QUE LOS BOTONES FUNCIONEN)
     window.switchTab = switchTab;
@@ -3414,6 +3434,7 @@ window.descargarTablaXLSX = function() {
     window.trasladarHook = trasladarHook;
     window.actualizarCeldaInvitado = actualizarCeldaInvitado;
     window.sincronizarTablaDesdeEnlace = sincronizarTablaDesdeEnlace;
+    window.desplazarTablaPrincipal = desplazarTablaPrincipal;
 
 // 4. ARRANQUE CORREGIDO
     window.addEventListener('load', () => {
