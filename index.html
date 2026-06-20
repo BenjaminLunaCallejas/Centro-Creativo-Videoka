@@ -1627,8 +1627,8 @@ window.aplicarAuditoriaTabla = () => {
                        <h3 class="text-xl font-bold mb-4 text-gray-800">AI Prompt Generator</h3>
                         <p class="text-sm text-gray-500 mb-2">Ajusta los días y copia este prompt para usarlo en tu IA y generar el calendario.</p>
                         <div class="flex items-center gap-3 mb-4">
-                            <label for="diasPrompt" class="text-sm font-semibold text-indigo-900">Días a cubrir en el calendario:</label>
-                            <input type="number" id="diasPrompt" value="30" min="1" max="365" oninput="renderEstrategiaResumen()" class="w-20 p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-bold text-center">
+                            <label for="diasPrompt" class="text-sm font-semibold text-indigo-900">Días de contenido que deseas planear:</label>
+                            <input type="number" id="diasPrompt" value="31" min="1" max="365" oninput="renderEstrategiaResumen()" class="w-20 p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 text-sm font-bold text-center">
                         </div>
                         <div class="relative">
                             <textarea id="aiPromptArea" rows="12" class="w-full p-4 bg-slate-900 text-indigo-200 font-mono text-xs rounded-lg border border-slate-700 leading-relaxed custom-scroll" readonly></textarea>
@@ -2583,7 +2583,7 @@ const aw = localStorage.getItem('strat_awareness') || 'Generar visibilidad masiv
     const fi = localStorage.getItem('strat_fidelizacion') || 'Mantener a la comunidad activa.';
 
     const inputDias = document.getElementById('diasPrompt');
-    const diasGenerar = inputDias ? inputDias.value || 30 : 30;
+    const diasGenerar = inputDias ? inputDias.value || 31 : 31;
 
     if (container) {
         container.innerHTML = `
@@ -3178,6 +3178,8 @@ window.initAppState = () => {
             document.getElementById('strat_consideracion').value = localStorage.getItem('strat_consideracion') || '';
             document.getElementById('strat_conversion').value = localStorage.getItem('strat_conversion') || '';
             document.getElementById('strat_fidelizacion').value = localStorage.getItem('strat_fidelizacion') || '';
+    /* --- NUEVO: Cargar los días del prompt --- */
+            document.getElementById('diasPrompt').value = localStorage.getItem('diasPrompt') || '31';
             
             for(let i=1; i<=3; i++) {
                 document.getElementById(`starFormat${i}_name`).value = localStorage.getItem(`starFormat${i}_name`) || '';
