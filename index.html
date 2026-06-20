@@ -1518,31 +1518,32 @@ window.aplicarAuditoriaTabla = () => {
                         <p class="text-xs text-gray-500 mb-2">Define la identidad de tu marca indicando tu personalidad (arquetipos), tu eslogan (opcional), tu propósito, tu valor diferencial, tu tono de voz, y tu estilo de tu comunicación. <br><span class="font-medium">Ejemplo:</span> <em>Mi personalidad mezcla los arquetipos de “El Sabio” y “El Bufón”. Mi eslogan es Revolucionando la forma de hacer ciencia. Tono académico pero accesible, uso lenguaje científico intercalado con referencias de la cultura pop, ritmo rápido y directo. Mi propósito es despertar curiosidad y pensamiento crítico. Mi valor diferencial es combinar la ciencia y la cultura pop. Mi estilo de Comunicación es explicar como a un niño de 10 años.</em></p>
                         <textarea id="identidadTono" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Mi tono es inspirador..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none overflow-hidden"></textarea>
                     </div>
-                        <div class="border-t pt-6 mt-6">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4">Guía de Identidad Visual</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-600 mb-1">Paleta de Colores (Códigos HEX)</label>
-                                <input type="text" id="visualColores" onblur="saveStrategyExtras()" placeholder="Ej. Primario: #4F46E5, Secundario: #10B981" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-600 mb-1">Tipografías (Títulos y Cuerpo)</label>
-                                <input type="text" id="visualTipografia" onblur="saveStrategyExtras()" placeholder="Ej. Títulos: Montserrat Bold | Cuerpo: Open Sans" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-semibold text-gray-600 mb-1">Estilo Visual</label>
-                                <input type="text" id="visualEstilo" onblur="saveStrategyExtras()" placeholder="Ej. Minimalista, alto contraste, editorial, tecnológico..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-600 mb-1">Enlace Público del Logotipo</label>
-                                <input type="text" id="visualLogoUrl" onblur="saveStrategyExtras()" placeholder="Ej. https://imgur.com/logo.png" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-600 mb-1">Reglas de Logo y Espaciado</label>
-                                <input type="text" id="visualLogo" onblur="saveStrategyExtras()" placeholder="Ej. Siempre esquina inferior derecha, margen 50px." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                            </div>
-                        </div>
-                    </div>
+                    <div class="border-t pt-6 mt-6">
+    <h3 class="text-lg font-bold text-gray-800 mb-1">Guía de Identidad Visual <span class="text-sm font-normal text-gray-500">(Opcional)</span></h3>
+    <p class="text-xs text-gray-500 mb-4">Puedes agregar varias opciones por línea presionando Enter. Los recuadros se ajustarán automáticamente.</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+            <label class="block text-sm font-semibold text-gray-600 mb-1">Paleta de Colores (Códigos HEX)</label>
+            <textarea id="visualColores" onblur="saveStrategyExtras()" rows="2" placeholder="Ej.&#10;Primarios: #4F46E5, #10B981&#10;Secundarios: #FFFFFF, #000000" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll resize-y overflow-hidden"></textarea>
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-600 mb-1">Tipografías (Títulos y Cuerpo)</label>
+            <textarea id="visualTipografia" onblur="saveStrategyExtras()" rows="2" placeholder="Ej.&#10;Títulos: Montserrat Bold&#10;Cuerpo: Open Sans, Roboto" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll resize-y overflow-hidden"></textarea>
+        </div>
+        <div class="md:col-span-2">
+            <label class="block text-sm font-semibold text-gray-600 mb-1">Estilo Visual</label>
+            <textarea id="visualEstilo" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Minimalista, alto contraste, editorial, tecnológico..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll resize-y overflow-hidden"></textarea>
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-600 mb-1">Enlace Público del Logotipo</label>
+            <textarea id="visualLogoUrl" onblur="saveStrategyExtras()" rows="1" placeholder="Ej. https://imgur.com/logo.png" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll resize-y overflow-hidden"></textarea>
+        </div>
+        <div>
+            <label class="block text-sm font-semibold text-gray-600 mb-1">Reglas de Logo y Espaciado</label>
+            <textarea id="visualLogo" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Siempre esquina inferior derecha, margen 50px." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll resize-y overflow-hidden"></textarea>
+        </div>
+    </div>
+</div>
                     <div class="mb-6 border-t pt-6">
                         <label class="block text-sm font-semibold text-gray-800 mb-4 bg-slate-100 p-2 rounded">Objetivos del Contenido (Redacción obligatoria)</label>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2675,6 +2676,7 @@ CONTEXTO:
 - Personalidad (Arquetipos): ${arq.join(', ')} | Público: ${publico}
 - Ejes Transversales: ${ejes.join(', ')}
 - Identidad y Tono de Comunicación: ${tono}
+- Guía Visual (sólo para contenidos jpg): ${guiaVisualPrompt}
 ${seccionFormatos}
 FUNNEL:
 - Reconocimiento: ${aw} | Consideración: ${co} | Conversión: ${cv} | Fidelización: ${fi}
@@ -2740,6 +2742,20 @@ REGLAS CRÍTICAS:
     try { const val = localStorage.getItem('ejesTags'); if(val) { const parsed = JSON.parse(val); if(parsed.length) ejes = parsed; } } catch(e) {}
     
     const tono = localStorage.getItem('identidadTono') || "Tono profesional y adecuado al nicho";
+           const tono = localStorage.getItem('identidadTono') || "Tono profesional y adecuado al nicho";
+    
+    // --- LÓGICA DE GUÍA VISUAL OPCIONAL Y CORRECCIÓN DE BUG ---
+    const visColores = localStorage.getItem('visualColores') || "";
+    const visTipo = localStorage.getItem('visualTipografia') || "";
+    const visEstilo = localStorage.getItem('visualEstilo') || "";
+    const visLogoUrl = localStorage.getItem('visualLogoUrl') || "";
+    const visLogo = localStorage.getItem('visualLogo') || "";
+
+    let guiaVisualPrompt = "";
+    if (visColores || visTipo || visEstilo || visLogoUrl || visLogo) {
+        guiaVisualPrompt = `\n- Guía Visual (sólo para estáticos): Paleta: ${visColores} | Tipografía: ${visTipo} | Estilo: ${visEstilo} | Link Logo: ${visLogoUrl} | Reglas: ${visLogo}`;
+    }
+    // -----------------------------------------------------------
     
     area.value = `Actúa como un creador de contenido en redes sociales con millones de seguidores y un gran engagement.
 MI PERFIL ESTRATÉGICO:
