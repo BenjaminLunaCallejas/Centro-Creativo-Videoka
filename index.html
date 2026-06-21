@@ -1755,21 +1755,18 @@ window.aplicarAuditoriaTabla = () => {
                                 <select id="ideaFormato" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
                                     <option value="Short Content">Short Content</option>
                                     <option value="Long Content">Long Content</option>
-                                    <option value="Estático">Estático (4:5)</option>
-                                    <option value="Estático">Estático (1:1)</option>
-                                    <option value="Storie">Storie (Estática 9:16)</option>
-                                    <option value="Storie">Storie (Video 9:16)</option>
+                                    <option value="Estático">Estático</option>
+                                    <option value="Storie">Storie</option>
                                     <option value="Podcast">Podcast</option>
-                                    <option value="Infografías">Infografías (4:5)</option>
-                                    <option value="Fotos">Fotos (4:5)</option>
-                                    <option value="Memes">Memes (4:5)</option>
+                                    <option value="Infografías">Infografías</option>
+                                    <option value="Fotos">Fotos</option>
+                                    <option value="Memes">Memes</option>
                                     <option value="Blogs">Blogs</option>
                                     <option value="Lives">Lives</option>
-                                    <option value="Carruseles">Carruseles (4:5)</option>
+                                    <option value="Carruseles">Carruseles</option>
                                     <option value="Ponencias">Ponencias</option>
                                 </select>
                             </div>
-
                             
                             <div>
                                 <label class="block text-sm font-semibold text-gray-600 mb-2">Tipo de Contenido</label>
@@ -2788,17 +2785,17 @@ REGLAS CRÍTICAS:
     // --- LÓGICA INTELIGENTE DE FORMATO DIGITAL (Duración/Estructura) ---
     let reglaFormato = "Duración: 45-60 segundos."; // Por defecto (Short Content)
     if (["Long Content", "Podcast", "Videoblogs", "Ponencias", "Entrevistas", "Gameplays"].includes(formato)) {
-        reglaFormato = "Duración: Más de 8 minutos, desarrolla la información a profundidad.";
-    } else if (["Estático (4:5)", “Estático (1:1)”, "Fotos (4:5)", "Memes (4:5)", "Infografías (4:5)", "Carruseles (4:5)", "Storie (Estática 9:16), “Storie (Video 9:16)"].includes(formato)) {
-        reglaFormato = "Estructura: Lectura visual/estática. (NO uses palabras de video como 'en este video te explico', en formato JPG con texto para leer e imágenes impresionantes de fondo).";
+        reglaFormato = "Duración: Formato largo (más de 3 minutos), desarrolla la información a profundidad.";
+    } else if (["Estático", "Fotos", "Memes", "Infografías", "Carruseles"].includes(formato)) {
+        reglaFormato = "Estructura: Lectura visual/estática. (NO uses palabras de video como 'en este video te explico', usa formato texto para leer).";
     } else if (formato === "Blogs") {
         reglaFormato = "Estructura: Artículo de blog bien estructurado con subtítulos y párrafos para lectura web.";
-    } else if (formato === "Storie (Video 9:16)") {
+    } else if (formato === "Storie") {
         reglaFormato = "Duración: 15-30 segundos (rápido, ágil, interactivo y al grano).";
     } else if (formato === "Lives") {
         reglaFormato = "Estructura: Escaleta de puntos clave/guía para sostener una transmisión en vivo.";
     }
-
+  
     area.value = `Actúa como un creador de contenido en redes sociales con millones de seguidores y un gran engagement.
 MI PERFIL ESTRATÉGICO:
 - Tema central (Autoridad): ${tema}
@@ -2829,7 +2826,6 @@ INSTRUCCIONES DE REDACCIÓN:
 6. Aplica 100% el estilo coloquial, rápido y conversacional de un creador de contenido.
 7. Prohibido usar jerga, términos específicos o complejos, a menos que el video trate específicamente de eso. Usa analogías de la vida cotidiana.
 8. Si se incluye un hook propuesto, este se debe respetar al 100% en el guión generado.
-9. Sólo considera ${guiaVisualPrompt} si el contenido es estático, fotos, memes, infografías, carruseles y stories estáticas.
 
 ENTREGABLES ADICIONALES (Debajo del guion):
 - COPYWRITING: Breve resumen del guión, dato adicional relevante, palabras clave SEO, CTA claro. Máx 4 líneas.
