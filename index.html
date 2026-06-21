@@ -1752,7 +1752,7 @@ window.aplicarAuditoriaTabla = () => {
                             
                             <div>
                                 <label class="block text-sm font-semibold text-gray-600 mb-2">Formato Digital</label>
-<select id="ideaFormato" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
+<select id="ideaFormato" onchange="updateLivePrompt()" onmousedown="this.parentElement.scrollIntoView(true)" class="w-full p-3 border rounded-lg outline-none">
     <option value="Short Content">Short Content</option>
     <option value="Long Content">Long Content</option>
     <option value="Visual (4:5)">Visual (4:5)</option>
