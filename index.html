@@ -2845,14 +2845,47 @@ REGLAS CRÍTICAS:
         reglaFormato = "Duración: 45-60 segundos."; // Intacto como pediste
     }
 
-           // --- NUEVA LÓGICA DINÁMICA PARA EL ENTREGABLE ---
+// --- LÓGICA HIPER-ESPECÍFICA DE ALTO VALOR POR ENTREGABLE ---
     let nombreEntregable = entregable || "Guión general";
     let reglaEstructura = "";
+    let reglaAdicional = "";
     
-    if (nombreEntregable.includes("Guión") || nombreEntregable.includes("Copywriting")) {
-        reglaEstructura = "Diseña el texto en UN SOLO PÁRRAFO continuo (o en slides si es formato estático). Debe incluir: Hook verbal interesante (incluye promesa del video) + Frase breve de refuerzo + Desarrollo dinámico + Llamado a la acción (CTA).";
+    if (nombreEntregable.includes("Guión general")) {
+        reglaEstructura = "Diseña el texto en UN SOLO PÁRRAFO continuo. Debe incluir: Hook verbal de alta retención (incluye promesa) + Frase de refuerzo rápida + Desarrollo dinámico y directo + Llamado a la acción (CTA) claro.";
+        reglaAdicional = "No especifiques las partes en el video. Evita figuras retóricas. PROHIBIDO PRESENTARSE.";
+    } else if (nombreEntregable.includes("Guión técnico")) {
+        reglaEstructura = "Crea una estructura de tabla o viñetas separando claramente: 1) Visual/Acción (planos, movimientos de cámara, b-roll) y 2) Audio/Diálogo.";
+        reglaAdicional = "Indica dónde hay cortes rápidos, transiciones dinámicas, textos en pantalla (pop-ups) y efectos de sonido. Piensa en estímulos visuales cada 3 segundos para retención extrema (Algoritmo TikTok/Reels).";
+    } else if (nombreEntregable.includes("Concepto creativo")) {
+        reglaEstructura = "Desarrolla el 'Big Idea'. Describe el insight emocional, el ángulo visual, el gancho psicológico y por qué funcionaría en los algoritmos actuales (potencial de viralidad).";
+        reglaAdicional = "No redactes diálogos. Enfócate en la 'vibra', la narrativa visual, la música en tendencia sugerida y el formato del contenido.";
+    } else if (nombreEntregable.includes("Copywriting")) {
+        reglaEstructura = "Redacta un Caption/Texto magnético listo para publicar. Primera línea provocativa (que obligue a dar clic en 'ver más'), cuerpo escaneable con viñetas de valor, uso estratégico de emojis y un CTA de alta conversión.";
+        reglaAdicional = "Cero formato de guion. Optimiza para SEO usando palabras clave de forma natural. Maximiza la retención de lectura.";
+    } else if (nombreEntregable.includes("Brief creativo")) {
+        reglaEstructura = "Estructura el documento de forma ejecutiva: 1. Objetivo, 2. Insight de la audiencia, 3. Mensaje principal (One-liner), 4. Ángulo/Gancho de retención, y 5. Referencias de estilo o 'mood'.";
+        reglaAdicional = "Sirve de guía para pre-producción. Debe ser claro, inspirador y alinear al equipo creativo sobre el potencial de viralidad.";
+    } else if (nombreEntregable.includes("Estructura de carrusel")) {
+        reglaEstructura = "Crea un índice estratégico de los slides. Hook irresistible en el Slide 1, puente/contexto en el Slide 2, viñetas de alto valor del 3 al penúltimo, y CTA fuerte para guardar/compartir en el último.";
+        reglaAdicional = "Enfócate en títulos hiper-cortos y curiosos que obliguen al usuario a deslizar (Swipe). No desarrolles todo el texto del cuerpo, solo el esqueleto estructural.";
+    } else if (nombreEntregable.includes("Contenido por diapositiva")) {
+        reglaEstructura = "Redacta el texto exacto slide por slide. Mantenlo extremadamente visual y escaneable. Usa listas y frases cortas, máximo 15-20 palabras por slide.";
+        reglaAdicional = "Indica claramente qué texto va grande (Títulos principales) y qué texto va más pequeño (Cuerpo). Prioriza el contraste psicológico para retener la atención gráfica.";
+    } else if (nombreEntregable.includes("Escaleta")) {
+        reglaEstructura = "Enumera cronológicamente los bloques temáticos o escenas del contenido. Usa viñetas para marcar los picos de atención, los cambios de ritmo y el clímax.";
+        reglaAdicional = "No escribas diálogos completos. Son solo 'Bullet points' o ideas principales diseñadas para que el creador improvise frente a cámara manteniendo un ritmo ágil.";
+    } else if (nombreEntregable.includes("Shot list")) {
+        reglaEstructura = "Genera una lista numerada y detallada de planos (fotografías o tomas de video b-roll) necesarios para la producción.";
+        reglaAdicional = "Especifica para cada toma: 1. Tipo de Plano (Close up, general, etc.), 2. Acción o sujeto, 3. Iluminación/Mood, 4. Ángulo de cámara.";
+    } else if (nombreEntregable.includes("Storyboard")) {
+        reglaEstructura = "Describe escena por escena priorizando la retención visual: 1) Qué se ve en pantalla (Visual), 2) Qué se escucha (Audio/Efectos), y 3) Texto o gráficos en pantalla (Pop-ups).";
+        reglaAdicional = "Maximiza los estímulos cada 2-3 segundos. Diseña las escenas pensando en el dinamismo que exigen las redes sociales hoy.";
+    } else if (nombreEntregable.includes("Presentación")) {
+        reglaEstructura = "Redacta diapositivas para exposición profesional. Estructura: Título de Diapositiva, Bullet points clave (ideas escaneables), y 'Talking Points' (notas para el ponente).";
+        reglaAdicional = "No satures las diapositivas de texto. El valor de retención debe estar en las notas del ponente y el impacto visual.";
     } else {
-        reglaEstructura = `Organiza tu respuesta ESTRICTAMENTE según las convenciones visuales y estructurales de un(a) "${nombreEntregable}". (Ejemplo: si es Storyboard detalla la parte visual y de audio por escena; si es Guión técnico usa columnas; si es Escaleta haz una lista ordenada de temas, etc.).`;
+        reglaEstructura = "Diseña el material enfocándote en alta retención y potencial de compartición. Organiza tu respuesta según las convenciones profesionales de este formato.";
+        reglaAdicional = "Adapta tu nivel de detalle (descripción visual, diálogos, copy, o viñetas) al entregable solicitado.";
     }
   
     area.value = `Actúa como un creador de contenido en redes sociales con millones de seguidores y un gran engagement.
