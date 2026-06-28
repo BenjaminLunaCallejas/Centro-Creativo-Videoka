@@ -3045,7 +3045,11 @@ REGLAS DE DISEÑO ESTRICTAS:
 5. Dimensiones exactas: Cada diapositiva (slide) debe ser un contenedor principal de 1080px de ancho por 1350px de alto.
 6. Zona Segura y Grid: Respeta un margen exterior de 60px y una separación interna de 24px. No coloques texto fuera de esta zona.
 7. Componentes: Nombra las clases lógicamente (ej. .card, .header, .title, .cta).
-8. ENTREGA (IMPORTANTE): Si tu sistema te permite generar directamente las imágenes JPG/PNG con la tipografía perfecta, alineada y sin errores ortográficos, entrégalas. Si no tienes esa capacidad visual precisa, o si eres un modelo basado en texto (como Claude o GPT), genera EXCLUSIVAMENTE el código HTML/SVG listo para ser renderizado en mi navegador. Genera cada slide dentro de un contenedor <div class="videoka-slide" style="width:1080px; height:1350px; position:relative; overflow:hidden; background-color: var(--background);">...</div>.`;
+8. ENTREGA (IMPORTANTE): Si tu sistema te permite generar directamente las imágenes JPG/PNG con la tipografía perfecta, alineada y sin errores ortográficos, entrégalas. Si no tienes esa capacidad visual precisa, o si eres un modelo basado en texto (como Claude o GPT), genera EXCLUSIVAMENTE el código HTML/SVG listo para ser renderizado en mi navegador. Genera cada slide dentro de un contenedor <div class="videoka-slide" style="width:1080px; height:1350px; position:relative; overflow:hidden; background-color: var(--background);">...</div>.
+9. FORMATOS (MANDATORIO):
+   - FORMATO DE ARCHIVOS: Debes ejecutar internamente un script para generar y entregar dos archivos independientes descargables: un archivo con extensión .html (como respaldo de diseño) y un archivo con extensión .pdf (donde cada slide ocupe exactamente una página sin deformarse).
+   - FORMATO DE COPIADO RÁPIDO: Adicionalmente, en tu respuesta de texto final, debes mostrar OBLIGATORIAMENTE todo el código HTML/CSS/SVG completo dentro de un bloque de código markdown (usando ```html ... ```). Esto es fundamental para que pueda copiarlo con un solo clic a mi sitio web.
+   - REGLA DE SÚPER INTEGRIDAD: Está estrictamente prohibido recortar el código, resumir secciones o usar comentarios de elisión (como ""). Debes entregar el código 100% completo, con los 9 slides estructurados de principio a fin, listo para producción.`;
             
         } else if (assetType.includes("Diapositivas")) {
         } else if (assetType.includes("Diapositivas")) {
