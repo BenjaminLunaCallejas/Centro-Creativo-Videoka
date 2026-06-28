@@ -2893,16 +2893,19 @@ ENTREGABLES ADICIONALES (Debajo del guion):
                         <button onclick="editarIdea(${idea.id}); closeModal(null)" class="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-lg text-xs font-bold border border-indigo-200">✏️ EDITAR</button>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-y-3 gap-x-4 text-[11px] border-b pb-4 mt-4">
-                        <div><span class="text-gray-400 font-bold uppercase block">📅 Fecha de Publicación:</span> ${idea.fecha} | ${idea.hora}</div>
+                       
                         <div><span class="text-gray-400 font-bold uppercase block">📱 Formato:</span> ${idea.formato}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">📏 Relación Aspecto:</span> ${idea.aspecto || 'N/A'}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">📂 Tipo de Contenido:</span> ${idea.tipo}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">🎯 Objetivo:</span> ${idea.objetivo}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">⚡ Estrategia:</span> ${idea.tipoEstrategico}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">🤝 Colaboración:</span> ${idea.colaboracion}</div>
+                        <div><span class="text-gray-400 font-bold uppercase block">📢 Tipo de Publicación:</span> ${idea.publicacion || 'N/A'}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">🌐 Plataformas:</span> ${(idea.plataformas && idea.plataformas.length > 0) ? idea.plataformas.join(', ') : 'N/A'}</div>
-                        <div><span class="text-gray-400 font-bold uppercase block">📊 Progreso:</span> ${idea.progreso || 'Planeación'}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">⭐ Formato Estrella:</span> ${idea.starFormat || 'Ninguno'}</div>
+                        <div><span class="text-gray-400 font-bold uppercase block">📊 Progreso:</span> ${idea.progreso || 'Planeación'}</div>
+                        <div><span class="text-gray-400 font-bold uppercase block">📅 Fecha de Publicación:</span> ${idea.fecha || 'Sin fecha'}</div>
+                        <div><span class="text-gray-400 font-bold uppercase block">⏰ Hora de Publicación:</span> ${idea.hora || 'Sin hora'}</div>
                     </div>
                     ${idea.hook ? `<div class="mt-4 p-3 bg-indigo-50 border-l-4 border-indigo-500 text-xs italic"><b>Gancho:</b> "${idea.hook}"</div>` : ''}
                    ${idea.enlaces ? `
