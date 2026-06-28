@@ -2012,15 +2012,15 @@ window.aplicarAuditoriaTabla = () => {
                             </h3>
                             <p class="text-[10px] text-emerald-700 mb-4 leading-relaxed"><b>Instrucciones:</b> Selecciona el tipo de recurso que vas a crear. Esta herramienta tomará tu Guía de Identidad Visual (colores, fuentes, estilo) y tu Relación de Aspecto para construir un prompt avanzado. Cópialo y úsalo en Midjourney, DALL-E, Sora, Runway, o envíaselo a tu diseñador para maquetar diapositivas/carruseles.</p>
                             
-                          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                                 <div>
                                     <label class="block text-sm font-semibold text-emerald-800 mb-2">Tipo de recurso:</label>
                                     <select id="ideaAssetType" onchange="updateLivePrompt()" class="w-full p-3 border border-emerald-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-bold text-emerald-900 bg-white shadow-sm">
-                                        <option value="Imágenes fotorrealistas">Imágenes Fotorrealistas (Midjourney/DALL-E)</option>
-                                        <option value="Ilustraciones y Vectores">Ilustraciones y Vectores (Flat design, Isométrico)</option>
-                                        <option value="Video generativo con IA">Video con IA (Sora/Runway/Pika)</option>
-                                        <option value="Diseño de Carrusel">Diseño de Carrusel (Estructura UX/UI)</option>
-                                        <option value="Diapositivas y Presentaciones">Diapositivas / Presentaciones (Layout)</option>
+                                        <option value="Imágenes fotorrealistas">Imágenes Fotorrealistas (Midjourney/DALL-E/Gemini)</option>
+                                        <option value="Ilustraciones y Vectores">Ilustraciones / SVG (Claude/Gemini/Gráficos)</option>
+                                        <option value="Video generativo con IA">Video con IA (Sora/Runway/Luma/Gemini/Veo)</option>
+                                        <option value="Diseño de Carrusel">Diseño de Carrusel (UI/UX - Claude/Gemini)</option>
+                                        <option value="Diapositivas y Presentaciones">Diapositivas (Layout y Código - Claude/Gemini)</option>
                                         <option value="Animación Motion Graphics">Animación 2D / Motion Graphics</option>
                                     </select>
                                 </div>
@@ -2037,13 +2037,13 @@ window.aplicarAuditoriaTabla = () => {
                                     <label class="block text-sm font-semibold text-emerald-800 mb-2">Formato de Salida:</label>
                                     <select id="ideaVisualFormat" onchange="updateLivePrompt()" class="w-full p-3 border border-emerald-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-medium text-emerald-900 bg-white shadow-sm">
                                         <option value="JPG/PNG">Imágenes (JPG / PNG)</option>
+                                        <option value="Código UI (React/HTML/SVG)">Código UI (Artifacts / SVG)</option>
                                         <option value="MP4">Video (MP4)</option>
-                                        <option value="SVG/EPS">Vectores (SVG / EPS)</option>
                                         <option value="PDF">Documento (PDF)</option>
                                     </select>
                                 </div>
                             </div>
-
+                            
                             <div class="relative mt-2">
                                <textarea id="aiVisualPromptArea" rows="8" class="w-full p-4 bg-white text-slate-700 font-mono text-xs rounded-lg border border-emerald-200 leading-relaxed shadow-inner custom-scroll" readonly></textarea>
                                 <button onclick="copyToClipboardElement('aiVisualPromptArea')" class="absolute top-2 right-2 bg-emerald-600 text-white px-3 py-1 rounded text-[10px] hover:bg-emerald-700 transition shadow-sm font-bold">Copiar Prompt Visual</button>
@@ -2978,7 +2978,7 @@ ENTREGABLES ADICIONALES (Al final de tu respuesta):
 - HASHTAGS (5): #1 Formato, #2 y #3 Tema, #4 y #5 Nicho.
 - FUENTES: 4 enlaces con fuentes oficiales/teóricas.`;
 
-// --- LÓGICA DEL NUEVO PROMPT VISUAL (COMANDO DIRECTO DE INGENIERÍA) ---
+// --- LÓGICA DEL NUEVO PROMPT VISUAL (MULTIMODEL E INGENIERÍA DIRECTA) ---
     const visualArea = document.getElementById('aiVisualPromptArea');
     if (visualArea) {
         // Capturar los nuevos selectores visuales
@@ -2999,20 +2999,20 @@ ENTREGABLES ADICIONALES (Al final de tu respuesta):
         let basePrompt = "";
         
         if (assetType.includes("fotorrealistas")) {
-            basePrompt = `Genera una imagen fotorrealista basada estrictamente en el siguiente contenido: "${textoBaseParaVisual}".\n\nPARÁMETROS DE INGENIERÍA (PROMPT):\n- Entregable asociado: ${nombreEntregableVisual} (${formato}).\n- Estilo visual de la marca: ${visEstilo}.\n- Paleta de colores a forzar: ${visColores}.\n- Calidad técnica: ${visualQuality}.\n- Relación de aspecto (Formato): ${aspecto}.\n- Formato de entrega esperado: ${visualOutputFormat}.`;
+            basePrompt = `Genera una imagen fotorrealista (o el prompt detallado para generarla) basada estrictamente en este contenido: "${textoBaseParaVisual}".\n\nPARÁMETROS:\n- Entregable asociado: ${nombreEntregableVisual} (${formato}).\n- Estilo visual de la marca: ${visEstilo}.\n- Paleta de colores a forzar: ${visColores}.\n- Calidad técnica: ${visualQuality}.\n- Relación de aspecto: ${aspecto}.\n- Formato de entrega: ${visualOutputFormat}.`;
         } else if (assetType.includes("Vectores")) {
-            basePrompt = `Genera una ilustración digital gráfica (vector style) que represente la siguiente idea o guión: "${textoBaseParaVisual}".\n\nPARÁMETROS DE DISEÑO:\n- Estilo de ilustración: ${visEstilo} (flat design, limpio).\n- Colores exactos a usar: ${visColores}.\n- Calidad visual: ${visualQuality}.\n- Relación de aspecto: ${aspecto}.\n- Formato de entrega simulado: ${visualOutputFormat}.`;
+            basePrompt = `Crea una ilustración digital (estilo flat design/vector). INSTRUCCIÓN CLAVE: Si eres un modelo capaz de programar (como Claude o Gemini), genera el CÓDIGO SVG completo, limpio y funcional que renderice la ilustración. Basado en: "${textoBaseParaVisual}".\n\nPARÁMETROS DE DISEÑO:\n- Estilo: ${visEstilo} (limpio y moderno).\n- Colores exactos a usar: ${visColores}.\n- Calidad visual: ${visualQuality}.\n- Relación de aspecto: ${aspecto}.\n- Formato de entrega: ${visualOutputFormat}.`;
         } else if (assetType.includes("Video")) {
-            basePrompt = `[Si usas Sora, Runway Gen-2 o Pika, copia esto en inglés]:\nGenerate a highly detailed video. Subject/Action based on this script: "${textoBaseParaVisual}". \nVisual settings: ${visEstilo}. Brand colors: ${visColores}. Technical quality: ${visualQuality}. Smooth cinematic motion, no morphing. Aspect Ratio: ${aspecto}. Output format: ${visualOutputFormat}.`;
+            basePrompt = `[Si usas IA de Video como Sora o Runway, usa esto en inglés]:\nGenerate a highly detailed video. Subject/Action based on this script: "${textoBaseParaVisual}". \nVisual settings: ${visEstilo}. Brand colors: ${visColores}. Technical quality: ${visualQuality}. Smooth cinematic motion, no morphing. Aspect Ratio: ${aspecto}. Output format: ${visualOutputFormat}.`;
         } else if (assetType.includes("Carrusel")) {
-            basePrompt = `Genera las composiciones visuales completas para un Carrusel basándote en este guión/copy: "${textoBaseParaVisual}".\n\nREGLAS DE DISEÑO UI/UX:\n1. Genera imágenes individuales en aspecto ${aspecto} (${visualOutputFormat}).\n2. Renderiza la calidad con: ${visualQuality}.\n3. Aplica este estilo visual estricto: ${visEstilo} usando los colores: ${visColores}.\n4. Extrae los textos más impactantes del guión provisto e incrústalos en la imagen usando una tipografía estilo ${visTipo}. Mantenlo súper limpio y escaneable.`;
+            basePrompt = `Actúa como un diseñador experto en UX/UI y redes sociales. Diseña un Carrusel completo basándote en este contenido: "${textoBaseParaVisual}".\n\nREGLAS DE DISEÑO:\n1. Formato: ${aspecto} (${visualOutputFormat}).\n2. Estilo y Colores: ${visEstilo} | ${visColores}.\n3. Tipografía: ${visTipo}.\n4. Extrae los textos más impactantes e incrústalos en el diseño.\n5. INSTRUCCIÓN CRÍTICA: Si tienes capacidades de programación (como Claude Artifacts, Gemini o ChatGPT), genera el CÓDIGO FUNCIONAL (React, HTML/CSS o SVG) que renderice este carrusel de forma interactiva y profesional. Si no puedes programar, dame la descripción visual hiper-detallada slide por slide.`;
         } else if (assetType.includes("Diapositivas")) {
-            basePrompt = `Diseña gráficamente las diapositivas de presentación basadas en el siguiente contenido: "${textoBaseParaVisual}".\n\nREGLAS CORPORATIVAS:\n- Estética: ${visEstilo} | Paleta: ${visColores}.\n- Calidad de render: ${visualQuality}.\n- Aspecto: ${aspecto}.\n- Formato de salida visual: ${visualOutputFormat}.\n- Extrae los bullet points principales del texto provisto y genera el layout visual listo para exponer.`;
+            basePrompt = `Diseña las diapositivas de presentación basadas en: "${textoBaseParaVisual}".\n\nREGLAS CORPORATIVAS:\n- Estética: ${visEstilo} | Paleta: ${visColores}.\n- Calidad de render: ${visualQuality}.\n- Aspecto: ${aspecto}.\n- INSTRUCCIÓN CRÍTICA: Si eres capaz (Claude/Gemini), escribe el código SVG o HTML/CSS que maquete el layout visual listo para exponer. Si no, dame la estructura del texto y diseño visual por slide.`;
         } else if (assetType.includes("Motion Graphics")) {
-            basePrompt = `Genera los keyframes visuales (imágenes clave) para una animación 2D basada en este guión: "${textoBaseParaVisual}".\n\nPARÁMETROS:\n- Dirección de arte: ${visEstilo}.\n- Colores corporativos: ${visColores}.\n- Render settings: ${visualQuality}.\n- Aspecto: ${aspecto}.\n- Formato: ${visualOutputFormat}.\n- Muestra cómo interactuarían los elementos gráficos descritos en el guión sin requerir texto plano.`;
+            basePrompt = `Genera la dirección de arte y los keyframes visuales para una animación 2D (Motion Graphics) basada en: "${textoBaseParaVisual}".\n\nPARÁMETROS:\n- Dirección de arte: ${visEstilo}.\n- Colores: ${visColores}.\n- Aspecto: ${aspecto}.\n- Describe los keyframes visuales, las transiciones y cómo interactúan los gráficos.`;
         }
 
-        visualArea.value = `INSTRUCCIÓN DIRECTA PARA IA GENERADORA (Pegar en DALL-E 3, Midjourney, Sora, etc.):\n\n${basePrompt}`;
+        visualArea.value = `INSTRUCCIÓN DIRECTA PARA IA (Pégalo en Claude, Gemini, ChatGPT Plus, DALL-E, Midjourney, etc.):\n\n${basePrompt}`;
     }
            
 }
