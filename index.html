@@ -2506,7 +2506,7 @@ function guardarIdea() {
                             <button onclick="event.stopPropagation(); eliminarIdea(${idea.id})" class="text-red-500 text-xs hover:bg-red-50 px-2 py-1 rounded">Eliminar</button>
                         </div>
                     </div>
-                    <p class="text-xs text-indigo-600 font-bold uppercase mt-1">${idea.fecha || 'Sin fecha'} | ${idea.objetivo}</p>
+<p class="text-xs text-indigo-600 font-bold uppercase mt-1">${idea.fecha || 'Sin fecha'} | 📦 ${idea.entregable || 'Guión general'} | ${idea.objetivo}</p>
                     <div class="text-[9px] mt-2 text-gray-400">Clic para detalles | ✏️ para editar</div>
                 </div>`;
             });
