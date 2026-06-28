@@ -826,6 +826,7 @@ window.generarEnlaceColaborativo = async () => {
             const payload = {
                 titulo: document.getElementById('ideaTitulo').value || 'Sin título',
                 formato: document.getElementById('ideaFormato').value,
+                aspecto: document.getElementById('ideaAspecto').value,
                 tipo: document.getElementById('ideaTipo').value,
                 objetivo: document.getElementById('ideaObjetivo').value,
                 tipoEstrategico: document.getElementById('ideaTipoEstrategico').value,
@@ -900,6 +901,7 @@ window.generarEnlaceColaborativo = async () => {
                     const data = snap.data();
                     document.getElementById('sharedCtxTitulo').innerText = data.titulo || 'Sin título';
                     document.getElementById('sharedCtxFormato').innerText = `${data.formato || 'N/A'} / ${data.tipo || 'N/A'}`;
+                    if (document.getElementById('sharedCtxAspecto')) document.getElementById('sharedCtxAspecto').innerText = data.aspecto || 'N/A';
                     document.getElementById('sharedCtxTipo').innerText = data.tipo || 'N/A';
                     document.getElementById('sharedCtxObjetivo').innerText = data.objetivo || 'N/A';
                     document.getElementById('sharedCtxEstrategico').innerText = data.tipoEstrategico || 'N/A';
@@ -1275,6 +1277,12 @@ window.aplicarAuditoriaTabla = () => {
                         <span class="block text-xs font-semibold text-gray-500 mb-1">Formato Digital</span>
                         <div id="sharedCtxFormato" class="p-3 bg-gray-50 rounded border text-gray-800">Cargando...</div>
                     </div>
+
+                    <div>
+                        <span class="block text-xs font-semibold text-gray-500 mb-1">Relación de Aspecto</span>
+                        <div id="sharedCtxAspecto" class="p-3 bg-gray-50 rounded border text-gray-800">Cargando...</div>
+                    </div>
+                    
                     <div>
                         <span class="block text-xs font-semibold text-gray-500 mb-1">Tipo de Contenido</span>
                         <div id="sharedCtxTipo" class="p-3 bg-gray-50 rounded border text-gray-800">Cargando...</div>
@@ -1754,23 +1762,38 @@ window.aplicarAuditoriaTabla = () => {
                                 <input type="text" id="ideaTitulo" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400">
                             </div>
                             
-                            <div>
+<div>
                                 <label class="block text-sm font-semibold text-gray-600 mb-2">Formato Digital</label>
-<select id="ideaFormato" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
-    <option value="Short Content">Short Content</option>
-    <option value="Long Content">Long Content</option>
-    <option value="Visual (4:5)">Visual (4:5)</option>
-    <option value="Visual (1:1)">Visual (1:1)</option>
-    <option value="Storie (Estática 9:16)">Storie (Estática 9:16)</option>
-    <option value="Storie (Video 9:16)">Storie (Video 9:16)</option>
-    <option value="Podcast">Podcast</option>
-    <option value="Infografías (4:5)">Infografías (4:5)</option>
-    <option value="Fotos (4:5)">Fotos (4:5)</option>
-    <option value="Memes (4:5)">Memes (4:5)</option>
-    <option value="Lives">Lives</option>
-    <option value="Carruseles (4:5)">Carruseles (4:5)</option>
-    <option value="Ponencias">Ponencias</option>
-</select>
+                                <select id="ideaFormato" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
+                                    <option value="Short Content">Short Content</option>
+                                    <option value="Long Content">Long Content</option>
+                                    <option value="Visual">Visual</option>
+                                    <option value="Storie (Estática)">Storie (Estática)</option>
+                                    <option value="Storie (Video)">Storie (Video)</option>
+                                    <option value="Podcast">Podcast</option>
+                                    <option value="Infografía">Infografía</option>
+                                    <option value="Fotos">Fotos</option>
+                                    <option value="Memes">Memes</option>
+                                    <option value="Lives">Lives</option>
+                                    <option value="Carrusel">Carrusel</option>
+                                    <option value="Ponencia">Ponencia</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-2">Relación de Aspecto</label>
+                                <select id="ideaAspecto" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
+                                    <option value="1:1 (1080 × 1080 px)">1:1 (1080 × 1080 px) - Cuadrado</option>
+                                    <option value="4:5 (1080 × 1350 px)">4:5 (1080 × 1350 px) - Feed vertical</option>
+                                    <option value="9:16 (1080 × 1920 px)">9:16 (1080 × 1920 px) - Stories, Reels, TikTok, Shorts</option>
+                                    <option value="16:9 (1920 × 1080 px)">16:9 (1920 × 1080 px) - Horizontal</option>
+                                    <option value="1.91:1 (1200 × 628 px)">1.91:1 (1200 × 628 px) - Facebook/LinkedIn</option>
+                                    <option value="3:4 (1080 × 1440 px)">3:4 (1080 × 1440 px) - Vertical clásico</option>
+                                    <option value="2:3 (1080 × 1620 px)">2:3 (1080 × 1620 px) - Fotografía vertical</option>
+                                    <option value="3:2 (1620 × 1080 px)">3:2 (1620 × 1080 px) - Fotografía horizontal</option>
+                                    <option value="A4 Vertical (2480 × 3508 px)">A4 Vertical (2480 × 3508 px) - PDF/Impresión</option>
+                                    <option value="A4 Horizontal (3508 × 2480 px)">A4 Horizontal (3508 × 2480 px) - PDF/Presentación</option>
+                                </select>
                             </div>
                             
                             <div>
@@ -2361,6 +2384,7 @@ function guardarIdea() {
                 sharedId: sharedId, 
                 titulo, 
                 formato: document.getElementById('ideaFormato').value,
+                aspecto: document.getElementById('ideaAspecto').value,
                 tipo: document.getElementById('ideaTipo').value,
                 objetivo: document.getElementById('ideaObjetivo').value,
                 tipoEstrategico: document.getElementById('ideaTipoEstrategico').value,
@@ -2406,6 +2430,7 @@ function guardarIdea() {
             editandoId = id;
             document.getElementById('ideaTitulo').value = idea.titulo || '';
             document.getElementById('ideaFormato').value = idea.formato || '';
+            document.getElementById('ideaAspecto').value = idea.aspecto || '9:16 (1080 × 1920 px)';
             document.getElementById('ideaTipo').value = idea.tipo || '';
             document.getElementById('ideaObjetivo').value = idea.objetivo || '';
             document.getElementById('ideaTipoEstrategico').value = idea.tipoEstrategico || '';
@@ -2449,7 +2474,7 @@ function guardarIdea() {
             editandoId = null;
             document.getElementById('btnGuardarGuion').innerText = "Guardar Guion Estructurado";
             document.getElementById('btnCancelarEdicion').classList.add('hidden');
-            ['ideaTitulo','ideaGuion','ideaCopy','ideaHashtags','ideaFecha','ideaHora', 'ideaHook', 'ideaEnlaces', 'ideaGuionBase', 'ideaStarFormat', 'ideaEnlaceCarpeta', 'ideaObservaciones'].forEach(id => document.getElementById(id).value = '');
+            ['ideaTitulo','ideaGuion','ideaCopy','ideaHashtags','ideaFecha','ideaHora', 'ideaHook', 'ideaEnlaces', 'ideaGuionBase', 'ideaStarFormat', 'ideaEnlaceCarpeta', 'ideaObservaciones', 'ideaAspecto'].forEach(id => document.getElementById(id).value = '');
             updateLivePrompt();
             document.getElementById('btnSyncEnlace').classList.add('hidden');
         }
@@ -2731,6 +2756,7 @@ REGLAS CRÍTICAS:
     if (!area) return;
     
     const formato = document.getElementById('ideaFormato').value;
+    const aspecto = document.getElementById('ideaAspecto').value;
     const tipo = document.getElementById('ideaTipo').value;
     const obj = document.getElementById('ideaObjetivo').value;
     const est = document.getElementById('ideaTipoEstrategico').value;
@@ -2790,7 +2816,7 @@ REGLAS CRÍTICAS:
 // --- LÓGICA INTELIGENTE DE FORMATO DIGITAL (Duración/Estructura) ---
     let reglaFormato = "Duración: 45-60 segundos."; // Se mantiene por defecto para Short Content
 
-    const estaticos = ["Visual (4:5)", "Visual (1:1)", "Storie (Estática 9:16)", "Infografías (4:5)", "Fotos (4:5)", "Memes (4:5)", "Carruseles (4:5)"];
+    const estaticos = ["Visual", "Storie (Estática)", "Infografía", "Fotos", "Memes", "Carrusel"];
     const longContent = ["Long Content", "Podcast", "Ponencias", "Lives"];
 
     if (longContent.includes(formato)) {
@@ -2817,6 +2843,7 @@ TAREA: Redacta un guión completo para un contenido de tipo "${formato}". El gui
 Si utilizas un formato estrella listado arriba, asegúrate que el guión siga  la estructura de ese formato específico.
 
 ESPECIFICACIONES TÉCNICAS DEL VIDEO:
+- Relación de Aspecto: ${aspecto}
 - Estilo de contenido: ${tipo}
 - Objetivo estratégico: ${obj}
 - Enfoque de valor: ${est}
@@ -2868,6 +2895,7 @@ ENTREGABLES ADICIONALES (Debajo del guion):
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-y-3 gap-x-4 text-[11px] border-b pb-4 mt-4">
                         <div><span class="text-gray-400 font-bold uppercase block">📅 Fecha de Publicación:</span> ${idea.fecha} | ${idea.hora}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">📱 Formato:</span> ${idea.formato}</div>
+                        <div><span class="text-gray-400 font-bold uppercase block">📏 Relación Aspecto:</span> ${idea.aspecto || 'N/A'}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">📂 Tipo de Contenido:</span> ${idea.tipo}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">🎯 Objetivo:</span> ${idea.objetivo}</div>
                         <div><span class="text-gray-400 font-bold uppercase block">⚡ Estrategia:</span> ${idea.tipoEstrategico}</div>
@@ -2943,6 +2971,7 @@ function copyToClipboardData(id) {
 
 📊 DETALLES GENERALES:
 • Formato Digital: ${idea.formato || 'N/A'}
+• Relación de Aspecto: ${idea.aspecto || 'N/A'}
 • Tipo de Contenido: ${idea.tipo || 'N/A'}
 • Objetivo: ${idea.objetivo || 'N/A'}
 • Tipo Estratégico: ${idea.tipoEstrategico || 'N/A'}
@@ -3009,6 +3038,7 @@ ${idea.copy || 'N/A'}`;
             <h2>📊 DETALLES GENERALES:</h2>
             <ul>
                 <li><span class="strong">Formato Digital:</span> ${idea.formato || 'N/A'}</li>
+                <li><span class="strong">Relación de Aspecto:</span> ${idea.aspecto || 'N/A'}</li>
                 <li><span class="strong">Tipo de Contenido:</span> ${idea.tipo || 'N/A'}</li>
                 <li><span class="strong">Objetivo:</span> ${idea.objetivo || 'N/A'}</li>
                 <li><span class="strong">Tipo Estratégico:</span> ${idea.tipoEstrategico || 'N/A'}</li>
