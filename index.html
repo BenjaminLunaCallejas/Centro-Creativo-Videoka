@@ -2844,6 +2844,16 @@ REGLAS CRÍTICAS:
     } else if (formato === "Short Content") {
         reglaFormato = "Duración: 45-60 segundos."; // Intacto como pediste
     }
+
+           // --- NUEVA LÓGICA DINÁMICA PARA EL ENTREGABLE ---
+    let nombreEntregable = entregable || "Guión general";
+    let reglaEstructura = "";
+    
+    if (nombreEntregable.includes("Guión") || nombreEntregable.includes("Copywriting")) {
+        reglaEstructura = "Diseña el texto en UN SOLO PÁRRAFO continuo (o en slides si es formato estático). Debe incluir: Hook verbal interesante (incluye promesa del video) + Frase breve de refuerzo + Desarrollo dinámico + Llamado a la acción (CTA).";
+    } else {
+        reglaEstructura = `Organiza tu respuesta ESTRICTAMENTE según las convenciones visuales y estructurales de un(a) "${nombreEntregable}". (Ejemplo: si es Storyboard detalla la parte visual y de audio por escena; si es Guión técnico usa columnas; si es Escaleta haz una lista ordenada de temas, etc.).`;
+    }
   
     area.value = `Actúa como un creador de contenido en redes sociales con millones de seguidores y un gran engagement.
 MI PERFIL ESTRATÉGICO:
@@ -2855,12 +2865,12 @@ MI PERFIL ESTRATÉGICO:
 - Ejes Transversales: ${ejes.join(', ')}
 - Identidad y Tono de Comunicación: ${tono}${guiaVisualPrompt}
 
-TAREA: Redacta un guión completo para un contenido de tipo "${formato}". El guión debe llamar la atención, generar interés, despertar deseo y entrener. El storytelling debe ser entretenido, memorable, emotivo, interesante y carismático.
-Si utilizas un formato estrella listado arriba, asegúrate que el guión siga  la estructura de ese formato específico.
+TAREA: Desarrolla el siguiente entregable: "${nombreEntregable}". Este material está pensado para un contenido de tipo "${formato}". El resultado debe llamar la atención, generar interés, despertar deseo y entretener. El storytelling debe ser memorable, emotivo, interesante y carismático.
+Si utilizas un formato estrella listado arriba, asegúrate que la estructura base siga fielmente ese formato específico.
 
-ESPECIFICACIONES TÉCNICAS DEL VIDEO:
-- Relación de Aspecto: ${aspecto}
+ESPECIFICACIONES TÉCNICAS DEL ENTREGABLE:
 - Entregable Solicitado: ${entregable}
+- Relación de Aspecto: ${aspecto}
 - Estilo de contenido: ${tipo}
 - Objetivo estratégico: ${obj}
 - Enfoque de valor: ${est}
@@ -2871,16 +2881,16 @@ ESPECIFICACIONES TÉCNICAS DEL VIDEO:
 INSTRUCCIONES DE REDACCIÓN:
 1. TONO: Debe estar escrito obligatoriamente bajo el tono e identidad descrito en CONTEXTO. DEBE SER MEMORABLE, EMOCIONAL Y ENTRETENIDO.
 2. CALIDAD: Entrega información de valor, precisa, confiable, útil y oficial. Evita lo superficial.
-3. ESTRUCTURA: Diseña el guión en UN SOLO PÁRRAFO, sólo si es de tipo estático genera el texto en slides. Debe incluir: Hook verbal interesante (incluye promesa del video) + Frase breve de refuerzo + Desarrollo dinámico + Llamado a la acción (CTA).
+3. ESTRUCTURA: ${reglaEstructura}
 4. RESTRICCIONES: No especifiques las partes en el video. Evita figuras retóricas. PROHIBIDO PRESENTARSE.
 5. ELEMENTOS ADICIONALES: Incluye un CTA potente. ${reglaFormato}
 6. Aplica 100% el estilo coloquial, rápido y conversacional de un creador de contenido.
 7. Prohibido usar jerga, términos específicos o complejos, a menos que el video trate específicamente de eso. Usa analogías de la vida cotidiana.
-8. Si se incluye un hook propuesto, este se debe respetar al 100% en el guión generado.
+8. Si se incluye un hook propuesto, este se debe respetar y adaptar al 100% en el material generado.
 9. Sólo considera ${guiaVisualPrompt} para el diseño si el contenido es estático como viusales, fotos, memes, infografías, carruseles y stories estáticas.
 10. ENTREGABLE: Redacta y estructura tu respuesta estrictamente como un(a) "${entregable}". Adapta tu nivel de detalle (descripción visual, diálogos, copy, o viñetas) al formato que exige este entregable específico.
 
-ENTREGABLES ADICIONALES (Debajo del guión):
+ENTREGABLES ADICIONALES (Al final de tu respuesta):
 - COPYWRITING: Breve resumen del guión, dato adicional relevante, palabras clave SEO, CTA claro. Máx 4 líneas.
 - TÍTULO: Título corto y potente para portada.
 - SEO: Palabras clave.
