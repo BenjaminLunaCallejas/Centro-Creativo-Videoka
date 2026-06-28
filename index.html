@@ -1758,9 +1758,9 @@ window.aplicarAuditoriaTabla = () => {
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                            <div class="md:col-span-3">
+                           <div class="md:col-span-3">
                                 <label class="block text-sm font-semibold text-gray-600 mb-2">Título de la Idea</label>
-                                <input type="text" id="ideaTitulo" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400">
+                                <input type="text" id="ideaTitulo" oninput="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400">
                             </div>
                             
 <div>
@@ -2779,6 +2779,7 @@ REGLAS CRÍTICAS:
     const pub = document.getElementById('ideaPublicacion').value;
     const starFormatSelect = document.getElementById('ideaStarFormat').value;
     const entregable = document.getElementById('ideaEntregable') ? document.getElementById('ideaEntregable').value : '';
+    const titulo = document.getElementById('ideaTitulo').value || "[TEMA O TÍTULO NO DEFINIDO]";
     const hook = document.getElementById('ideaHook').value || "[INSERTAR GANCHO AQUÍ]";
     const enlaces = document.getElementById('ideaEnlaces').value.trim();
     const guionBase = document.getElementById('ideaGuionBase').value.trim();
@@ -2909,6 +2910,7 @@ ESPECIFICACIONES TÉCNICAS DEL ENTREGABLE:
 - Enfoque de valor: ${est}
 - Colaboración: ${col}
 - Tipo de publicación: ${pub}
+- Tema / Título específico: ${titulo}
 - GANCHO (Hook) PROPUESTO: "${hook}"${especificacionesOpcionales}
 
 INSTRUCCIONES DE REDACCIÓN:
