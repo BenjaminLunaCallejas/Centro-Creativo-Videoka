@@ -668,7 +668,7 @@ content.innerHTML = `
             
             <div class="flex flex-col gap-8">
                 <div>
-                    <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2"><span>📝</span> Guión Estructurado</h4>
+                    <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2"><span>📝</span> Guión o Entregable</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="flex flex-col"><label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label><div class="audit-text-container">${deletedGuion}</div></div>
                         <div class="flex flex-col"><label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube (Editable ✏️)</label><div id="auditGuionFinal" class="audit-text-container border-emerald-200 bg-emerald-50 cursor-text focus:ring-2 focus:ring-emerald-400 outline-none transition-all" contenteditable="true">${addedGuion}</div></div>
@@ -832,6 +832,7 @@ window.generarEnlaceColaborativo = async () => {
                 tipoEstrategico: document.getElementById('ideaTipoEstrategico').value,
                 colaboracion: document.getElementById('ideaColaboracion').value,
                 publicacion: document.getElementById('ideaPublicacion').value,
+                entregable: document.getElementById('ideaEntregable') ? document.getElementById('ideaEntregable').value : '',
                 
                 // NUEVO: Guardar Plataformas y Progreso
                 plataformas: plataformasSeleccionadas,
@@ -2401,6 +2402,7 @@ function guardarIdea() {
                 tipoEstrategico: document.getElementById('ideaTipoEstrategico').value,
                 colaboracion: document.getElementById('ideaColaboracion').value,
                 publicacion: document.getElementById('ideaPublicacion').value,
+                entregable: document.getElementById('ideaEntregable') ? document.getElementById('ideaEntregable').value : '',
                 
                 // NUEVO: Integración de las nuevas variables al objeto
                 plataformas: plataformasSeleccionadas,
@@ -2441,6 +2443,8 @@ function guardarIdea() {
             editandoId = id;
             document.getElementById('ideaTitulo').value = idea.titulo || '';
             document.getElementById('ideaFormato').value = idea.formato || '';
+            window.actualizarOpcionesEntregable(); // Genera las opciones antes de intentar asignarle el valor
+            if(document.getElementById('ideaEntregable')) document.getElementById('ideaEntregable').value = idea.entregable || '';
             document.getElementById('ideaAspecto').value = idea.aspecto || '9:16 (1080 × 1920 px)';
             document.getElementById('ideaTipo').value = idea.tipo || '';
             document.getElementById('ideaObjetivo').value = idea.objetivo || '';
@@ -2485,7 +2489,7 @@ function guardarIdea() {
             editandoId = null;
             document.getElementById('btnGuardarGuion').innerText = "Guardar Guión o Entregable";
             document.getElementById('btnCancelarEdicion').classList.add('hidden');
-            ['ideaTitulo','ideaGuion','ideaCopy','ideaHashtags','ideaFecha','ideaHora', 'ideaHook', 'ideaEnlaces', 'ideaGuionBase', 'ideaStarFormat', 'ideaEnlaceCarpeta', 'ideaObservaciones', 'ideaAspecto'].forEach(id => document.getElementById(id).value = '');
+            ['ideaTitulo','ideaGuion','ideaCopy','ideaHashtags','ideaFecha','ideaHora', 'ideaHook', 'ideaEnlaces', 'ideaGuionBase', 'ideaStarFormat', 'ideaEnlaceCarpeta', 'ideaObservaciones', 'ideaAspecto', 'ideaEntregable'].forEach(id => document.getElementById(id).value = '');
             updateLivePrompt();
             document.getElementById('btnSyncEnlace').classList.add('hidden');
         }
@@ -2774,6 +2778,7 @@ REGLAS CRÍTICAS:
     const col = document.getElementById('ideaColaboracion').value;
     const pub = document.getElementById('ideaPublicacion').value;
     const starFormatSelect = document.getElementById('ideaStarFormat').value;
+    const entregable = document.getElementById('ideaEntregable') ? document.getElementById('ideaEntregable').value : '';
     const hook = document.getElementById('ideaHook').value || "[INSERTAR GANCHO AQUÍ]";
     const enlaces = document.getElementById('ideaEnlaces').value.trim();
     const guionBase = document.getElementById('ideaGuionBase').value.trim();
@@ -2855,6 +2860,7 @@ Si utilizas un formato estrella listado arriba, asegúrate que el guión siga  l
 
 ESPECIFICACIONES TÉCNICAS DEL VIDEO:
 - Relación de Aspecto: ${aspecto}
+- Entregable Solicitado: ${entregable}
 - Estilo de contenido: ${tipo}
 - Objetivo estratégico: ${obj}
 - Enfoque de valor: ${est}
@@ -2872,6 +2878,7 @@ INSTRUCCIONES DE REDACCIÓN:
 7. Prohibido usar jerga, términos específicos o complejos, a menos que el video trate específicamente de eso. Usa analogías de la vida cotidiana.
 8. Si se incluye un hook propuesto, este se debe respetar al 100% en el guión generado.
 9. Sólo considera ${guiaVisualPrompt} para el diseño si el contenido es estático como viusales, fotos, memes, infografías, carruseles y stories estáticas.
+10. ENTREGABLE: Redacta y estructura tu respuesta estrictamente como un(a) "${entregable}". Adapta tu nivel de detalle (descripción visual, diálogos, copy, o viñetas) al formato que exige este entregable específico.
 
 ENTREGABLES ADICIONALES (Debajo del guión):
 - COPYWRITING: Breve resumen del guión, dato adicional relevante, palabras clave SEO, CTA claro. Máx 4 líneas.
@@ -2928,7 +2935,7 @@ ENTREGABLES ADICIONALES (Debajo del guión):
                 </div>
                 <div class="space-y-6">
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Guión Estructurado</label>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Guión o Entregable</label>
                         <div class="p-4 bg-gray-50 rounded-lg text-sm whitespace-pre-wrap border border-gray-100 leading-relaxed">${idea.guion}</div>
                     </div>
                     <div>
@@ -2999,7 +3006,7 @@ function copyToClipboardData(id) {
 🔥 GANCHO (HOOK):
 ${idea.hook || 'N/A'}
 
-🎬 GUIÓN ESTRUCTURADO:
+🎬 GUIÓN O ENTREGABLE:
 ${idea.guion || 'N/A'}
 
 ✍️ COPYWRITING:
@@ -3067,7 +3074,7 @@ ${idea.copy || 'N/A'}`;
             <h2>🔥 GANCHO (HOOK):</h2>
             <div class="highlight"><p>${(idea.hook || 'N/A').replace(/\n/g, '<br>')}</p></div>
 
-            <h2>🎬 GUIÓN ESTRUCTURADO:</h2>
+            <h2>🎬 GUIÓN O ENTREGABLE:</h2>
             <p>${(idea.guion || 'N/A').replace(/\n/g, '<br>')}</p>
 
             <h2>✍️ COPYWRITING:</h2>
@@ -3461,6 +3468,7 @@ window.initAppState = () => {
             renderHistoryTasks();
             renderHistoryNotas();
             renderIdeas();
+            window.actualizarOpcionesEntregable();
             actualizarSelectFormatosEstrella();
             updateLivePrompt();
             
@@ -3510,6 +3518,81 @@ document.addEventListener('click', function(event) {
         menu.classList.add('hidden');
     }
 });
+        window.actualizarOpcionesEntregable = function() {
+            const formato = document.getElementById('ideaFormato').value;
+            const selectEntregable = document.getElementById('ideaEntregable');
+            if (!selectEntregable) return;
+
+            const valorPrevio = selectEntregable.value;
+            selectEntregable.innerHTML = '';
+
+            let opciones = [];
+            const video = ["Short Content", "Long Content", "Storie (Video)", "Lives"];
+            const staticos = ["Visual", "Storie (Estática)", "Infografía", "Memes"];
+
+            if (video.includes(formato)) {
+                opciones = [
+                    {val: "Guión general", text: "Guión general (Hook, desarrollo y cierre)"},
+                    {val: "Guión técnico", text: "Guión técnico (Escenas, tomas y diálogos)"},
+                    {val: "Concepto creativo", text: "Concepto creativo (Idea general de la pieza)"},
+                    {val: "Escaleta", text: "Escaleta (Orden de temas sin diálogos)"},
+                    {val: "Storyboard", text: "Storyboard (Bocetos de cada escena)"},
+                    {val: "Brief creativo", text: "Brief creativo (Objetivo, tono y mensaje)"}
+                ];
+            } else if (staticos.includes(formato)) {
+                opciones = [
+                    {val: "Concepto creativo", text: "Concepto creativo (Idea general de la pieza)"},
+                    {val: "Copywriting", text: "Copywriting (Texto listo para publicar)"},
+                    {val: "Brief creativo", text: "Brief creativo (Objetivo, tono y mensaje)"}
+                ];
+            } else if (formato === "Carrusel") {
+                opciones = [
+                    {val: "Estructura de carrusel", text: "Estructura de carrusel (Título + contenido de cada slide)"},
+                    {val: "Contenido por diapositiva", text: "Contenido por diapositiva (Desarrollo de 8–12 slides)"},
+                    {val: "Concepto creativo", text: "Concepto creativo (Idea general de la pieza)"},
+                    {val: "Copywriting", text: "Copywriting (Texto listo para publicar)"},
+                    {val: "Brief creativo", text: "Brief creativo (Objetivo, tono y mensaje)"}
+                ];
+            } else if (formato === "Fotos") {
+                opciones = [
+                    {val: "Shot list", text: "Shot list (Lista de fotografías requeridas)"},
+                    {val: "Concepto creativo", text: "Concepto creativo (Idea general de la pieza)"},
+                    {val: "Copywriting", text: "Copywriting (Texto listo para publicar)"},
+                    {val: "Brief creativo", text: "Brief creativo (Objetivo, tono y mensaje)"}
+                ];
+            } else if (formato === "Podcast") {
+                opciones = [
+                    {val: "Escaleta", text: "Escaleta (Orden de temas sin diálogos)"},
+                    {val: "Guión general", text: "Guión general (Hook, desarrollo y cierre)"},
+                    {val: "Concepto creativo", text: "Concepto creativo (Idea general de la pieza)"}
+                ];
+            } else if (formato === "Ponencia") {
+                opciones = [
+                    {val: "Presentación", text: "Presentación (Diapositivas para exposición)"},
+                    {val: "Escaleta", text: "Escaleta (Orden de temas)"},
+                    {val: "Guión general", text: "Guión general (Discurso completo)"},
+                    {val: "Brief creativo", text: "Brief creativo (Objetivo, tono y mensaje)"}
+                ];
+            } else {
+                 opciones = [
+                    {val: "Concepto creativo", text: "Concepto creativo (Idea general de la pieza)"},
+                    {val: "Guión general", text: "Guión general (Hook, desarrollo y cierre)"}
+                 ];
+            }
+
+            opciones.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.val;
+                option.textContent = opt.text;
+                selectEntregable.appendChild(option);
+            });
+
+            // Conservar la opción si es compatible al cambiar de formato
+            if (opciones.some(o => o.val === valorPrevio)) {
+                selectEntregable.value = valorPrevio;
+            }
+        };
+        
         window.descargarTablaCSV = function() {
     // Usamos el arreglo global (sirve tanto para el creador como para el invitado)
     const data = window.tablaIAParsed || (typeof tablaIAParsed !== 'undefined' ? tablaIAParsed : []);
