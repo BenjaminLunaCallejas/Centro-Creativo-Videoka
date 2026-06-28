@@ -185,7 +185,7 @@ textarea.auto-grow {
     #calendarioTablaContainer td:nth-of-type(4):before { content: "Formato:"; }
     #calendarioTablaContainer td:nth-of-type(5):before { content: "Gancho:"; }
     #calendarioTablaContainer td:nth-of-type(6):before { content: "Contenido:"; }
-    #calendarioTablaContainer td:nth-of-type(7):before { content: "Guion:"; }
+    #calendarioTablaContainer td:nth-of-type(7):before { content: "Guión:"; }
     #calendarioTablaContainer td:nth-of-type(8):before { content: "CTA:"; }
     #calendarioTablaContainer td:nth-of-type(9) { text-align: center; padding: 1rem !important; display: flex; justify-content: center; }
     #calendarioTablaContainer td:nth-of-type(9):before { display: none; }
@@ -1764,7 +1764,7 @@ window.aplicarAuditoriaTabla = () => {
                             
 <div>
                                 <label class="block text-sm font-semibold text-gray-600 mb-2">Formato Digital</label>
-                                <select id="ideaFormato" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
+                                <select id="ideaFormato" onchange="window.actualizarOpcionesEntregable(); updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
                                     <option value="Short Content">Short Content</option>
                                     <option value="Long Content">Long Content</option>
                                     <option value="Visual">Visual</option>
@@ -1921,9 +1921,16 @@ window.aplicarAuditoriaTabla = () => {
                                 <input type="date" id="ideaFecha" class="w-full p-3 border rounded-lg outline-none">
                             </div>
                             
-                            <div>
+                          <div>
                                 <label class="block text-sm font-semibold text-gray-600 mb-2">Hora</label>
                                 <input type="time" id="ideaHora" class="w-full p-3 border rounded-lg outline-none">
+                            </div>
+                            
+                            <div class="md:col-span-3">
+                                <label class="block text-sm font-semibold text-indigo-700 mb-2">Entregable Solicitado</label>
+                                <select id="ideaEntregable" onchange="updateLivePrompt()" class="w-full p-3 border border-indigo-200 bg-indigo-50/50 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 font-medium text-indigo-900">
+                                    <option value="">Selecciona un formato digital primero...</option>
+                                </select>
                             </div>
                         </div>
 
@@ -1952,7 +1959,7 @@ window.aplicarAuditoriaTabla = () => {
                         </div>
 
                         <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-lg mb-6 shadow-sm">
-                            <p class="text-sm text-indigo-900 font-medium">🤖 <b>Siguiente paso:</b> Copia el prompt generado arriba, pégalo en tu IA de preferencia (ChatGPT, Claude, Gemini, etc.) y traslada los resultados a las casillas correspondientes de aquí abajo.</p>
+                            <p class="text-sm text-indigo-900 font-medium"><b>Instrucciones:</b> Copia el prompt generado arriba, pégalo en tu IA de preferencia (ChatGPT, Claude, Gemini, etc.) y traslada los resultados a las casillas correspondientes de aquí abajo y guarda tus avances.</p>
                         </div>
 
                         <div class="mb-4 relative">
@@ -2000,7 +2007,7 @@ window.aplicarAuditoriaTabla = () => {
 </div>
 
                         <div class="flex flex-col md:flex-row gap-4">
-                            <button id="btnGuardarGuion" onclick="guardarIdea()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition flex-1">Guardar Guion Estructurado</button>
+                            <button id="btnGuardarGuion" onclick="guardarIdea()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition flex-1">Guardar Guión o Entregable</button>
                             <button id="btnCancelarEdicion" onclick="cancelarEdicion()" class="bg-gray-200 text-gray-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition hidden">Cancelar</button>
                         </div>
                     </div>
@@ -2466,7 +2473,7 @@ function guardarIdea() {
                 document.getElementById('btnSyncEnlace').classList.add('hidden');
             }
 
-            document.getElementById('btnGuardarGuion').innerText = "Actualizar Guion Existente";
+            document.getElementById('btnGuardarGuion').innerText = "Actualizar Guión o Entregable";
             document.getElementById('btnCancelarEdicion').classList.remove('hidden');
             
             switchTab('ideas');
@@ -2476,7 +2483,7 @@ function guardarIdea() {
 
         function cancelarEdicion() {
             editandoId = null;
-            document.getElementById('btnGuardarGuion').innerText = "Guardar Guion Estructurado";
+            document.getElementById('btnGuardarGuion').innerText = "Guardar Guión o Entregable";
             document.getElementById('btnCancelarEdicion').classList.add('hidden');
             ['ideaTitulo','ideaGuion','ideaCopy','ideaHashtags','ideaFecha','ideaHora', 'ideaHook', 'ideaEnlaces', 'ideaGuionBase', 'ideaStarFormat', 'ideaEnlaceCarpeta', 'ideaObservaciones', 'ideaAspecto'].forEach(id => document.getElementById(id).value = '');
             updateLivePrompt();
@@ -2502,7 +2509,7 @@ function guardarIdea() {
         }
 
         function eliminarIdea(id) {
-            if(!confirm('¿Seguro que quieres eliminar este guion?')) return;
+            if(!confirm('¿Seguro que quieres eliminar este guión?')) return;
             ideas = ideas.filter(i => i.id !== id);
             localStorage.setItem('contentIdeas', JSON.stringify(ideas));
             renderIdeas();
@@ -2858,7 +2865,7 @@ ESPECIFICACIONES TÉCNICAS DEL VIDEO:
 INSTRUCCIONES DE REDACCIÓN:
 1. TONO: Debe estar escrito obligatoriamente bajo el tono e identidad descrito en CONTEXTO. DEBE SER MEMORABLE, EMOCIONAL Y ENTRETENIDO.
 2. CALIDAD: Entrega información de valor, precisa, confiable, útil y oficial. Evita lo superficial.
-3. ESTRUCTURA: Diseña el guion en UN SOLO PÁRRAFO, sólo si es de tipo estático genera el texto en slides. Debe incluir: Hook verbal interesante (incluye promesa del video) + Frase breve de refuerzo + Desarrollo dinámico + Llamado a la acción (CTA).
+3. ESTRUCTURA: Diseña el guión en UN SOLO PÁRRAFO, sólo si es de tipo estático genera el texto en slides. Debe incluir: Hook verbal interesante (incluye promesa del video) + Frase breve de refuerzo + Desarrollo dinámico + Llamado a la acción (CTA).
 4. RESTRICCIONES: No especifiques las partes en el video. Evita figuras retóricas. PROHIBIDO PRESENTARSE.
 5. ELEMENTOS ADICIONALES: Incluye un CTA potente. ${reglaFormato}
 6. Aplica 100% el estilo coloquial, rápido y conversacional de un creador de contenido.
@@ -2866,7 +2873,7 @@ INSTRUCCIONES DE REDACCIÓN:
 8. Si se incluye un hook propuesto, este se debe respetar al 100% en el guión generado.
 9. Sólo considera ${guiaVisualPrompt} para el diseño si el contenido es estático como viusales, fotos, memes, infografías, carruseles y stories estáticas.
 
-ENTREGABLES ADICIONALES (Debajo del guion):
+ENTREGABLES ADICIONALES (Debajo del guión):
 - COPYWRITING: Breve resumen del guión, dato adicional relevante, palabras clave SEO, CTA claro. Máx 4 líneas.
 - TÍTULO: Título corto y potente para portada.
 - SEO: Palabras clave.
@@ -2917,11 +2924,11 @@ ENTREGABLES ADICIONALES (Debajo del guion):
                         <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 mt-3">Enlaces de Referencia</label>
                         <div class="p-4 bg-slate-50 border border-gray-200 rounded-lg text-sm text-gray-700 whitespace-pre-wrap break-words leading-relaxed">${linkify(idea.enlaces)}</div>
                     </div>` : ''}
-                    ${idea.guionBase ? `<div class="mt-2 p-3 bg-indigo-50/30 border border-indigo-100 rounded-lg text-xs text-gray-700"><b>Idea Inicial / Guion Base:</b><br>${idea.guionBase}</div>` : ''}
+                    ${idea.guionBase ? `<div class="mt-2 p-3 bg-indigo-50/30 border border-indigo-100 rounded-lg text-xs text-gray-700"><b>Idea Inicial / Guión Base:</b><br>${idea.guionBase}</div>` : ''}
                 </div>
                 <div class="space-y-6">
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Guion Estructurado</label>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Guión Estructurado</label>
                         <div class="p-4 bg-gray-50 rounded-lg text-sm whitespace-pre-wrap border border-gray-100 leading-relaxed">${idea.guion}</div>
                     </div>
                     <div>
@@ -3509,7 +3516,7 @@ document.addEventListener('click', function(event) {
     if (!data || data.length === 0) return alert("No hay datos para descargar.");
     
     let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // \uFEFF fuerza formato UTF-8 para evitar caracteres raros (tildes)
-    csvContent += "Día,Tipo,Tema,Formato,Gancho,Contenido,Guion Base,CTA\n";
+    csvContent += "Día,Tipo,Tema,Formato,Gancho,Contenido,Guión Base,CTA\n";
     
     data.forEach(row => {
         let r = [row.dia, row.tipo, row.tema, row.formato, row.hook, row.contenido, row.guionBase, row.cta];
@@ -3533,7 +3540,7 @@ window.descargarTablaXLSX = function() {
     
     // 1. Crear el libro y definir encabezados
     const wb = XLSX.utils.book_new();
-    const headers = ["Día", "Tipo", "Tema", "Formato", "Gancho", "Contenido", "Guion Base", "CTA"];
+    const headers = ["Día", "Tipo", "Tema", "Formato", "Gancho", "Contenido", "Guión Base", "CTA"];
     const wsData = [headers];
     
     data.forEach(row => {
@@ -3601,7 +3608,7 @@ window.descargarTablaXLSX = function() {
         { wch: 15 },  // Formato
         { wch: 30 },  // Gancho
         { wch: 35 },  // Contenido
-        { wch: 45 },  // Guion base
+        { wch: 45 },  // Guión base
         { wch: 20 }   // CTA
     ];
 
