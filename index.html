@@ -1750,7 +1750,7 @@ window.aplicarAuditoriaTabla = () => {
 
                 <section id="ideas" class="tab-content max-w-5xl mx-auto">
                     <div class="bg-white p-4 md:p-8 rounded-xl shadow-sm border border-gray-100 mb-8">
-                        <h2 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Generador de Guiones e Información</h2>
+                        <h2 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Generador de Guiones y Entregables</h2>
                         
                         <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-lg mb-6 shadow-sm">
                             <p class="text-sm text-indigo-900 font-medium">💡 <b>Instrucciones:</b> Llena la información solicitada según el contenido que deseas crear. Más abajo encontrarás diversos prompts generados automáticamente; solo deberás copiarlos y pegarlos en tu IA favorita para crear tus guiones, imágenes o recursos visuales.</p>
@@ -1937,7 +1937,7 @@ window.aplicarAuditoriaTabla = () => {
                         </div>
 
                         <div class="mb-6">
-                            <label class="block text-sm font-semibold text-indigo-600 mb-2">Idea Inicial o Guion Base <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
+                            <label class="block text-sm font-semibold text-indigo-600 mb-2">Guión Base o Entregable inicial<span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
                             <textarea id="ideaGuionBase" oninput="updateLivePrompt()" placeholder="Ej: Deseo explicar los 3 pilares... (Deja vacío si no aplica)" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 bg-indigo-50/30 custom-scroll" rows="3"></textarea>
                         </div>
                         <div class="mb-8 border-t-2 border-dashed pt-6 bg-slate-50 p-6 rounded-xl">
@@ -1954,7 +1954,7 @@ window.aplicarAuditoriaTabla = () => {
                         <div class="mb-4 relative">
                             <div class="flex justify-between items-end mb-1">
                                 <div>
-                                    <label class="block text-sm font-semibold text-gray-600 mb-1">Guion, Copy y Hashtags</label>
+                                    <label class="block text-sm font-semibold text-gray-600 mb-1">Guión o Entregable (slides, escaleta, storyboard, etc)</label>
                                     <p class="text-[10px] text-gray-400">💡 Estructura: [HOOK] -> [FRASE] -> [CUERPO] -> [CTA]</p>
                                 </div>
                                 <div class="flex flex-col sm:flex-row gap-2">
@@ -1962,7 +1962,7 @@ window.aplicarAuditoriaTabla = () => {
                                     <button type="button" onclick="generarEnlaceColaborativo()" class="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1 rounded font-bold transition shadow-sm flex items-center gap-1 border border-emerald-300">🔗 Generar Enlace Vivo</button>
                                 </div>
                             </div>
-                            <textarea id="ideaGuion" rows="5" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" placeholder="Escribe aquí la estructura de tu guion..."></textarea>
+                            <textarea id="ideaGuion" rows="5" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" placeholder="Escribe aquí el contenido de tu entregable (guión, slides, etc)..."></textarea>
                         </div>
 
                         <div class="mb-4 bg-slate-50 p-4 rounded-lg border border-slate-100">
