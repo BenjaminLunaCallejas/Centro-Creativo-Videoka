@@ -6,6 +6,10 @@
     <title>Planificador Estratégico de Contenido - Core Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
+    
     <style>
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -2050,6 +2054,25 @@ window.aplicarAuditoriaTabla = () => {
                             </div>
                         </div>
 
+                        <div class="mb-8 border-t-2 border-dashed border-pink-300 pt-6 bg-pink-50/40 p-6 rounded-xl mt-6">
+    <h3 class="text-sm font-bold text-pink-900 mb-3 uppercase tracking-wider flex items-center gap-2">
+        📸 Convertidor Automático: De Código a Visuales
+    </h3>
+    <p class="text-[10px] text-pink-700 mb-4 leading-relaxed">
+        <b>Instrucciones:</b> Pega aquí el código HTML o SVG que te generó la IA. Presiona "Previsualizar" para ver cómo lucen tus slides en formato 1080x1350. Luego, descarga los archivos JPG o SVG organizados en un archivo ZIP.
+    </p>
+    
+    <textarea id="renderCodeInput" rows="5" class="w-full p-4 bg-slate-900 text-pink-100 font-mono text-xs rounded-lg border border-pink-300 leading-relaxed custom-scroll mb-4" placeholder='<style>:root { --primary: #ff2eca; ...</style>\n<div class="videoka-slide">...</div>'></textarea>
+    
+    <div class="flex flex-wrap gap-3 mb-4">
+        <button onclick="window.previewVisuals()" class="bg-pink-600 text-white px-6 py-2 rounded-lg text-xs font-bold hover:bg-pink-700 shadow-sm transition flex items-center gap-2">👁️ Previsualizar Slides</button>
+        <button id="btnDownloadJPG" onclick="window.downloadCarouselAs('jpg')" class="bg-indigo-600 text-white px-6 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 shadow-sm transition hidden items-center gap-2">📦 Descargar JPGs (ZIP)</button>
+        <button id="btnDownloadSVG" onclick="window.downloadCarouselAs('svg')" class="bg-emerald-600 text-white px-6 py-2 rounded-lg text-xs font-bold hover:bg-emerald-700 shadow-sm transition hidden items-center gap-2">📦 Descargar SVGs (ZIP)</button>
+    </div>
+
+    <div id="renderPreviewContainer" class="hidden overflow-x-auto gap-6 pb-4 custom-scroll items-center bg-gray-200 p-6 rounded-lg border-2 border-gray-300 border-dashed"></div>
+</div>
+
                         <div class="flex flex-col md:flex-row gap-4">
                             <button id="btnGuardarGuion" onclick="guardarIdea()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition flex-1">Guardar Guión o Entregable</button>
                             <button id="btnCancelarEdicion" onclick="cancelarEdicion()" class="bg-gray-200 text-gray-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition hidden">Cancelar</button>
@@ -3011,8 +3034,20 @@ ENTREGABLES ADICIONALES (Al final de tu respuesta):
             basePrompt = `Crea una ilustración digital (estilo flat design/vector). INSTRUCCIÓN CLAVE: Si eres un modelo capaz de programar (como Claude o Gemini), genera el CÓDIGO SVG completo, limpio y funcional que renderice la ilustración. Basado en: "${textoBaseParaVisual}".\n\nPARÁMETROS DE DISEÑO:\n- Estilo: ${visEstilo} (limpio y moderno).\n- Colores exactos a usar: ${visColores}.\n- Calidad visual: ${visualQuality}.\n- Relación de aspecto: ${aspecto}.\n- Formato de entrega: ${visualOutputFormat}.`;
         } else if (assetType.includes("Video")) {
             basePrompt = `[Si usas IA de Video como Sora, Runway, Veo, usa esto en inglés]:\nGenerate a highly detailed video. Subject/Action based on this script: "${textoBaseParaVisual}". \nVisual settings: ${visEstilo}. Brand colors: ${visColores}. Technical quality: ${visualQuality}. Smooth cinematic motion, no morphing. Aspect Ratio: ${aspecto}. Output format: ${visualOutputFormat}.`;
-        } else if (assetType.includes("Carrusel")) {
-            basePrompt = `Diseña un Carrusel completo basándote en este contenido: "${textoBaseParaVisual}".\n\nREGLAS DE DISEÑO:\n1. Formato: ${aspecto} (${visualOutputFormat}).\n2. Estilo y Colores: ${visEstilo} | ${visColores}.\n3. Tipografía: ${visTipo}.\n4. Extrae los textos más impactantes e incrústalos en el diseño. Coloca todos los elementos importantes (títulos, subtítulos, texto, iconos y llamadas a la acción) dentro del margen de la zona segura para evitar que sean recortados por las interfaces de las redes sociales. No coloques ningún elemento importante fuera de esa área.\n5. INSTRUCCIÓN CRÍTICA: 1. Genera directamente TODAS las imagenes en formato JPG/PNG 2. Si no puedes generar imágenes, entonces genera un archivo PPTX editable. 3. Si tampoco puedes generar un archivo PPTX editable, genera un archivo SVG independiente por cada diapositiva y que se pueda editar en Canva o cualquier otro software.`;
+     } else if (assetType.includes("Carrusel")) {
+            basePrompt = `Diseña un Carrusel completo de diapositivas basándote en este contenido: "${textoBaseParaVisual}".
+
+REGLAS DE DISEÑO ESTRICTAS:
+1. Todo debe ser vectorial (usar <svg> o elementos HTML estilizables, no <img src="...">).
+2. Agrupa elementos lógicamente usando <g id="nombre-descriptivo"> para SVGs o <div id="...">.
+3. Tipografía editable: Usa la fuente ${visTipo} sin convertirla a curvas.
+4. Variables CSS: Crea un bloque <style> usando :root para la paleta de colores (${visColores}) y usa var(--color) en los elementos.
+5. Dimensiones exactas: Cada diapositiva (slide) debe ser un contenedor principal de 1080px de ancho por 1350px de alto.
+6. Zona Segura y Grid: Respeta un margen exterior de 60px y una separación interna de 24px. No coloques texto fuera de esta zona.
+7. Componentes: Nombra las clases lógicamente (ej. .card, .header, .title, .cta).
+8. ENTREGA (IMPORTANTE): Si tu sistema te permite generar directamente las imágenes JPG/PNG con la tipografía perfecta, alineada y sin errores ortográficos, entrégalas. Si no tienes esa capacidad visual precisa, o si eres un modelo basado en texto (como Claude o GPT), genera EXCLUSIVAMENTE el código HTML/SVG listo para ser renderizado en mi navegador. Genera cada slide dentro de un contenedor <div class="videoka-slide" style="width:1080px; height:1350px; position:relative; overflow:hidden; background-color: var(--background);">...</div>.`;
+            
+        } else if (assetType.includes("Diapositivas")) {
         } else if (assetType.includes("Diapositivas")) {
             basePrompt = `Diseña las diapositivas de presentación basadas en: "${textoBaseParaVisual}".\n\nREGLAS CORPORATIVAS:\n- Estética: ${visEstilo} | Paleta: ${visColores}.\n- Calidad de render: ${visualQuality}.\n- Aspecto: ${aspecto}.\n- INSTRUCCIÓN CRÍTICA: Si eres capaz (Claude/Gemini), crea una presentación de Google Slides mediante las herramientas disponibles, si no, genera un archivo PPTX editable. Si tampoco puedes generar un PPTX editable, como último recurso escribe el código SVG o HTML/CSS que maquete el layout visual listo para exponer.`;
         } else if (assetType.includes("Motion Graphics")) {
@@ -4053,6 +4088,111 @@ window.descargarEstrategiaWord = function() {
     window.actualizarCeldaInvitado = actualizarCeldaInvitado;
     window.sincronizarTablaDesdeEnlace = sincronizarTablaDesdeEnlace;
     window.desplazarTablaPrincipal = desplazarTablaPrincipal;
+
+        // ==========================================
+// MOTOR DE RENDERIZADO VISUAL EN NAVEGADOR
+// ==========================================
+
+window.previewVisuals = function() {
+    const code = document.getElementById('renderCodeInput').value.trim();
+    if (!code) return alert("Pega el código HTML/SVG generado por la IA primero.");
+
+    const container = document.getElementById('renderPreviewContainer');
+    container.innerHTML = code;
+    
+    // Forzar la escala visual para previsualizar sin romper el navegador (los descarga en tamaño real)
+    const slides = container.querySelectorAll('.videoka-slide');
+    if(slides.length === 0) {
+        alert("No se detectaron contenedores con la clase 'videoka-slide'. Verifica el código de la IA.");
+        return;
+    }
+
+    slides.forEach(slide => {
+        // Asegurar que tengan el tamaño estricto internamente
+        slide.style.width = '1080px';
+        slide.style.height = '1350px';
+        slide.style.position = 'relative';
+        slide.style.backgroundColor = slide.style.backgroundColor || '#ffffff';
+        slide.style.flexShrink = '0';
+        
+        // Escalar visualmente mediante transform para que quepan en la pantalla
+        slide.style.transform = 'scale(0.25)';
+        slide.style.transformOrigin = 'top left';
+        slide.style.marginRight = '-810px'; // Ajuste matemático por el scale(0.25)
+        slide.style.marginBottom = '-1012px';
+        slide.style.boxShadow = '0 20px 40px rgba(0,0,0,0.3)';
+    });
+
+    container.classList.remove('hidden');
+    container.style.display = 'flex';
+    
+    document.getElementById('btnDownloadJPG').classList.remove('hidden');
+    document.getElementById('btnDownloadJPG').classList.add('flex');
+    document.getElementById('btnDownloadSVG').classList.remove('hidden');
+    document.getElementById('btnDownloadSVG').classList.add('flex');
+};
+
+window.downloadCarouselAs = async function(format) {
+    const slides = document.querySelectorAll('#renderPreviewContainer .videoka-slide');
+    if (slides.length === 0) return alert("No hay slides para descargar.");
+
+    const zip = new JSZip();
+    const btnId = format === 'jpg' ? 'btnDownloadJPG' : 'btnDownloadSVG';
+    const btnElement = document.getElementById(btnId);
+    const originalText = btnElement.innerHTML;
+    
+    btnElement.innerHTML = "⏳ Generando ZIP...";
+    btnElement.disabled = true;
+
+    try {
+        for (let i = 0; i < slides.length; i++) {
+            const slide = slides[i];
+            
+            // Revertir escala temporalmente para captura en HD
+            slide.style.transform = 'scale(1)';
+            slide.style.marginRight = '0px';
+            slide.style.marginBottom = '0px';
+
+            if (format === 'jpg') {
+                const dataUrl = await htmlToImage.toJpeg(slide, { quality: 0.95, width: 1080, height: 1350 });
+                const base64Data = dataUrl.split(',')[1];
+                zip.file(`Slide_${i + 1}.jpg`, base64Data, { base64: true });
+            } else if (format === 'svg') {
+                // Si la IA generó SVGs en lugar de HTML, extraemos su contenido
+                const svgElement = slide.querySelector('svg');
+                let svgData = '';
+                if (svgElement) {
+                    svgData = new XMLSerializer().serializeToString(svgElement);
+                } else {
+                    // Exportar como HTML si no es SVG puro
+                    svgData = `<html><head><style>${document.querySelector('#renderPreviewContainer style')?.innerHTML || ''}</style></head><body style="margin:0;">${slide.outerHTML}</body></html>`;
+                    format = 'html'; // Cambiamos la extensión
+                }
+                zip.file(`Slide_${i + 1}.${format}`, svgData);
+            }
+
+            // Restaurar escala
+            slide.style.transform = 'scale(0.25)';
+            slide.style.marginRight = '-810px';
+            slide.style.marginBottom = '-1012px';
+        }
+
+        const content = await zip.generateAsync({ type: "blob" });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(content);
+        link.download = `Carrusel_Videoka_${Date.now()}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+    } catch (error) {
+        console.error("Error al exportar:", error);
+        alert("Ocurrió un error al generar las imágenes. Revisa la consola.");
+    } finally {
+        btnElement.innerHTML = originalText;
+        btnElement.disabled = false;
+    }
+};
 
 // 4. ARRANQUE CORREGIDO
     window.addEventListener('load', () => {
