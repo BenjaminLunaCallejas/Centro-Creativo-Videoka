@@ -2012,16 +2012,36 @@ window.aplicarAuditoriaTabla = () => {
                             </h3>
                             <p class="text-[10px] text-emerald-700 mb-4 leading-relaxed"><b>Instrucciones:</b> Selecciona el tipo de recurso que vas a crear. Esta herramienta tomará tu Guía de Identidad Visual (colores, fuentes, estilo) y tu Relación de Aspecto para construir un prompt avanzado. Cópialo y úsalo en Midjourney, DALL-E, Sora, Runway, o envíaselo a tu diseñador para maquetar diapositivas/carruseles.</p>
                             
-                            <div class="mb-4">
-                                <label class="block text-sm font-semibold text-emerald-800 mb-2">Tipo de recurso a generar:</label>
-                                <select id="ideaAssetType" onchange="updateLivePrompt()" class="w-full p-3 border border-emerald-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-bold text-emerald-900 bg-white shadow-sm">
-                                    <option value="Imágenes fotorrealistas">Imágenes Fotorrealistas (Midjourney/DALL-E)</option>
-                                    <option value="Ilustraciones y Vectores">Ilustraciones y Vectores (Flat design, Isométrico)</option>
-                                    <option value="Video generativo con IA">Video con IA (Prompt cinematográfico para Sora/Runway)</option>
-                                    <option value="Diseño de Carrusel">Diseño de Carrusel (Estructura gráfica y distribución)</option>
-                                    <option value="Diapositivas y Presentaciones">Diapositivas / Presentaciones (Layout y UX/UI)</option>
-                                    <option value="Animación Motion Graphics">Animación 2D / Motion Graphics (Instrucciones visuales)</option>
-                                </select>
+                          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-emerald-800 mb-2">Tipo de recurso:</label>
+                                    <select id="ideaAssetType" onchange="updateLivePrompt()" class="w-full p-3 border border-emerald-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-bold text-emerald-900 bg-white shadow-sm">
+                                        <option value="Imágenes fotorrealistas">Imágenes Fotorrealistas (Midjourney/DALL-E)</option>
+                                        <option value="Ilustraciones y Vectores">Ilustraciones y Vectores (Flat design, Isométrico)</option>
+                                        <option value="Video generativo con IA">Video con IA (Sora/Runway/Pika)</option>
+                                        <option value="Diseño de Carrusel">Diseño de Carrusel (Estructura UX/UI)</option>
+                                        <option value="Diapositivas y Presentaciones">Diapositivas / Presentaciones (Layout)</option>
+                                        <option value="Animación Motion Graphics">Animación 2D / Motion Graphics</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-emerald-800 mb-2">Calidad / Resolución:</label>
+                                    <select id="ideaVisualQuality" onchange="updateLivePrompt()" class="w-full p-3 border border-emerald-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-medium text-emerald-900 bg-white shadow-sm">
+                                        <option value="Alta calidad, detalles nítidos, profesional">Estándar (Alta Calidad)</option>
+                                        <option value="8k resolution, photorealistic, hyper-detailed, octane render, Unreal Engine 5, volumetric lighting">Máxima (8k, Hiperdetallado, Unreal 5)</option>
+                                        <option value="4k resolution, cinematic lighting, dramatic shadows, depth of field, vivid colors">Cinematográfica (4k, Iluminación Dramática)</option>
+                                        <option value="Clean lines, sharp details, high contrast, vibrant colors, flat UI design">Digital / Limpio (Vectores/UI)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-emerald-800 mb-2">Formato de Salida:</label>
+                                    <select id="ideaVisualFormat" onchange="updateLivePrompt()" class="w-full p-3 border border-emerald-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-medium text-emerald-900 bg-white shadow-sm">
+                                        <option value="JPG/PNG">Imágenes (JPG / PNG)</option>
+                                        <option value="MP4">Video (MP4)</option>
+                                        <option value="SVG/EPS">Vectores (SVG / EPS)</option>
+                                        <option value="PDF">Documento (PDF)</option>
+                                    </select>
+                                </div>
                             </div>
 
                             <div class="relative mt-2">
@@ -2426,6 +2446,9 @@ function guardarIdea() {
                 colaboracion: document.getElementById('ideaColaboracion').value,
                 publicacion: document.getElementById('ideaPublicacion').value,
                 entregable: document.getElementById('ideaEntregable') ? document.getElementById('ideaEntregable').value : '',
+                assetType: document.getElementById('ideaAssetType') ? document.getElementById('ideaAssetType').value : '',
+                visualQuality: document.getElementById('ideaVisualQuality') ? document.getElementById('ideaVisualQuality').value : '',
+                visualFormat: document.getElementById('ideaVisualFormat') ? document.getElementById('ideaVisualFormat').value : '',
                 
                 // NUEVO: Integración de las nuevas variables al objeto
                 plataformas: plataformasSeleccionadas,
@@ -2468,6 +2491,9 @@ function guardarIdea() {
             document.getElementById('ideaFormato').value = idea.formato || '';
             window.actualizarOpcionesEntregable(); // Genera las opciones antes de intentar asignarle el valor
             if(document.getElementById('ideaEntregable')) document.getElementById('ideaEntregable').value = idea.entregable || '';
+            if(document.getElementById('ideaAssetType')) document.getElementById('ideaAssetType').value = idea.assetType || 'Imágenes fotorrealistas';
+            if(document.getElementById('ideaVisualQuality')) document.getElementById('ideaVisualQuality').value = idea.visualQuality || 'Alta calidad, detalles nítidos, profesional';
+            if(document.getElementById('ideaVisualFormat')) document.getElementById('ideaVisualFormat').value = idea.visualFormat || 'JPG/PNG';
             document.getElementById('ideaAspecto').value = idea.aspecto || '9:16 (1080 × 1920 px)';
             document.getElementById('ideaTipo').value = idea.tipo || '';
             document.getElementById('ideaObjetivo').value = idea.objetivo || '';
@@ -2512,7 +2538,7 @@ function guardarIdea() {
             editandoId = null;
             document.getElementById('btnGuardarGuion').innerText = "Guardar Guión o Entregable";
             document.getElementById('btnCancelarEdicion').classList.add('hidden');
-            ['ideaTitulo','ideaGuion','ideaCopy','ideaHashtags','ideaFecha','ideaHora', 'ideaHook', 'ideaEnlaces', 'ideaGuionBase', 'ideaStarFormat', 'ideaEnlaceCarpeta', 'ideaObservaciones', 'ideaAspecto', 'ideaEntregable'].forEach(id => document.getElementById(id).value = '');
+            ['ideaTitulo','ideaGuion','ideaCopy','ideaHashtags','ideaFecha','ideaHora', 'ideaHook', 'ideaEnlaces', 'ideaGuionBase', 'ideaStarFormat', 'ideaEnlaceCarpeta', 'ideaObservaciones', 'ideaAspecto', 'ideaEntregable', 'ideaAssetType', 'ideaVisualQuality', 'ideaVisualFormat'].forEach(id => document.getElementById(id).value = '');
             updateLivePrompt();
             document.getElementById('btnSyncEnlace').classList.add('hidden');
         }
@@ -2952,37 +2978,43 @@ ENTREGABLES ADICIONALES (Al final de tu respuesta):
 - HASHTAGS (5): #1 Formato, #2 y #3 Tema, #4 y #5 Nicho.
 - FUENTES: 4 enlaces con fuentes oficiales/teóricas.`;
 
-           // --- LÓGICA DEL NUEVO PROMPT VISUAL (COMANDO DIRECTO PARA GENERAR IMÁGENES) ---
+// --- LÓGICA DEL NUEVO PROMPT VISUAL (COMANDO DIRECTO DE INGENIERÍA) ---
     const visualArea = document.getElementById('aiVisualPromptArea');
     if (visualArea) {
+        // Capturar los nuevos selectores visuales
         const assetType = document.getElementById('ideaAssetType') ? document.getElementById('ideaAssetType').value : 'Imágenes fotorrealistas';
-        const textoBase = guionBase ? guionBase.substring(0, 150) : (hook || "el tema principal");
+        const visualQuality = document.getElementById('ideaVisualQuality') ? document.getElementById('ideaVisualQuality').value : 'Alta calidad';
+        const visualOutputFormat = document.getElementById('ideaVisualFormat') ? document.getElementById('ideaVisualFormat').value : 'JPG/PNG';
         
-        let visColores = localStorage.getItem('visualColores') || "colores modernos que contrasten bien";
-        let visEstilo = localStorage.getItem('visualEstilo') || "estilo profesional y llamativo";
-        let visTipo = localStorage.getItem('visualTipografia') || "fuentes legibles sin serifas";
+        // Magia Negra: Chupar el guion y el copy real si ya se llenaron; si no, usar la idea base.
+        const guionEscrito = document.getElementById('ideaGuion') ? document.getElementById('ideaGuion').value.trim() : '';
+        const copyEscrito = document.getElementById('ideaCopy') ? document.getElementById('ideaCopy').value.trim() : '';
+        const textoBaseParaVisual = guionEscrito || copyEscrito || guionBase || hook || titulo || "el tema principal";
         
-        // Capturamos el entregable para darle contexto a la IA de diseño
+        let visColores = localStorage.getItem('visualColores') || "colores modernos de marca";
+        let visEstilo = localStorage.getItem('visualEstilo') || "profesional y llamativo";
+        let visTipo = localStorage.getItem('visualTipografia') || "fuentes legibles corporativas";
         let nombreEntregableVisual = entregable || "Contenido visual";
         
         let basePrompt = "";
         
         if (assetType.includes("fotorrealistas")) {
-            basePrompt = `Genera una imagen fotorrealista de alta calidad para acompañar mi ${nombreEntregableVisual} (Formato: ${formato}).\nTema Central: "${titulo}".\nContexto: "${textoBase}".\n\nREGLAS DE DISEÑO:\n- Estilo visual: ${visEstilo}.\n- Colores predominantes a integrar: ${visColores}.\n- Iluminación cinemática, hiperdetallada, 8k.\n- Relación de aspecto (Formato): ${aspecto}.`;
+            basePrompt = `Genera una imagen fotorrealista basada estrictamente en el siguiente contenido: "${textoBaseParaVisual}".\n\nPARÁMETROS DE INGENIERÍA (PROMPT):\n- Entregable asociado: ${nombreEntregableVisual} (${formato}).\n- Estilo visual de la marca: ${visEstilo}.\n- Paleta de colores a forzar: ${visColores}.\n- Calidad técnica: ${visualQuality}.\n- Relación de aspecto (Formato): ${aspecto}.\n- Formato de entrega esperado: ${visualOutputFormat}.`;
         } else if (assetType.includes("Vectores")) {
-            basePrompt = `Genera una ilustración digital estilo vector (flat design) para complementar mi ${nombreEntregableVisual} (Formato: ${formato}).\nTema Central: "${titulo}".\nContexto: "${textoBase}".\n\nREGLAS DE DISEÑO:\n- Aplica estrictamente este estilo visual: ${visEstilo}.\n- Utiliza esta paleta de colores exactos: ${visColores}.\n- Genera la ilustración directamente, con fondo limpio y diseño corporativo.\n- Relación de aspecto (Formato): ${aspecto}.`;
+            basePrompt = `Genera una ilustración digital gráfica (vector style) que represente la siguiente idea o guión: "${textoBaseParaVisual}".\n\nPARÁMETROS DE DISEÑO:\n- Estilo de ilustración: ${visEstilo} (flat design, limpio).\n- Colores exactos a usar: ${visColores}.\n- Calidad visual: ${visualQuality}.\n- Relación de aspecto: ${aspecto}.\n- Formato de entrega simulado: ${visualOutputFormat}.`;
         } else if (assetType.includes("Video")) {
-            basePrompt = `[IMPORTANTE: Si usas generadores de video como Sora o Runway, copia esto directo en inglés]:\nCinematic video, highly detailed. Action/Subject: ${titulo} - ${textoBase}. This is to complement a ${nombreEntregableVisual} (${formato}). Visual style: ${visEstilo}, Color palette: ${visColores}. Smooth camera movement, highly realistic, 4k resolution. Aspect Ratio: ${aspecto}.`;
+            basePrompt = `[Si usas Sora, Runway Gen-2 o Pika, copia esto en inglés]:\nGenerate a highly detailed video. Subject/Action based on this script: "${textoBaseParaVisual}". \nVisual settings: ${visEstilo}. Brand colors: ${visColores}. Technical quality: ${visualQuality}. Smooth cinematic motion, no morphing. Aspect Ratio: ${aspecto}. Output format: ${visualOutputFormat}.`;
         } else if (assetType.includes("Carrusel")) {
-            basePrompt = `Genera las imágenes gráficas completas para un ${nombreEntregableVisual} de redes sociales.\nTema Central: "${titulo}".\nContexto: "${textoBase}".\n\nREGLAS DE DISEÑO ESTRICTAS:\n1. Genera 4 imágenes separadas en formato ${aspecto}.\n2. Usa estrictamente el estilo visual: ${visEstilo}.\n3. Usa la paleta de colores: ${visColores}.\n4. Intenta colocar títulos cortos y llamativos relacionados al tema usando tipografía tipo ${visTipo}.\n5. Mantén un diseño limpio (negative space) para que el texto sea hiper-legible. Genera las imágenes ahora.`;
+            basePrompt = `Genera las composiciones visuales completas para un Carrusel basándote en este guión/copy: "${textoBaseParaVisual}".\n\nREGLAS DE DISEÑO UI/UX:\n1. Genera imágenes individuales en aspecto ${aspecto} (${visualOutputFormat}).\n2. Renderiza la calidad con: ${visualQuality}.\n3. Aplica este estilo visual estricto: ${visEstilo} usando los colores: ${visColores}.\n4. Extrae los textos más impactantes del guión provisto e incrústalos en la imagen usando una tipografía estilo ${visTipo}. Mantenlo súper limpio y escaneable.`;
         } else if (assetType.includes("Diapositivas")) {
-            basePrompt = `Genera las imágenes finales de 4 diapositivas para mi ${nombreEntregableVisual} (Formato: ${formato}).\nTema Central: "${titulo}".\nContexto: "${textoBase}".\n\nREGLAS DE DISEÑO:\n- Estilo visual: ${visEstilo}.\n- Colores: ${visColores}.\n- Relación de aspecto: ${aspecto}.\n- Tipografía a simular: ${visTipo}.\n- Genera las diapositivas completas con gráficos, íconos corporativos y estructura visual de presentación. Genera los archivos de imagen directamente.`;
+            basePrompt = `Diseña gráficamente las diapositivas de presentación basadas en el siguiente contenido: "${textoBaseParaVisual}".\n\nREGLAS CORPORATIVAS:\n- Estética: ${visEstilo} | Paleta: ${visColores}.\n- Calidad de render: ${visualQuality}.\n- Aspecto: ${aspecto}.\n- Formato de salida visual: ${visualOutputFormat}.\n- Extrae los bullet points principales del texto provisto y genera el layout visual listo para exponer.`;
         } else if (assetType.includes("Motion Graphics")) {
-            basePrompt = `Genera un frame clave (keyframe visual) de estilo Motion Graphics 2D para mi ${nombreEntregableVisual} (Formato: ${formato}).\nTema Central: "${titulo}".\nContexto: "${textoBase}".\n\nREGLAS DE DISEÑO:\n- Usa un estilo moderno (${visEstilo}).\n- Paleta de colores estricta: ${visColores}.\n- Relación de aspecto: ${aspecto}.\n- No incluyas texto, solo los gráficos y vectores dinámicos listos en la composición visual. Genera la imagen ahora.`;
+            basePrompt = `Genera los keyframes visuales (imágenes clave) para una animación 2D basada en este guión: "${textoBaseParaVisual}".\n\nPARÁMETROS:\n- Dirección de arte: ${visEstilo}.\n- Colores corporativos: ${visColores}.\n- Render settings: ${visualQuality}.\n- Aspecto: ${aspecto}.\n- Formato: ${visualOutputFormat}.\n- Muestra cómo interactuarían los elementos gráficos descritos en el guión sin requerir texto plano.`;
         }
 
-        visualArea.value = `INSTRUCCIÓN DIRECTA PARA IA GENERADORA DE IMÁGENES (Pégalo en ChatGPT Plus/DALL-E 3, Midjourney, etc.):\n\n${basePrompt}`;
+        visualArea.value = `INSTRUCCIÓN DIRECTA PARA IA GENERADORA (Pegar en DALL-E 3, Midjourney, Sora, etc.):\n\n${basePrompt}`;
     }
+           
 }
         function copyPrompt() {
             copyToClipboardElement('aiPromptArea');
