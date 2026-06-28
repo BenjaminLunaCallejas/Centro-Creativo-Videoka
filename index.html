@@ -2006,6 +2006,29 @@ window.aplicarAuditoriaTabla = () => {
     </div>
     <textarea id="ideaObservaciones" rows="2" class="w-full p-3 border border-amber-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-400 custom-scroll bg-white" placeholder="Ej: Revisar el audio en el segundo 15... (Deja vacío si no aplica)"></textarea>
 </div>
+                        <div class="mb-8 border-t-2 border-dashed border-emerald-200 pt-6 bg-emerald-50/30 p-6 rounded-xl">
+                            <h3 class="text-sm font-bold text-emerald-900 mb-3 uppercase tracking-wider flex items-center gap-2">
+                                🎨 PROMPT PARA GENERACIÓN VISUAL E IMÁGENES
+                            </h3>
+                            <p class="text-[10px] text-emerald-700 mb-4 leading-relaxed"><b>Instrucciones:</b> Selecciona el tipo de recurso que vas a crear. Esta herramienta tomará tu Guía de Identidad Visual (colores, fuentes, estilo) y tu Relación de Aspecto para construir un prompt avanzado. Cópialo y úsalo en Midjourney, DALL-E, Sora, Runway, o envíaselo a tu diseñador para maquetar diapositivas/carruseles.</p>
+                            
+                            <div class="mb-4">
+                                <label class="block text-sm font-semibold text-emerald-800 mb-2">Tipo de recurso a generar:</label>
+                                <select id="ideaAssetType" onchange="updateLivePrompt()" class="w-full p-3 border border-emerald-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-bold text-emerald-900 bg-white shadow-sm">
+                                    <option value="Imágenes fotorrealistas">Imágenes Fotorrealistas (Midjourney/DALL-E)</option>
+                                    <option value="Ilustraciones y Vectores">Ilustraciones y Vectores (Flat design, Isométrico)</option>
+                                    <option value="Video generativo con IA">Video con IA (Prompt cinematográfico para Sora/Runway)</option>
+                                    <option value="Diseño de Carrusel">Diseño de Carrusel (Estructura gráfica y distribución)</option>
+                                    <option value="Diapositivas y Presentaciones">Diapositivas / Presentaciones (Layout y UX/UI)</option>
+                                    <option value="Animación Motion Graphics">Animación 2D / Motion Graphics (Instrucciones visuales)</option>
+                                </select>
+                            </div>
+
+                            <div class="relative mt-2">
+                               <textarea id="aiVisualPromptArea" rows="8" class="w-full p-4 bg-white text-slate-700 font-mono text-xs rounded-lg border border-emerald-200 leading-relaxed shadow-inner custom-scroll" readonly></textarea>
+                                <button onclick="copyToClipboardElement('aiVisualPromptArea')" class="absolute top-2 right-2 bg-emerald-600 text-white px-3 py-1 rounded text-[10px] hover:bg-emerald-700 transition shadow-sm font-bold">Copiar Prompt Visual</button>
+                            </div>
+                        </div>
 
                         <div class="flex flex-col md:flex-row gap-4">
                             <button id="btnGuardarGuion" onclick="guardarIdea()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition flex-1">Guardar Guión o Entregable</button>
@@ -2928,6 +2951,38 @@ ENTREGABLES ADICIONALES (Al final de tu respuesta):
 - SEO: Palabras clave.
 - HASHTAGS (5): #1 Formato, #2 y #3 Tema, #4 y #5 Nicho.
 - FUENTES: 4 enlaces con fuentes oficiales/teóricas.`;
+
+           // --- LÓGICA DEL NUEVO PROMPT VISUAL (COMANDO DIRECTO PARA GENERAR IMÁGENES) ---
+    const visualArea = document.getElementById('aiVisualPromptArea');
+    if (visualArea) {
+        const assetType = document.getElementById('ideaAssetType') ? document.getElementById('ideaAssetType').value : 'Imágenes fotorrealistas';
+        const textoBase = guionBase ? guionBase.substring(0, 150) : (hook || "el tema principal");
+        
+        let visColores = localStorage.getItem('visualColores') || "colores modernos que contrasten bien";
+        let visEstilo = localStorage.getItem('visualEstilo') || "estilo profesional y llamativo";
+        let visTipo = localStorage.getItem('visualTipografia') || "fuentes legibles sin serifas";
+        
+        // Capturamos el entregable para darle contexto a la IA de diseño
+        let nombreEntregableVisual = entregable || "Contenido visual";
+        
+        let basePrompt = "";
+        
+        if (assetType.includes("fotorrealistas")) {
+            basePrompt = `Genera una imagen fotorrealista de alta calidad para acompañar mi ${nombreEntregableVisual} (Formato: ${formato}).\nTema Central: "${titulo}".\nContexto: "${textoBase}".\n\nREGLAS DE DISEÑO:\n- Estilo visual: ${visEstilo}.\n- Colores predominantes a integrar: ${visColores}.\n- Iluminación cinemática, hiperdetallada, 8k.\n- Relación de aspecto (Formato): ${aspecto}.`;
+        } else if (assetType.includes("Vectores")) {
+            basePrompt = `Genera una ilustración digital estilo vector (flat design) para complementar mi ${nombreEntregableVisual} (Formato: ${formato}).\nTema Central: "${titulo}".\nContexto: "${textoBase}".\n\nREGLAS DE DISEÑO:\n- Aplica estrictamente este estilo visual: ${visEstilo}.\n- Utiliza esta paleta de colores exactos: ${visColores}.\n- Genera la ilustración directamente, con fondo limpio y diseño corporativo.\n- Relación de aspecto (Formato): ${aspecto}.`;
+        } else if (assetType.includes("Video")) {
+            basePrompt = `[IMPORTANTE: Si usas generadores de video como Sora o Runway, copia esto directo en inglés]:\nCinematic video, highly detailed. Action/Subject: ${titulo} - ${textoBase}. This is to complement a ${nombreEntregableVisual} (${formato}). Visual style: ${visEstilo}, Color palette: ${visColores}. Smooth camera movement, highly realistic, 4k resolution. Aspect Ratio: ${aspecto}.`;
+        } else if (assetType.includes("Carrusel")) {
+            basePrompt = `Genera las imágenes gráficas completas para un ${nombreEntregableVisual} de redes sociales.\nTema Central: "${titulo}".\nContexto: "${textoBase}".\n\nREGLAS DE DISEÑO ESTRICTAS:\n1. Genera 4 imágenes separadas en formato ${aspecto}.\n2. Usa estrictamente el estilo visual: ${visEstilo}.\n3. Usa la paleta de colores: ${visColores}.\n4. Intenta colocar títulos cortos y llamativos relacionados al tema usando tipografía tipo ${visTipo}.\n5. Mantén un diseño limpio (negative space) para que el texto sea hiper-legible. Genera las imágenes ahora.`;
+        } else if (assetType.includes("Diapositivas")) {
+            basePrompt = `Genera las imágenes finales de 4 diapositivas para mi ${nombreEntregableVisual} (Formato: ${formato}).\nTema Central: "${titulo}".\nContexto: "${textoBase}".\n\nREGLAS DE DISEÑO:\n- Estilo visual: ${visEstilo}.\n- Colores: ${visColores}.\n- Relación de aspecto: ${aspecto}.\n- Tipografía a simular: ${visTipo}.\n- Genera las diapositivas completas con gráficos, íconos corporativos y estructura visual de presentación. Genera los archivos de imagen directamente.`;
+        } else if (assetType.includes("Motion Graphics")) {
+            basePrompt = `Genera un frame clave (keyframe visual) de estilo Motion Graphics 2D para mi ${nombreEntregableVisual} (Formato: ${formato}).\nTema Central: "${titulo}".\nContexto: "${textoBase}".\n\nREGLAS DE DISEÑO:\n- Usa un estilo moderno (${visEstilo}).\n- Paleta de colores estricta: ${visColores}.\n- Relación de aspecto: ${aspecto}.\n- No incluyas texto, solo los gráficos y vectores dinámicos listos en la composición visual. Genera la imagen ahora.`;
+        }
+
+        visualArea.value = `INSTRUCCIÓN DIRECTA PARA IA GENERADORA DE IMÁGENES (Pégalo en ChatGPT Plus/DALL-E 3, Midjourney, etc.):\n\n${basePrompt}`;
+    }
 }
         function copyPrompt() {
             copyToClipboardElement('aiPromptArea');
