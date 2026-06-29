@@ -2067,7 +2067,7 @@ window.aplicarAuditoriaTabla = () => {
     <div class="flex flex-wrap gap-3 mb-4">
         <button onclick="window.previewVisuals()" class="bg-pink-600 text-white px-6 py-2 rounded-lg text-xs font-bold hover:bg-pink-700 shadow-sm transition flex items-center gap-2">👁️ Previsualizar Slides</button>
         <button id="btnDownloadJPG" onclick="window.downloadCarouselAs('jpg')" class="bg-indigo-600 text-white px-6 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 shadow-sm transition hidden items-center gap-2">📦 Descargar JPGs (ZIP)</button>
-        <button id="btnDownloadSVG" onclick="window.downloadCarouselAs('svg')" class="bg-emerald-600 text-white px-6 py-2 rounded-lg text-xs font-bold hover:bg-emerald-700 shadow-sm transition hidden items-center gap-2">📦 Descargar SVGs (ZIP)</button>
+        <button id="btnDownloadSVG" onclick="window.downloadCarouselAs('png')" class="bg-emerald-600 text-white px-6 py-2 rounded-lg text-xs font-bold hover:bg-emerald-700 shadow-sm transition hidden items-center gap-2">📦 Descargar PNGs (ZIP)</button>
     </div>
 
     <div id="renderPreviewContainer" class="hidden overflow-x-auto gap-6 pb-4 custom-scroll items-center bg-gray-200 p-6 rounded-lg border-2 border-gray-300 border-dashed"></div>
@@ -4196,20 +4196,26 @@ window.downloadCarouselAs = async function(format) {
             slide.style.marginRight = '0px';
             slide.style.marginBottom = '0px';
 
+            // 1. Extraer el color real calculado por el navegador
+            const compStyle = iframeDoc.defaultView.getComputedStyle(slide);
+            let realBgColor = compStyle.backgroundColor;
+            
+            // Si es transparente, forzamos blanco para no tener fondos corruptos en JPG
+            if (realBgColor === 'rgba(0, 0, 0, 0)' || realBgColor === 'transparent') {
+                realBgColor = '#ffffff'; 
+            }
+
+            // 2. Exportación condicionada
+            let base64Data = '';
             if (format === 'jpg') {
-                const dataUrl = await htmlToImage.toJpeg(slide, { quality: 0.95, width: 1080, height: 1350 });
-                const base64Data = dataUrl.split(',')[1];
+                const dataUrl = await htmlToImage.toJpeg(slide, { quality: 0.95, width: 1080, height: 1350, bgcolor: realBgColor });
+                base64Data = dataUrl.split(',')[1];
                 zip.file(`Slide_${i + 1}.jpg`, base64Data, { base64: true });
-            } else if (format === 'svg') {
-                const svgElement = slide.querySelector('svg');
-                let svgData = '';
-                if (svgElement) {
-                    svgData = new XMLSerializer().serializeToString(svgElement);
-                } else {
-                    svgData = `<html><head><style>${iframeDoc.querySelector('style')?.innerHTML || ''}</style></head><body style="margin:0;">${slide.outerHTML}</body></html>`;
-                    format = 'html'; 
-                }
-                zip.file(`Slide_${i + 1}.${format}`, svgData);
+            } else {
+                // Convertimos la antigua opción SVG a PNG de alta fidelidad
+                const dataUrl = await htmlToImage.toPng(slide, { width: 1080, height: 1350, bgcolor: realBgColor });
+                base64Data = dataUrl.split(',')[1];
+                zip.file(`Slide_${i + 1}.png`, base64Data, { base64: true });
             }
 
             // Restaurar escala inmediatamente después
@@ -4228,7 +4234,7 @@ window.downloadCarouselAs = async function(format) {
 
     } catch (error) {
         console.error("Error al exportar:", error);
-        alert("Ocurrió un error al generar las imágenes. Si esto pasa, intenta descargarlas como SVG.");
+        alert("Ocurrió un error al generar las imágenes.");
     } finally {
         btnElement.innerHTML = originalText;
         btnElement.disabled = false;
