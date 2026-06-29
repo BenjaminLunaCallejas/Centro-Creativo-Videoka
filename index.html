@@ -3657,7 +3657,7 @@ window.initAppState = () => {
         }
 
         function autoResizeTextareas() {
-            const textareas = document.querySelectorAll('textarea:not(#aiPromptArea):not(#aiScriptPromptArea):not(#tablaIAPaste)');
+            const textareas = document.querySelectorAll('textarea:not(#aiPromptArea):not(#aiScriptPromptArea):not(#tablaIAPaste):not(#renderCodeInput)');
             textareas.forEach(textarea => {
                 textarea.style.height = 'auto';
                 textarea.style.height = (textarea.scrollHeight + 10) + 'px';
