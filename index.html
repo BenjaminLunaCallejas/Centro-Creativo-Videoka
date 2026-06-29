@@ -3040,7 +3040,7 @@ ENTREGABLES ADICIONALES (Al final de tu respuesta):
 REGLAS DE DISEÑO ESTRICTAS:
 1. Todo debe ser vectorial (usar <svg> o elementos HTML estilizables, no <img src="...">).
 2. Agrupa elementos lógicamente usando <g id="nombre-descriptivo"> para SVGs o <div id="...">.
-3. Tipografía editable: Usa la fuente ${visTipo} sin convertirla a curvas.
+3. Tipografía: Usa ${visTipo} y conserva el texto completamente editable. No conviertas ninguna fuente a curvas, contornos (outlines) o trazados (paths).
 4. Variables CSS: Crea un bloque <style> usando :root para la paleta de colores (${visColores}) y usa var(--color) en los elementos.
 5. Dimensiones exactas: Cada diapositiva (slide) debe ser un contenedor principal de 1080px de ancho por 1350px de alto.
 6. Zona Segura y Grid: Respeta un margen exterior de 60px y una separación interna de 24px. No coloques texto fuera de esta zona.
