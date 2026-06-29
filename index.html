@@ -2062,7 +2062,7 @@ window.aplicarAuditoriaTabla = () => {
         <b>Instrucciones:</b> Pega aquí el código HTML o SVG que te generó la IA. Presiona "Previsualizar" para ver cómo lucen tus slides en formato 1080x1350. Luego, descarga los archivos JPG o SVG organizados en un archivo ZIP.
     </p>
     
-    <textarea id="renderCodeInput" rows="5" class="w-full p-4 bg-slate-900 text-pink-100 font-mono text-xs rounded-lg border border-pink-300 leading-relaxed custom-scroll mb-4" placeholder='<style>:root { --primary: #ff2eca; ...</style>\n<div class="videoka-slide">...</div>'></textarea>
+    <textarea id="renderCodeInput" class="w-full p-4 bg-slate-900 text-pink-100 font-mono text-xs rounded-lg border border-pink-300 leading-relaxed custom-scroll mb-4 h-64 resize-y overflow-y-auto" style="resize: vertical !important;" placeholder='<style>:root { --primary: #ff2eca; ...</style>\n<div class="videoka-slide">...</div>'></textarea>
     
     <div class="flex flex-wrap gap-3 mb-4">
         <button onclick="window.previewVisuals()" class="bg-pink-600 text-white px-6 py-2 rounded-lg text-xs font-bold hover:bg-pink-700 shadow-sm transition flex items-center gap-2">👁️ Previsualizar Slides</button>
@@ -2070,7 +2070,7 @@ window.aplicarAuditoriaTabla = () => {
         <button id="btnDownloadSVG" onclick="window.downloadCarouselAs('png')" class="bg-emerald-600 text-white px-6 py-2 rounded-lg text-xs font-bold hover:bg-emerald-700 shadow-sm transition hidden items-center gap-2">📦 Descargar PNGs (ZIP)</button>
     </div>
 
-    <div id="renderPreviewContainer" class="hidden overflow-x-auto gap-6 pb-4 custom-scroll items-center bg-gray-200 p-6 rounded-lg border-2 border-gray-300 border-dashed"></div>
+    <div id="renderPreviewContainer" class="hidden flex-nowrap overflow-x-auto overflow-y-hidden h-[480px] gap-6 pb-4 custom-scroll items-center bg-gray-200 p-6 rounded-lg border-2 border-gray-300 border-dashed"></div>
 </div>
 
                         <div class="flex flex-col md:flex-row gap-4">
