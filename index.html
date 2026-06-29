@@ -4091,7 +4091,7 @@ window.descargarEstrategiaWord = function() {
         
     window.desplazarTablaPrincipal = desplazarTablaPrincipal;
 
-        // ==========================================
+// ==========================================
 // MOTOR DE RENDERIZADO VISUAL EN NAVEGADOR
 // ==========================================
 
@@ -4100,42 +4100,83 @@ window.previewVisuals = function() {
     if (!code) return alert("Pega el código HTML/SVG generado por la IA primero.");
 
     const container = document.getElementById('renderPreviewContainer');
-    container.innerHTML = code;
-    
-    // Forzar la escala visual para previsualizar sin romper el navegador (los descarga en tamaño real)
-    const slides = container.querySelectorAll('.videoka-slide');
-    if(slides.length === 0) {
-        alert("No se detectaron contenedores con la clase 'videoka-slide'. Verifica el código de la IA.");
-        return;
-    }
+    container.innerHTML = ''; // Limpiamos el contenedor
 
-    slides.forEach(slide => {
-        // Asegurar que tengan el tamaño estricto internamente
-        slide.style.width = '1080px';
-        slide.style.height = '1350px';
-        slide.style.position = 'relative';
-        slide.style.backgroundColor = slide.style.backgroundColor || '#ffffff';
-        slide.style.flexShrink = '0';
+    // 1. Crear un iframe para AISLAR los estilos y evitar que tu web se rompa
+    const iframe = document.createElement('iframe');
+    iframe.id = 'previewIframe';
+    iframe.style.width = '100%';
+    iframe.style.height = '420px'; 
+    iframe.style.border = 'none';
+    iframe.style.backgroundColor = 'transparent';
+    iframe.style.borderRadius = '8px';
+    
+    container.appendChild(iframe);
+
+    // 2. Inyectar el código de la IA dentro del iframe
+    const iframeDoc = iframe.contentWindow.document;
+    iframeDoc.open();
+    iframeDoc.write(code);
+    iframeDoc.close();
+
+    // 3. Procesar las slides una vez que el iframe cargue
+    setTimeout(() => {
+        // Buscamos la clase oficial, o como respaldo (Plan B), los divs principales
+        let slides = iframeDoc.querySelectorAll('.videoka-slide');
+        if(slides.length === 0) {
+            slides = iframeDoc.querySelectorAll('body > div');
+        }
+
+        if(slides.length === 0) {
+            alert("No se detectaron diapositivas. Verifica que el código de la IA tenga etiquetas <div>.");
+            return;
+        }
+
+        // Acomodar el body del iframe para que se comporte como un carrusel
+        iframeDoc.body.style.display = 'flex';
+        iframeDoc.body.style.gap = '20px';
+        iframeDoc.body.style.padding = '20px';
+        iframeDoc.body.style.margin = '0';
+        iframeDoc.body.style.overflowX = 'auto';
+        iframeDoc.body.style.backgroundColor = '#e5e7eb'; // Fondo gris para contrastar
+
+        slides.forEach(slide => {
+            // Le forzamos la clase por si la IA la olvidó
+            slide.classList.add('videoka-slide');
+            
+            // Forzamos proporciones estrictas
+            slide.style.width = '1080px';
+            slide.style.height = '1350px';
+            slide.style.position = 'relative';
+            slide.style.overflow = 'hidden';
+            slide.style.backgroundColor = slide.style.backgroundColor || '#ffffff';
+            slide.style.flexShrink = '0';
+            
+            // Escala visual para que quepan en la pantalla
+            slide.style.transform = 'scale(0.25)';
+            slide.style.transformOrigin = 'top left';
+            slide.style.marginRight = '-810px'; 
+            slide.style.marginBottom = '-1012px';
+            slide.style.boxShadow = '0 20px 40px rgba(0,0,0,0.3)';
+        });
+
+        container.classList.remove('hidden');
+        container.style.display = 'block'; 
         
-        // Escalar visualmente mediante transform para que quepan en la pantalla
-        slide.style.transform = 'scale(0.25)';
-        slide.style.transformOrigin = 'top left';
-        slide.style.marginRight = '-810px'; // Ajuste matemático por el scale(0.25)
-        slide.style.marginBottom = '-1012px';
-        slide.style.boxShadow = '0 20px 40px rgba(0,0,0,0.3)';
-    });
-
-    container.classList.remove('hidden');
-    container.style.display = 'flex';
-    
-    document.getElementById('btnDownloadJPG').classList.remove('hidden');
-    document.getElementById('btnDownloadJPG').classList.add('flex');
-    document.getElementById('btnDownloadSVG').classList.remove('hidden');
-    document.getElementById('btnDownloadSVG').classList.add('flex');
+        document.getElementById('btnDownloadJPG').classList.remove('hidden');
+        document.getElementById('btnDownloadJPG').classList.add('flex');
+        document.getElementById('btnDownloadSVG').classList.remove('hidden');
+        document.getElementById('btnDownloadSVG').classList.add('flex');
+    }, 150); // Pausa minúscula para asegurar renderizado
 };
 
 window.downloadCarouselAs = async function(format) {
-    const slides = document.querySelectorAll('#renderPreviewContainer .videoka-slide');
+    const iframe = document.getElementById('previewIframe');
+    if (!iframe) return alert("Previsualiza primero.");
+    
+    const iframeDoc = iframe.contentWindow.document;
+    const slides = iframeDoc.querySelectorAll('.videoka-slide');
+    
     if (slides.length === 0) return alert("No hay slides para descargar.");
 
     const zip = new JSZip();
@@ -4150,7 +4191,7 @@ window.downloadCarouselAs = async function(format) {
         for (let i = 0; i < slides.length; i++) {
             const slide = slides[i];
             
-            // Revertir escala temporalmente para captura en HD
+            // Revertir escala temporalmente para captura en HD (1080x1350)
             slide.style.transform = 'scale(1)';
             slide.style.marginRight = '0px';
             slide.style.marginBottom = '0px';
@@ -4160,20 +4201,18 @@ window.downloadCarouselAs = async function(format) {
                 const base64Data = dataUrl.split(',')[1];
                 zip.file(`Slide_${i + 1}.jpg`, base64Data, { base64: true });
             } else if (format === 'svg') {
-                // Si la IA generó SVGs en lugar de HTML, extraemos su contenido
                 const svgElement = slide.querySelector('svg');
                 let svgData = '';
                 if (svgElement) {
                     svgData = new XMLSerializer().serializeToString(svgElement);
                 } else {
-                    // Exportar como HTML si no es SVG puro
-                    svgData = `<html><head><style>${document.querySelector('#renderPreviewContainer style')?.innerHTML || ''}</style></head><body style="margin:0;">${slide.outerHTML}</body></html>`;
-                    format = 'html'; // Cambiamos la extensión
+                    svgData = `<html><head><style>${iframeDoc.querySelector('style')?.innerHTML || ''}</style></head><body style="margin:0;">${slide.outerHTML}</body></html>`;
+                    format = 'html'; 
                 }
                 zip.file(`Slide_${i + 1}.${format}`, svgData);
             }
 
-            // Restaurar escala
+            // Restaurar escala inmediatamente después
             slide.style.transform = 'scale(0.25)';
             slide.style.marginRight = '-810px';
             slide.style.marginBottom = '-1012px';
@@ -4189,7 +4228,7 @@ window.downloadCarouselAs = async function(format) {
 
     } catch (error) {
         console.error("Error al exportar:", error);
-        alert("Ocurrió un error al generar las imágenes. Revisa la consola.");
+        alert("Ocurrió un error al generar las imágenes. Si esto pasa, intenta descargarlas como SVG.");
     } finally {
         btnElement.innerHTML = originalText;
         btnElement.disabled = false;
