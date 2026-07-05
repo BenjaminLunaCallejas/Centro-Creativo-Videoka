@@ -1660,9 +1660,11 @@ window.aplicarAuditoriaTabla = () => {
                     
                     <div id="resumenContent" class="space-y-6"></div>
 
-                     <div class="mt-6 flex flex-col sm:flex-row gap-3">
-                        <button onclick="window.copiarEstrategiaResumen()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-md flex items-center justify-center gap-2">📋 Copiar Estrategia</button>
-                        <button onclick="window.descargarEstrategiaWord()" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition shadow-md flex items-center justify-center gap-2">📄 Descargar en Word</button>
+               <div class="mt-6 flex flex-col sm:flex-row gap-3 flex-wrap">
+                        <button onclick="window.copiarEstrategiaCompleta()" class="bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-bold hover:bg-indigo-700 transition shadow-md flex items-center justify-center gap-2 text-sm flex-1 sm:flex-none">📋 Copiar Todo (Estrategia + Formatos)</button>
+                        <button onclick="window.descargarEstrategiaCompletaWord()" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-bold hover:bg-blue-700 transition shadow-md flex items-center justify-center gap-2 text-sm flex-1 sm:flex-none">📄 Descargar Todo en Word</button>
+                        <button onclick="window.copiarEstrategiaResumen()" class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-4 py-2 rounded-lg font-bold hover:bg-indigo-100 transition shadow-sm flex items-center justify-center gap-2 text-sm flex-1 sm:flex-none ml-auto">📋 Sólo Estrategia</button>
+                        <button onclick="window.descargarEstrategiaWord()" class="bg-blue-50 text-blue-700 border border-blue-200 px-4 py-2 rounded-lg font-bold hover:bg-blue-100 transition shadow-sm flex items-center justify-center gap-2 text-sm flex-1 sm:flex-none">📄 Sólo Estrategia (Word)</button>
                     </div>
                     
                     <div class="mt-8 border-t pt-6 bg-indigo-50/30 p-6 rounded-xl border border-indigo-100">
@@ -1683,6 +1685,12 @@ window.aplicarAuditoriaTabla = () => {
                                 <textarea id="starFormat3_desc" onblur="saveStarFormats()" placeholder="Descripción del formato estrella 3..." class="w-full p-3 border rounded-lg text-xs md:col-span-2 shadow-sm outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" rows="2"></textarea>
                             </div>
                         </div>
+                        
+                        <div class="mt-5 pt-4 border-t border-indigo-200/50 flex flex-col sm:flex-row gap-3">
+                            <button onclick="window.copiarFormatosEstrella()" class="bg-purple-100 text-purple-700 border border-purple-200 px-4 py-2 rounded-lg font-bold hover:bg-purple-200 transition shadow-sm flex items-center justify-center gap-2 text-sm">📋 Copiar Sólo Formatos</button>
+                            <button onclick="window.descargarFormatosEstrellaWord()" class="bg-purple-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-purple-700 transition shadow-sm flex items-center justify-center gap-2 text-sm">📄 Descargar Formatos en Word</button>
+                        </div>
+                        
                     </div>
                    
                     <div class="mt-8 border-t pt-6">
@@ -3956,7 +3964,7 @@ FUNNEL DE OBJETIVOS:
     navigator.clipboard.writeText(text).then(() => alert('¡Estrategia copiada al portapapeles!'));
 };
 
-window.descargarEstrategiaWord = function() {
+window.descargarEstrategiaWord = function(incluirFormatos = false) {
     let ejes = [];
     try { const val = localStorage.getItem('ejesTags'); if(val) ejes = JSON.parse(val); } catch(e) {}
     const ejesTexto = ejes.length > 0 ? ejes.join(', ') : 'N/A';
@@ -4017,6 +4025,7 @@ window.descargarEstrategiaWord = function() {
             <li><span class="strong">Conversión:</span> ${localStorage.getItem('strat_conversion') || 'N/A'}</li>
             <li><span class="strong">Fidelización:</span> ${localStorage.getItem('strat_fidelizacion') || 'N/A'}</li>
         </ul>
+        ${incluirFormatos ? `<h2>⭐ FORMATOS ESTRELLA</h2>${window.obtenerHTMLFormatos()}` : ''}
     </body></html>`;
 
     const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
@@ -4028,6 +4037,66 @@ window.descargarEstrategiaWord = function() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+};
+        // ==========================================
+// NUEVAS FUNCIONES: EXTRACCIÓN DE FORMATOS Y DESCARGA COMPLETA
+// ==========================================
+window.obtenerTextoFormatos = function() {
+    let lineas = [];
+    for(let i=1; i<=3; i++) {
+        const fn = localStorage.getItem(`starFormat${i}_name`);
+        const fd = localStorage.getItem(`starFormat${i}_desc`);
+        if(fn && fn.trim() !== '') {
+            lineas.push(`⭐ FORMATO ESTRELLA: ${fn.trim()}\n   Descripción: ${fd ? fd.trim() : 'N/A'}`);
+        }
+    }
+    return lineas.length > 0 ? lineas.join('\n\n') : 'No hay formatos estrella definidos.';
+};
+
+window.obtenerHTMLFormatos = function() {
+    let html = '';
+    for(let i=1; i<=3; i++) {
+        const fn = localStorage.getItem(`starFormat${i}_name`);
+        const fd = localStorage.getItem(`starFormat${i}_desc`);
+        if(fn && fn.trim() !== '') {
+            html += `<h3>⭐ Formato: ${fn.trim()}</h3><p>${fd ? fd.trim() : 'N/A'}</p>`;
+        }
+    }
+    return html !== '' ? html : '<p>No hay formatos estrella definidos.</p>';
+};
+
+window.copiarFormatosEstrella = function() {
+    const text = `📌 FORMATOS ESTRELLA\n\n${window.obtenerTextoFormatos()}`;
+    navigator.clipboard.writeText(text).then(() => alert('¡Formatos Estrella copiados al portapapeles!'));
+};
+
+window.descargarFormatosEstrellaWord = function() {
+    let html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Formatos Estrella</title><style>body { font-family: 'Segoe UI', Arial, sans-serif; color: #333; } h1 { color: #7e22ce; font-size: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;} h3 { color: #6b21a8; font-size: 16px; margin-top: 15px;} p { font-size: 14px; line-height: 1.6; margin-top: 5px;}</style></head><body><h1>📌 FORMATOS ESTRELLA</h1>${window.obtenerHTMLFormatos()}</body></html>`;
+    const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a'); link.href = url; link.download = `Formatos_Estrella_${Date.now()}.doc`;
+    document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
+};
+
+window.obtenerTextoEstrategiaBase = function() {
+    let ejes = []; try { const val = localStorage.getItem('ejesTags'); if(val) ejes = JSON.parse(val); } catch(e) {}
+    const visColores = localStorage.getItem('visualColores'); const visTipo = localStorage.getItem('visualTipografia');
+    const visEstilo = localStorage.getItem('visualEstilo'); const visLogoUrl = localStorage.getItem('visualLogoUrl');
+    const visLogo = localStorage.getItem('visualLogo');
+    let visualSection = '';
+    if (visColores || visTipo || visEstilo || visLogoUrl || visLogo) {
+        visualSection = `\n🎨 IDENTIDAD VISUAL:\n${visColores ? `• Paleta de Colores: ${visColores}\n` : ''}${visTipo ? `• Tipografías: ${visTipo}\n` : ''}${visEstilo ? `• Estilo Visual: ${visEstilo}\n` : ''}${visLogoUrl ? `• Enlace del Logo: ${visLogoUrl}\n` : ''}${visLogo ? `• Reglas de Espaciado: ${visLogo}\n` : ''}`;
+    }
+    return `📌 ESTRATEGIA DE CONTENIDO\n\nPERFIL:\n• Tema Central: ${localStorage.getItem('temaCentral') || 'N/A'}\n• Ejes Transversales: ${ejes.length > 0 ? ejes.join(', ') : 'N/A'}\n• Nicho: ${localStorage.getItem('nichoContenido') || 'N/A'}\n• Arquetipos: ${JSON.parse(localStorage.getItem('arquetiposSeleccionados') || '[]').join(' + ')}\n• Público: ${localStorage.getItem('publicoObjetivo') || 'N/A'}\n\nIDENTIDAD Y TONO:\n• Descripción del creador: ${localStorage.getItem('descCreador') || 'N/A'}\n• Tono de comunicación: ${localStorage.getItem('identidadTono') || 'N/A'}\n${visualSection}\nFUNNEL DE OBJETIVOS:\n• Reconocimiento: ${localStorage.getItem('strat_awareness') || 'N/A'}\n• Consideración: ${localStorage.getItem('strat_consideracion') || 'N/A'}\n• Conversión: ${localStorage.getItem('strat_conversion') || 'N/A'}\n• Fidelización: ${localStorage.getItem('strat_fidelizacion') || 'N/A'}`;
+};
+
+window.copiarEstrategiaCompleta = function() {
+    const textoFinal = `${window.obtenerTextoEstrategiaBase()}\n\n=================================\n\n📌 FORMATOS ESTRELLA\n\n${window.obtenerTextoFormatos()}`;
+    navigator.clipboard.writeText(textoFinal).then(() => alert('¡Estrategia Completa y Formatos copiados al portapapeles!'));
+};
+
+window.descargarEstrategiaCompletaWord = function() {
+    window.descargarEstrategiaWord(true);
 };
         
         // 3. EL PARCHE DE CONEXIÓN (LO QUE AGREGAMOS PARA QUE LOS BOTONES FUNCIONEN)
@@ -4081,6 +4150,10 @@ window.descargarEstrategiaWord = function() {
     window.trasladarHook = trasladarHook;
     window.copiarEstrategiaResumen = copiarEstrategiaResumen;
     window.descargarEstrategiaWord = descargarEstrategiaWord;
+    window.copiarFormatosEstrella = copiarFormatosEstrella;
+    window.descargarFormatosEstrellaWord = descargarFormatosEstrellaWord;
+    window.copiarEstrategiaCompleta = copiarEstrategiaCompleta;
+    window.descargarEstrategiaCompletaWord = descargarEstrategiaCompletaWord;
     window.irAFechaEspecifica = function(fecha) {
         if(!fecha) return;
         const partes = fecha.split('-'); // Extrae [YYYY, MM, DD]
