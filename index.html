@@ -1377,7 +1377,7 @@ window.aplicarAuditoriaTabla = () => {
         <div class="p-4 md:p-8 max-w-7xl mx-auto w-full">
             <div id="sharedTablaStatus" class="text-center text-lg text-gray-600 font-bold mt-10">⏳ Cargando tabla compartida...</div>
            <div id="sharedTablaContent" class="hidden overflow-auto max-h-[80vh] custom-scroll border rounded-lg shadow-sm relative bg-white">
-                <table class="w-full text-left text-xs border-collapse min-w-[1200px]">
+               <table class="w-full text-left text-xs border-collapse min-w-[1600px]">
                     <thead class="sticky top-0 z-30 bg-indigo-100 shadow-md">
                         <tr class="text-indigo-900 border-b-2 border-indigo-200">
                             <th class="p-3">Día</th><th class="p-3">Tipo</th><th class="p-3">Tema</th><th class="p-3">Formato</th>
@@ -1758,7 +1758,7 @@ window.aplicarAuditoriaTabla = () => {
     </div>
 </div>
                             <div id="contenedorTablaPrincipalScroll" class="overflow-x-auto overflow-y-auto max-h-[70vh] custom-scroll border rounded-lg shadow-sm relative scroll-smooth bg-white">
-                               <table class="w-full text-left text-xs border-collapse min-w-[1200px]">
+                               <table class="w-full text-left text-xs border-collapse min-w-[1600px]">
                                     <thead class="sticky top-0 z-30 bg-indigo-100 shadow-md">
                                         <tr class="text-indigo-900 border-b-2 border-indigo-200">
                                             <th class="p-3">Día</th>
@@ -3514,14 +3514,14 @@ tr.innerHTML = `
                     <td class="p-3 text-slate-600 text-[10px] uppercase font-bold w-[8%] align-top break-words group">
                         <div contenteditable="true" onblur="guardarCeldaEditada(event, ${index}, 'formato')" class="outline-none focus:bg-indigo-50 hover:bg-slate-50 p-1 -m-1 rounded transition cursor-text border border-transparent focus:border-indigo-300 min-h-[20px]">${item.formato}</div>
                     </td>
-                    <td class="p-3 text-gray-800 w-[15%] align-top whitespace-normal break-words italic relative group">
+                    <td class="p-3 text-gray-800 w-[12%] align-top whitespace-normal break-words italic relative group">
                         <div contenteditable="true" onblur="guardarCeldaEditada(event, ${index}, 'hook')" class="outline-none focus:bg-indigo-50 hover:bg-slate-50 p-1 -m-1 rounded transition cursor-text border border-transparent focus:border-indigo-300 min-h-[20px] pr-8">${item.hook}</div>
                         <button onclick="trasladarHook(${index})" class="absolute top-2 right-2 text-[10px] bg-amber-100 text-amber-700 hover:bg-amber-200 px-1.5 py-1 rounded shadow-sm opacity-0 group-hover:opacity-100 transition-opacity font-bold z-10 flex items-center gap-1" title="Mandar a Ideas Crudas">💡</button>
                     </td>
-                    <td class="p-3 text-gray-600 w-[15%] align-top whitespace-normal break-words group">
+                    <td class="p-3 text-gray-600 w-[12%] align-top whitespace-normal break-words group">
                         <div contenteditable="true" onblur="guardarCeldaEditada(event, ${index}, 'contenido')" class="outline-none focus:bg-indigo-50 hover:bg-slate-50 p-1 -m-1 rounded transition cursor-text border border-transparent focus:border-indigo-300 min-h-[20px]">${item.contenido}</div>
                     </td>
-                    <td class="p-3 text-gray-700 w-[25%] align-top whitespace-normal break-words leading-relaxed group">
+                    <td class="p-3 text-gray-700 w-[35%] align-top whitespace-normal break-words leading-relaxed group">
                         <div contenteditable="true" onblur="guardarCeldaEditada(event, ${index}, 'guionBase')" class="outline-none focus:bg-indigo-50 hover:bg-slate-50 p-1 -m-1 rounded transition cursor-text border border-transparent focus:border-indigo-300 min-h-[20px]">${item.guionBase}</div>
                     </td>
                     <td class="p-3 text-indigo-600 w-[10%] align-top whitespace-normal break-words font-semibold group">
@@ -3887,15 +3887,16 @@ window.descargarTablaXLSX = function() {
         }
     }
 
+
     // 4. Establecer el ancho de las columnas
     ws['!cols'] = [
         { wch: 8 },   // Día
         { wch: 15 },  // Tipo
-        { wch: 25 },  // Tema
+        { wch: 20 },  // Tema
         { wch: 15 },  // Formato
-        { wch: 30 },  // Gancho
-        { wch: 35 },  // Contenido
-        { wch: 45 },  // Guión base
+        { wch: 25 },  // Gancho
+        { wch: 30 },  // Contenido
+        { wch: 80 },  // Guión base
         { wch: 20 }   // CTA
     ];
 
