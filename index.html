@@ -4301,25 +4301,24 @@ window.previewVisuals = function() {
         iframeDoc.body.style.overflowX = 'auto';
         iframeDoc.body.style.backgroundColor = '#e5e7eb';
 
-        // EXTRAER MEDIDAS DINÁMICAS SELECCIONADAS EN LA INTERFAZ
+        // EXTRAER MEDIDAS DINÁMICAS
         const aspectoSel = document.getElementById('ideaAspecto').value;
         let exactWidth = 1080, exactHeight = 1350;
         const matchDim = aspectoSel.match(/\((\d+)\s*[x×]\s*(\d+)\s*px\)/);
         if (matchDim) { exactWidth = parseInt(matchDim[1]); exactHeight = parseInt(matchDim[2]); }
 
-        // AJUSTAR ESCALA (Para que los formatos horizontales anchos no se salgan de tu pantalla)
-        let scale = exactWidth > 1200 ? 0.15 : 0.25;
+        // LA MAGIA: Escala matemática. Forzamos a que el diseño siempre mida ~380px de alto
+        // Así siempre se verá de un "tamaño decente" sin importar si mide 1920 o 3500px reales.
+        let scale = 380 / exactHeight;
 
         slides.forEach(slide => {
             slide.classList.add('videoka-slide');
-            // Forzamos las dimensiones correctas a la caja
             slide.style.width = exactWidth + 'px';
             slide.style.height = exactHeight + 'px';
             slide.style.position = 'relative';
             slide.style.overflow = 'hidden';
             slide.style.flexShrink = '0';
             
-            // Escala visual
             slide.style.transform = `scale(${scale})`;
             slide.style.transformOrigin = 'top left';
             slide.style.marginRight = `-${exactWidth * (1 - scale)}px`; 
@@ -4334,28 +4333,13 @@ window.previewVisuals = function() {
         document.getElementById('btnDownloadSVG').classList.remove('hidden');
         document.getElementById('btnDownloadSVG').classList.add('flex');
     }, 150);
-
     };
 
 window.downloadCarouselAs = async function(format) {
-    const iframe = document.getElementById('previewIframe');
-    if (!iframe) return alert("Previsualiza primero.");
-    
-    const iframeDoc = iframe.contentWindow.document;
-    
-    // 1. Filtrar divs vacíos o basura que la IA pueda generar
-    let slides = Array.from(iframeDoc.querySelectorAll('.videoka-slide'));
-    if (slides.length === 0) {
-        slides = Array.from(iframeDoc.querySelectorAll('body > div')).filter(div => div.innerText.trim() !== '' || div.querySelector('svg'));
-    }
-    if (slides.length === 0) return alert("No hay slides para descargar.");
+    const code = document.getElementById('renderCodeInput').value.trim();
+    if (!code) return alert("No hay código para generar la imagen.");
 
-    // 2. Forzar 1 sola imagen si el formato NO es carrusel ni diapositivas
-    const assetType = document.getElementById('ideaAssetType') ? document.getElementById('ideaAssetType').value : '';
-    const isSingleFormat = !assetType.includes("Carrusel") && !assetType.includes("Diapositivas");
-    const slidesToDownload = isSingleFormat ? [slides[0]] : slides;
-
-    // 3. MEDIDAS DINÁMICAS PARA LA DESCARGA
+    // MEDIDAS DINÁMICAS PARA LA DESCARGA
     const aspectoSel = document.getElementById('ideaAspecto').value;
     let exactWidth = 1080, exactHeight = 1350;
     const matchDim = aspectoSel.match(/\((\d+)\s*[x×]\s*(\d+)\s*px\)/);
@@ -4364,32 +4348,65 @@ window.downloadCarouselAs = async function(format) {
     const btnId = format === 'jpg' ? 'btnDownloadJPG' : 'btnDownloadSVG';
     const btnElement = document.getElementById(btnId);
     const originalText = btnElement.innerHTML;
-    
-    btnElement.innerHTML = slidesToDownload.length === 1 ? "⏳ Generando Imagen..." : "⏳ Generando ZIP...";
+
+    btnElement.innerHTML = "⏳ Renderizando...";
     btnElement.disabled = true;
 
     try {
+        // 1. EL SECRETO: Crear un estudio fotográfico invisible del tamaño EXACTO
+        const hiddenIframe = document.createElement('iframe');
+        hiddenIframe.style.position = 'fixed';
+        hiddenIframe.style.top = '-9999px';
+        hiddenIframe.style.left = '-9999px';
+        hiddenIframe.style.width = (exactWidth + 100) + 'px'; // Ligeramente más grande para que no corte bordes
+        hiddenIframe.style.height = (exactHeight + 100) + 'px';
+        hiddenIframe.style.border = 'none';
+        document.body.appendChild(hiddenIframe);
+
+        const iframeDoc = hiddenIframe.contentWindow.document;
+        iframeDoc.open();
+        iframeDoc.write(code);
+        iframeDoc.close();
+
+        // Esperamos medio segundo a que el navegador dibuje todo en tamaño real
+        await new Promise(r => setTimeout(r, 500));
+
+        let slides = Array.from(iframeDoc.querySelectorAll('.videoka-slide'));
+        if (slides.length === 0) {
+            slides = Array.from(iframeDoc.querySelectorAll('body > div')).filter(div => div.innerText.trim() !== '' || div.querySelector('svg'));
+        }
+
+        if (slides.length === 0) {
+            document.body.removeChild(hiddenIframe);
+            throw new Error("No se detectaron diapositivas.");
+        }
+
+        const assetType = document.getElementById('ideaAssetType') ? document.getElementById('ideaAssetType').value : '';
+        const isSingleFormat = !assetType.includes("Carrusel") && !assetType.includes("Diapositivas");
+        const slidesToDownload = isSingleFormat ? [slides[0]] : slides;
+
+        // Limpiamos los estilos de las slides para la foto
+        slidesToDownload.forEach(slide => {
+            slide.style.width = exactWidth + 'px';
+            slide.style.height = exactHeight + 'px';
+            slide.style.margin = '0';
+            slide.style.position = 'relative';
+            slide.style.overflow = 'hidden';
+            slide.style.transform = 'none'; // Cero escalas locas que rompan la imagen
+        });
+
         if (slidesToDownload.length === 1) {
             // ==========================================
             // LÓGICA PARA 1 SOLA IMAGEN (DESCARGA DIRECTA)
             // ==========================================
+            btnElement.innerHTML = "📸 Tomando foto...";
             const slide = slidesToDownload[0];
             const compStyle = iframeDoc.defaultView.getComputedStyle(slide);
             let realBgColor = compStyle.backgroundColor;
-            if (realBgColor === 'rgba(0, 0, 0, 0)' || realBgColor === 'transparent') realBgColor = '#ffffff'; 
+            if (realBgColor === 'rgba(0, 0, 0, 0)' || realBgColor === 'transparent') realBgColor = '#ffffff';
 
-            // EL TRUCO ANTI-BUG: Inyectar la escala 1 directamente en la librería al tomar la foto
-            const exportOptions = { 
-                quality: 0.95, 
-                width: exactWidth, 
-                height: exactHeight, 
-                bgcolor: realBgColor,
-                style: { transform: 'scale(1)', transformOrigin: 'top left', margin: '0', boxShadow: 'none' }
-            };
-
-            let dataUrl = format === 'jpg' ? 
-                await htmlToImage.toJpeg(slide, exportOptions) : 
-                await htmlToImage.toPng(slide, exportOptions);
+            const exportOptions = { quality: 0.95, width: exactWidth, height: exactHeight, bgcolor: realBgColor };
+            let dataUrl = format === 'jpg' ? await htmlToImage.toJpeg(slide, exportOptions) : await htmlToImage.toPng(slide, exportOptions);
 
             const link = document.createElement('a');
             link.href = dataUrl;
@@ -4402,25 +4419,16 @@ window.downloadCarouselAs = async function(format) {
             // ==========================================
             // LÓGICA PARA MÚLTIPLES IMÁGENES (ZIP)
             // ==========================================
+            btnElement.innerHTML = "📦 Armando ZIP...";
             const zip = new JSZip();
             for (let i = 0; i < slidesToDownload.length; i++) {
                 const slide = slidesToDownload[i];
                 const compStyle = iframeDoc.defaultView.getComputedStyle(slide);
                 let realBgColor = compStyle.backgroundColor;
-                if (realBgColor === 'rgba(0, 0, 0, 0)' || realBgColor === 'transparent') realBgColor = '#ffffff'; 
+                if (realBgColor === 'rgba(0, 0, 0, 0)' || realBgColor === 'transparent') realBgColor = '#ffffff';
 
-                const exportOptions = { 
-                    quality: 0.95, 
-                    width: exactWidth, 
-                    height: exactHeight, 
-                    bgcolor: realBgColor,
-                    style: { transform: 'scale(1)', transformOrigin: 'top left', margin: '0', boxShadow: 'none' }
-                };
-
-                let dataUrl = format === 'jpg' ? 
-                    await htmlToImage.toJpeg(slide, exportOptions) : 
-                    await htmlToImage.toPng(slide, exportOptions);
-                    
+                const exportOptions = { quality: 0.95, width: exactWidth, height: exactHeight, bgcolor: realBgColor };
+                let dataUrl = format === 'jpg' ? await htmlToImage.toJpeg(slide, exportOptions) : await htmlToImage.toPng(slide, exportOptions);
                 let base64Data = dataUrl.split(',')[1];
                 let ext = format === 'jpg' ? 'jpg' : 'png';
                 zip.file(`Slide_${i + 1}.${ext}`, base64Data, { base64: true });
@@ -4435,9 +4443,12 @@ window.downloadCarouselAs = async function(format) {
             document.body.removeChild(link);
         }
 
+        // Eliminamos el estudio fotográfico para que no consuma memoria
+        document.body.removeChild(hiddenIframe);
+
     } catch (error) {
         console.error("Error al exportar:", error);
-        alert("Ocurrió un error al generar las imágenes.");
+        alert("Ocurrió un error al generar las imágenes. Revisa la consola.");
     } finally {
         btnElement.innerHTML = originalText;
         btnElement.disabled = false;
