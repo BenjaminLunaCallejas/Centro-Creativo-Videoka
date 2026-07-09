@@ -4271,45 +4271,57 @@ window.previewVisuals = function() {
     const container = document.getElementById('renderPreviewContainer');
     container.innerHTML = ''; // Limpiamos el contenedor
 
-    // 1. Crear un iframe para AISLAR los estilos y evitar que tu web se rompa
+    // EXTRAER MEDIDAS DINÁMICAS
+    const aspectoSel = document.getElementById('ideaAspecto').value;
+    let exactWidth = 1080, exactHeight = 1350;
+    const matchDim = aspectoSel.match(/\((\d+)\s*[x×]\s*(\d+)\s*px\)/);
+    if (matchDim) { exactWidth = parseInt(matchDim[1]); exactHeight = parseInt(matchDim[2]); }
+
+    // Escala matemática. Forzamos a que el diseño siempre mida ~380px de alto visualmente
+    let scale = 380 / exactHeight;
+
+    // Crear el iframe con el TAMAÑO EXACTO REAL (ej. 1080x1920) y escalarlo con CSS
     const iframe = document.createElement('iframe');
     iframe.id = 'previewIframe';
-    iframe.style.width = '100%';
-    iframe.style.height = '420px'; 
+    iframe.style.width = exactWidth + 'px';
+    iframe.style.height = exactHeight + 'px';
     iframe.style.border = 'none';
-    iframe.style.backgroundColor = 'transparent';
-    iframe.style.borderRadius = '8px';
+    iframe.style.backgroundColor = '#ffffff';
+    
+    // Aplicamos la escala al iframe completo para no romper elementos responsivos (vw/vh/%)
+    iframe.style.transform = `scale(${scale})`;
+    iframe.style.transformOrigin = 'top left';
+    
+    // Evitamos el espacio fantasma que deja la escala usando márgenes negativos
+    iframe.style.marginBottom = `-${exactHeight * (1 - scale)}px`;
+    iframe.style.marginRight = `-${exactWidth * (1 - scale)}px`;
+    iframe.style.boxShadow = '0 20px 40px rgba(0,0,0,0.3)';
+    iframe.style.flexShrink = '0';
     
     container.appendChild(iframe);
 
-    // 2. Inyectar el código de la IA dentro del iframe
+    // Inyectar el código de la IA
     const iframeDoc = iframe.contentWindow.document;
     iframeDoc.open();
     iframeDoc.write(code);
     iframeDoc.close();
 
-    // 3. Procesar las slides una vez que el iframe cargue
+    // Procesar las slides
     setTimeout(() => {
         let slides = iframeDoc.querySelectorAll('.videoka-slide');
         if(slides.length === 0) slides = iframeDoc.querySelectorAll('body > div');
-        if(slides.length === 0) return alert("No se detectaron diapositivas. Verifica que el código de la IA tenga etiquetas <div>.");
+        if(slides.length === 0) return alert("No se detectaron diapositivas. Verifica que el código tenga etiquetas <div>.");
 
-        iframeDoc.body.style.display = 'flex';
-        iframeDoc.body.style.gap = '20px';
-        iframeDoc.body.style.padding = '20px';
         iframeDoc.body.style.margin = '0';
-        iframeDoc.body.style.overflowX = 'auto';
-        iframeDoc.body.style.backgroundColor = '#e5e7eb';
+        iframeDoc.body.style.padding = '0';
 
-        // EXTRAER MEDIDAS DINÁMICAS
-        const aspectoSel = document.getElementById('ideaAspecto').value;
-        let exactWidth = 1080, exactHeight = 1350;
-        const matchDim = aspectoSel.match(/\((\d+)\s*[x×]\s*(\d+)\s*px\)/);
-        if (matchDim) { exactWidth = parseInt(matchDim[1]); exactHeight = parseInt(matchDim[2]); }
-
-        // LA MAGIA: Escala matemática. Forzamos a que el diseño siempre mida ~380px de alto
-        // Así siempre se verá de un "tamaño decente" sin importar si mide 1920 o 3500px reales.
-        let scale = 380 / exactHeight;
+        // Si es carrusel, expandimos el ancho del iframe para acomodar todo
+        if (slides.length > 1) {
+            iframeDoc.body.style.display = 'flex';
+            const totalWidth = exactWidth * slides.length;
+            iframe.style.width = totalWidth + 'px';
+            iframe.style.marginRight = `-${totalWidth * (1 - scale)}px`; // Ajuste del margen para scroll correcto
+        }
 
         slides.forEach(slide => {
             slide.classList.add('videoka-slide');
@@ -4318,22 +4330,16 @@ window.previewVisuals = function() {
             slide.style.position = 'relative';
             slide.style.overflow = 'hidden';
             slide.style.flexShrink = '0';
-            
-            slide.style.transform = `scale(${scale})`;
-            slide.style.transformOrigin = 'top left';
-            slide.style.marginRight = `-${exactWidth * (1 - scale)}px`; 
-            slide.style.marginBottom = `-${exactHeight * (1 - scale)}px`;
-            slide.style.boxShadow = '0 20px 40px rgba(0,0,0,0.3)';
         });
 
         container.classList.remove('hidden');
-        container.style.display = 'block'; 
+        container.style.display = 'flex'; 
         document.getElementById('btnDownloadJPG').classList.remove('hidden');
         document.getElementById('btnDownloadJPG').classList.add('flex');
         document.getElementById('btnDownloadSVG').classList.remove('hidden');
         document.getElementById('btnDownloadSVG').classList.add('flex');
     }, 150);
-    };
+};
 
 window.downloadCarouselAs = async function(format) {
     const code = document.getElementById('renderCodeInput').value.trim();
@@ -4358,8 +4364,8 @@ window.downloadCarouselAs = async function(format) {
         hiddenIframe.style.position = 'fixed';
         hiddenIframe.style.top = '-9999px';
         hiddenIframe.style.left = '-9999px';
-        hiddenIframe.style.width = (exactWidth + 100) + 'px'; // Ligeramente más grande para que no corte bordes
-        hiddenIframe.style.height = (exactHeight + 100) + 'px';
+        hiddenIframe.style.width = exactWidth + 'px';
+        hiddenIframe.style.height = exactHeight + 'px';
         hiddenIframe.style.border = 'none';
         document.body.appendChild(hiddenIframe);
 
@@ -4405,7 +4411,7 @@ window.downloadCarouselAs = async function(format) {
             let realBgColor = compStyle.backgroundColor;
             if (realBgColor === 'rgba(0, 0, 0, 0)' || realBgColor === 'transparent') realBgColor = '#ffffff';
 
-            const exportOptions = { quality: 0.95, width: exactWidth, height: exactHeight, bgcolor: realBgColor };
+            const exportOptions = { quality: 0.95, width: exactWidth, height: exactHeight, backgroundColor: realBgColor, style: { background: realBgColor } };
             let dataUrl = format === 'jpg' ? await htmlToImage.toJpeg(slide, exportOptions) : await htmlToImage.toPng(slide, exportOptions);
 
             const link = document.createElement('a');
@@ -4427,7 +4433,7 @@ window.downloadCarouselAs = async function(format) {
                 let realBgColor = compStyle.backgroundColor;
                 if (realBgColor === 'rgba(0, 0, 0, 0)' || realBgColor === 'transparent') realBgColor = '#ffffff';
 
-                const exportOptions = { quality: 0.95, width: exactWidth, height: exactHeight, bgcolor: realBgColor };
+                const exportOptions = { quality: 0.95, width: exactWidth, height: exactHeight, backgroundColor: realBgColor, style: { background: realBgColor } };
                 let dataUrl = format === 'jpg' ? await htmlToImage.toJpeg(slide, exportOptions) : await htmlToImage.toPng(slide, exportOptions);
                 let base64Data = dataUrl.split(',')[1];
                 let ext = format === 'jpg' ? 'jpg' : 'png';
