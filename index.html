@@ -2066,10 +2066,11 @@ window.aplicarAuditoriaTabla = () => {
                                     <select id="ideaAssetType" onchange="updateLivePrompt()" class="w-full p-3 border border-emerald-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-bold text-emerald-900 bg-white shadow-sm">
                                         <option value="Imágenes fotorrealistas">Imágenes realistas (Midjourney/DALL-E/Gemini)</option>
                                         <option value="Ilustraciones y Vectores">Ilustraciones / SVG (Claude/Gemini/Gráficos)</option>
-                                        <option value="Video generativo con IA">Video con IA (Sora/Runway/Luma/Gemini/Veo)</option>
+                                        <option value="Flyer promocional">Flyer promocional (Póster/Volante)</option>
                                         <option value="Diseño de Carrusel">Diseño de Carrusel (UI/UX - Claude/Gemini)</option>
-                                        <option value="Diapositivas y Presentaciones">Diapositivas (Layout y Código - Claude/Gemini)</option>
+                                        <option value="Video generativo con IA">Video con IA (Sora/Runway/Luma/Gemini/Veo)</option>
                                         <option value="Animación Motion Graphics">Animación 2D / Motion Graphics</option>
+                                        <option value="Diapositivas y Presentaciones">Diapositivas (Layout y Código - Claude/Gemini)</option> 
                                     </select>
                                 </div>
                                 <div>
@@ -3111,19 +3112,19 @@ ENTREGABLES ADICIONALES (Al final de tu respuesta):
         if (assetType.includes("fotorrealistas")) {
             basePrompt = `Genera una imagen fotorrealista (o el prompt detallado para generarla) basada estrictamente en este contenido: "${textoBaseParaVisual}".\n\nPARÁMETROS:\n- Entregable asociado: ${nombreEntregableVisual} (${formato}).\n- Estilo visual de la marca: ${visEstilo}.\n- Paleta de colores a forzar: ${visColores}.\n- Calidad técnica: ${visualQuality}.\n- Relación de aspecto: ${aspecto}.\n- Formato de entrega: ${visualOutputFormat}.`;
         } else if (assetType.includes("Vectores")) {
-            basePrompt = `Crea una ilustración digital (estilo flat design/vector). INSTRUCCIÓN CLAVE: Si eres un modelo capaz de programar (como Claude o Gemini), genera el CÓDIGO SVG completo, limpio y funcional que renderice la ilustración. Basado en: "${textoBaseParaVisual}".\n\nPARÁMETROS DE DISEÑO:\n- Estilo: ${visEstilo} (limpio y moderno).\n- Colores exactos a usar: ${visColores}.\n- Calidad visual: ${visualQuality}.\n- Relación de aspecto: ${aspecto}.\n- Formato de entrega: ${visualOutputFormat}.`;
+            basePrompt = `Crea una ilustración digital (estilo flat design/vector). INSTRUCCIÓN CLAVE: Si eres un modelo capaz de programar (como Claude o Gemini), genera el CÓDIGO SVG completo, limpio y funcional que renderice la ilustración. Basado en: "${textoBaseParaVisual}".\n\nPARÁMETROS DE DISEÑO:\n- Formato de destino: ${formato}.\n- Estética y Estilo: ${visEstilo} (limpio y moderno).\n- Colores exactos a usar: ${visColores}.\n- Calidad visual: ${visualQuality}.\n- Relación de aspecto: ${aspecto}.\n- Formato de entrega: ${visualOutputFormat}.`;
         } else if (assetType.includes("Video")) {
-            basePrompt = `[Si usas IA de Video como Sora, Runway, Veo, usa esto en inglés]:\nGenerate a highly detailed video. Subject/Action based on this script: "${textoBaseParaVisual}". \nVisual settings: ${visEstilo}. Brand colors: ${visColores}. Technical quality: ${visualQuality}. Smooth cinematic motion, no morphing. Aspect Ratio: ${aspecto}. Output format: ${visualOutputFormat}.`;
-     } else if (assetType.includes("Carrusel")) {
+            basePrompt = `[Si usas IA de Video como Sora, Runway, Veo, usa esto en inglés]:\nGenerate a highly detailed video for a ${formato} format. Subject/Action based on this script: "${textoBaseParaVisual}". \nVisual settings and Style: ${visEstilo}. Brand colors: ${visColores}. Technical quality: ${visualQuality}. Smooth cinematic motion, no morphing. Aspect Ratio: ${aspecto}. Output format: ${visualOutputFormat}.`;
+        } else if (assetType.includes("Carrusel")) {
             basePrompt = `Diseña un Carrusel completo de diapositivas basándote en este contenido: "${textoBaseParaVisual}".
 
 REGLAS DE DISEÑO ESTRICTAS:
 1. Todo debe ser vectorial (usar <svg> o elementos HTML estilizables, no <img src="...">).
 2. Agrupa elementos lógicamente usando <g id="nombre-descriptivo"> para SVGs o <div id="...">.
 3. Tipografía: Usa ${visTipo} y conserva el texto completamente editable. No conviertas ninguna fuente a curvas, contornos (outlines) o trazados (paths).
-4. Variables CSS: Crea un bloque <style> usando :root para la paleta de colores (${visColores}) y usa var(--color) en los elementos.
-5. Dimensiones exactas: Cada diapositiva (slide) debe ser un contenedor principal de 1080px de ancho por 1350px de alto.
-6. Zona Segura y Grid: Respeta un margen exterior de 60px y una separación interna de 24px. No coloques texto fuera de esta zona.
+4. Variables CSS: Crea un bloque <style> usando :root para la paleta de colores (${visColores}) y usa var(--color) en los elementos. Estilo Visual General: ${visEstilo}.
+5. Dimensiones exactas: Cada diapositiva (slide) debe adaptarse a la Relación de Aspecto requerida: ${aspecto} (Formato: ${formato}).
+6. Zona Segura y Grid: Respeta un margen exterior proporcional y no coloques texto fuera de la zona segura de visualización establecidos para cada formato.
 7. Componentes: Nombra las clases lógicamente (ej. .card, .header, .title, .cta).
 8. ENTREGA (IMPORTANTE): Si tu sistema te permite generar directamente las imágenes JPG/PNG con la tipografía perfecta, alineada y sin errores ortográficos, entrégalas. Si no tienes esa capacidad visual precisa, o si eres un modelo basado en texto (como Claude o GPT), genera EXCLUSIVAMENTE el código HTML/SVG listo para ser renderizado en mi navegador. Genera cada slide dentro de un contenedor <div class="videoka-slide" style="width:1080px; height:1350px; position:relative; overflow:hidden; background-color: var(--background);">...</div>.
 9. FORMATOS (MANDATORIO):
@@ -3132,10 +3133,11 @@ REGLAS DE DISEÑO ESTRICTAS:
    - REGLA DE SÚPER INTEGRIDAD: Está estrictamente prohibido recortar el código, resumir secciones o usar comentarios de elisión (como ""). Debes entregar el código 100% completo, con los 9 slides estructurados de principio a fin, listo para producción.`;
             
         } else if (assetType.includes("Diapositivas")) {
-        } else if (assetType.includes("Diapositivas")) {
-            basePrompt = `Diseña las diapositivas de presentación basadas en: "${textoBaseParaVisual}".\n\nREGLAS CORPORATIVAS:\n- Estética: ${visEstilo} | Paleta: ${visColores}.\n- Calidad de render: ${visualQuality}.\n- Aspecto: ${aspecto}.\n- INSTRUCCIÓN CRÍTICA: Si eres capaz (Claude/Gemini), crea una presentación de Google Slides mediante las herramientas disponibles, si no, genera un archivo PPTX editable. Si tampoco puedes generar un PPTX editable, como último recurso escribe el código SVG o HTML/CSS que maquete el layout visual listo para exponer.`;
+            basePrompt = `Diseña las diapositivas de presentación basadas en: "${textoBaseParaVisual}".\n\nREGLAS CORPORATIVAS:\n- Formato Digital: ${formato}.\n- Estética y Estilo Visual: ${visEstilo} | Paleta de Colores: ${visColores} | Tipografía: ${visTipo}.\n- Calidad de render: ${visualQuality}.\n- Relación de Aspecto: ${aspecto}.\n- INSTRUCCIÓN CRÍTICA: Si eres capaz (Claude/Gemini), crea una presentación de Google Slides mediante las herramientas disponibles, si no, genera un archivo PPTX editable. Si tampoco puedes generar un PPTX editable, como último recurso escribe el código SVG o HTML/CSS completo que maquete el layout visual listo para exponer, respetando el aspecto ${aspecto}.`;
         } else if (assetType.includes("Motion Graphics")) {
-            basePrompt = `Genera la dirección de arte y los keyframes visuales para una animación 2D (Motion Graphics) basada en: "${textoBaseParaVisual}".\n\nPARÁMETROS:\n- Dirección de arte: ${visEstilo}.\n- Colores: ${visColores}.\n- Aspecto: ${aspecto}.\n- Describe los keyframes visuales, las transiciones y cómo interactúan los gráficos.`;
+            basePrompt = `Genera la dirección de arte y los keyframes visuales para una animación 2D (Motion Graphics) basada en: "${textoBaseParaVisual}".\n\nPARÁMETROS:\n- Formato de destino: ${formato}.\n- Dirección de arte y Estilo Visual: ${visEstilo}.\n- Colores: ${visColores}.\n- Relación de Aspecto: ${aspecto}.\n- Describe los keyframes visuales, las transiciones y cómo interactúan los gráficos.`;
+        } else if (assetType.includes("Flyer promocional")) {
+            basePrompt = `Diseña un Flyer o póster promocional basado en este contenido: "${textoBaseParaVisual}".\n\nPARÁMETROS DE DISEÑO ESTRICTOS:\n- Formato de destino: ${formato}.\n- Relación de Aspecto: ${aspecto}.\n- Estética y Estilo Visual: ${visEstilo}.\n- Tipografía: ${visTipo}.\n- Paleta de Colores: ${visColores}.\n- Calidad técnica: ${visualQuality}.\n- INSTRUCCIÓN CRÍTICA: Genera EXCLUSIVAMENTE el código HTML/CSS/SVG completo listo para ser renderizado en mi navegador que contenga el diseño de este flyer respetando las proporciones de ${aspecto}, con una estética muy pulida, listo para descargar en formato ${visualOutputFormat}.`;
         }
 
        visualArea.value = `Actúa como un creador de contenido súper exitoso que es diseñador experto en UX/UI y redes sociales y ayúdame con la siguiente tarea y respetando la zona segura:\n\n${basePrompt}${reglasLogoVisual}`;
