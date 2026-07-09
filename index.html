@@ -3132,13 +3132,25 @@ let basePrompt = "";
 - Estilo visual de la marca: ${visEstilo}
 - Paleta de colores a forzar: ${visColores}
 - Formato de Salida Esperado: ${visualOutputFormat}`;
+
+        // 2. REGLAS ESTRICTAS DE ENTREGA, SAFE ZONES Y DISEÑO
+        let safeZonesText = "Margen interno: 8% a 10% (100px-150px) en todos los lados."; // Default
+        if (exactWidth === 1080 && exactHeight === 1080) {
+            safeZonesText = "Feed Cuadrado: Margen izquierdo, derecho, superior e inferior de 80 a 100 px.";
+        } else if (exactWidth === 1080 && exactHeight === 1350) {
+            safeZonesText = "Feed Vertical: Margen izquierdo y derecho de 80 a 100 px. Margen superior de 80 a 120 px. Margen inferior de 100 a 140 px.";
+        } else if (exactWidth === 1080 && exactHeight === 1920) {
+            safeZonesText = "Stories / Reels: Margen izquierdo y derecho de 90 a 120 px. Margen superior de 180 a 250 px. Margen inferior de 250 a 320 px.";
+        } else if (exactWidth === 1920 && exactHeight === 1080) {
+            safeZonesText = "Video Horizontal 16:9: Margen izquierdo y derecho de 120 a 160 px. Margen superior e inferior de 60 a 100 px.";
+        }
         
-        // 2. REGLAS ESTRICTAS DE ENTREGA Y DISEÑO (Contenido + HTML Obligatorio + Safe Zones + Canva)
+        // 3. REGLAS ESTRICTAS DE ENTREGA Y DISEÑO (Contenido + HTML Obligatorio + Safe Zones + Canva)
         const reglasCodigo = `\n\nINSTRUCCIONES DE ENTREGA Y DISEÑO:
-1. PROPUESTA Y RECURSO DIRECTO: Primero, explícame brevemente cómo distribuiste el contenido. Si tu plataforma te permite generar archivos descargables mediante código (como Python), entrega un archivo PDF.
+1. ARCHIVOS DESCARGABLES OBLIGATORIOS: Independientemente de si tienes la capacidad de generar la imagen, video o presentación final visualmente, DEBES crear y entregar mediante tu intérprete de código (ej. Python) un archivo PDF vectorizable y un archivo HTML independientes, ambos listos para su descarga.
 2. REGLA CRÍTICA PARA EL PDF (COMPATIBILIDAD CON CANVA): Si generas el PDF, DEBES asegurarte de que el texto sea "texto en vivo" (seleccionable, no trazado ni convertido a curvas) y que las formas sean vectores puros. Esto es estrictamente necesario para que, al importar el PDF a Canva, la plataforma reconozca las capas, los textos y me permita editar el diseño fácilmente.
-3. CÓDIGO HTML/SVG OBLIGATORIO: Sin importar si entregaste o no un archivo descargable, SIEMPRE debes generar el diseño en código HTML/CSS/SVG completo y listo para renderizar, metido en un solo bloque markdown.
-4. ESCALA Y SAFE ZONES (CRÍTICO EN EL CÓDIGO): Usa tamaños de fuente gigantes (ej. 80px a 150px) y anchos al 100% para que el diseño no se vea minúsculo. Es OBLIGATORIO incluir un margen interno (padding: 8% a 10% o 100px-150px) en el contenedor principal y/o slides. Los textos NUNCA deben tocar las orillas ni verse apretados; este "Safe Zone" evita que la interfaz de la red social tape la información.
+3. CÓDIGO HTML/SVG OBLIGATORIO: Además de los archivos descargables, SIEMPRE debes generar el diseño en código HTML/CSS/SVG completo y listo para renderizar, metido en un solo bloque markdown.
+4. ESCALA Y SAFE ZONES (CRÍTICO EN EL CÓDIGO): Usa tamaños de fuente proporcionales al lienzo (ej. 80px a 150px) y anchos al 100% para que el diseño no se vea minúsculo. Para evitar que la interfaz de la plataforma oculte la información, es OBLIGATORIO aplicar los siguientes márgenes internos (Safe Zones) en el contenedor principal o en cada slide: -> ${safeZonesText} Los textos NUNCA deben tocar las orillas ni verse apretados ni tocar ni invadir estos márgenes.
 5. FONDO SÓLIDO (EN EL CÓDIGO): El contenedor debe tener obligatoriamente un color de fondo sólido de la paleta. NUNCA transparente.`;
 
         if (assetType.includes("fotorrealistas")) {
