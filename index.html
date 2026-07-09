@@ -328,7 +328,7 @@ window.descargarDatosNube = () => {
             window.isUpdatingFromCloud = true; 
             
             const data = docSnap.data();
-            const keys = ['contentIdeas', 'ejesTags', 'contentTasks', 'blocNotasTasks', 'historyTasks', 'historyNotas', 'tablaIAGuardada', 'temaCentral', 'descCreador', 'identidadTono', 'nichoContenido', 'publicoObjetivo', 'strat_awareness', 'strat_consideracion', 'strat_conversion', 'strat_fidelizacion', 'arquetiposSeleccionados', 'starFormat1_name', 'starFormat1_desc', 'starFormat2_name', 'starFormat2_desc', 'starFormat3_name', 'starFormat3_desc', 'diasPrompt', 'visualColores', 'visualTipografia', 'visualEstilo', 'visualLogoUrl', 'visualLogo'];
+            const keys = ['contentIdeas', 'ejesTags', 'contentTasks', 'blocNotasTasks', 'historyTasks', 'historyNotas', 'tablaIAGuardada', 'temaCentral', 'pilaresContenido', 'nombreCreador', 'descCreador', 'identidadTono', 'nichoContenido', 'publicoObjetivo', 'strat_awareness', 'strat_consideracion', 'strat_conversion', 'strat_fidelizacion', 'arquetiposSeleccionados', 'starFormat1_name', 'starFormat1_desc', 'starFormat2_name', 'starFormat2_desc', 'starFormat3_name', 'starFormat3_desc', 'diasPrompt', 'visualColores', 'visualTipografia', 'visualEstilo', 'visualLogoUrl', 'visualLogo'];
             const setItemMethod = (typeof originalSetItem !== 'undefined') ? originalSetItem : localStorage.setItem;
             
             keys.forEach(k => {
@@ -382,6 +382,8 @@ window.syncToCloud = async () => {
         historyNotas: safeGet('historyNotas'),
         tablaIAGuardada: safeGet('tablaIAGuardada'),
         temaCentral: safeGet('temaCentral'),
+        pilaresContenido: safeGet('pilaresContenido'),
+        nombreCreador: safeGet('nombreCreador'),
         descCreador: safeGet('descCreador'),
         identidadTono: safeGet('identidadTono'),
         nichoContenido: safeGet('nichoContenido'),
@@ -1491,6 +1493,12 @@ window.aplicarAuditoriaTabla = () => {
                             <p class="text-xs text-gray-500 mb-2">Representa tu nicho principal y área de mayor rigor o <em>expertise</em>. Es el núcleo primario por el que tu audiencia te reconocerá como referente. <br><span class="font-medium">Ejemplo:</span> <em>Emprendimiento STEAM, Astrofísica Aplicada, Biotecnología.</em></p>
                             <input type="text" id="temaCentral" onblur="guardarTemaCentralAuto()" placeholder="Ej. Emprendimiento STEAM y Ciencia" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                         </div>
+                      
+                        <div class="mt-4">
+                            <label class="block text-sm font-semibold text-gray-600 mb-1">Pilares de Contenido (Subtemas)</label>
+                            <p class="text-xs text-gray-500 mb-2">Son los subtemas específicos que se desprenden de tu Tema Central y que abarcarás en tu contenido. <br><span class="font-medium">Ejemplo:</span> <em>Innovación, Biología Sintética, Startups Tecnológicas.</em></p>
+                            <textarea id="pilaresContenido" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Innovación tecnológica, Emprendimiento joven..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll"></textarea>
+                        </div>
                         
                         <div class="mb-6 border-t pt-6">
                             <label class="block text-sm font-semibold text-gray-600 mb-1">Ejes Transversales (Pilares Secundarios)</label>
@@ -1525,10 +1533,18 @@ window.aplicarAuditoriaTabla = () => {
                                 <input type="text" id="publicoObjetivo" onblur="saveStrategyExtras()" placeholder="¿A quién diriges tus videos?" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                             </div>
                         </div>
-                        <div class="border-t pt-4">
-                            <label class="block text-sm font-semibold text-gray-600 mb-1">Nombre y descripción de la persona Creadora de Contenido</label>
-                            <p class="text-xs text-gray-500 mb-2">Para conocer más de ti indica cuál es el nombre de tu marca y describre tus intereses, hobbies, talentos y características personales. Esta información humanizará tu estrategia y se integrará en el prompt de la IA.</p>
-                            <textarea id="descCreador" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Soy @Belucaa Gamer y me encanta tocar la guitarra, soy fan de la ciencia ficción, y disfruto el diseño digital..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll"></textarea>
+                        
+                    <div class="border-t pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Nombre de Creador o Marca Personal</label>
+                                <input type="text" id="nombreCreador" onblur="saveStrategyExtras()" placeholder="Ej. @Belucaa Gamer" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                        
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Descripción (Intereses, hobbies, características)</label>
+                                <p class="text-xs text-gray-500 mb-2">Describe tus talentos y características personales. Esta información humanizará tu estrategia y se integrará en el prompt de la IA.</p>
+                                <textarea id="descCreador" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Me encanta tocar la guitarra, soy fan de la ciencia ficción, y disfruto el diseño digital..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll"></textarea>
+                            </div>
                         </div>
 
                         <div>
@@ -2299,6 +2315,8 @@ let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
         function saveStrategyExtras() {
             localStorage.setItem('nichoContenido', document.getElementById('nichoContenido').value);
             localStorage.setItem('publicoObjetivo', document.getElementById('publicoObjetivo').value);
+            localStorage.setItem('pilaresContenido', document.getElementById('pilaresContenido').value);
+            localStorage.setItem('nombreCreador', document.getElementById('nombreCreador').value);
             localStorage.setItem('descCreador', document.getElementById('descCreador').value);
             localStorage.setItem('identidadTono', document.getElementById('identidadTono').value);
             localStorage.setItem('visualColores', document.getElementById('visualColores').value);
@@ -2750,8 +2768,10 @@ function renderEstrategiaResumen() {
     const promptArea = document.getElementById('aiPromptArea');
     
     const tema = localStorage.getItem('temaCentral') || 'No definido';
+    const pilares = localStorage.getItem('pilaresContenido') || 'No definidos';
     const nicho = localStorage.getItem('nichoContenido') || 'No definido';
     const publico = localStorage.getItem('publicoObjetivo') || 'No definido';
+    const nombreC = localStorage.getItem('nombreCreador') || 'No definido';
     const creador = localStorage.getItem('descCreador') || 'No definido';
     const tono = localStorage.getItem('identidadTono') || 'Tono no definido';
     // Dejamos vacío por defecto si no hay nada
@@ -2812,10 +2832,11 @@ const aw = localStorage.getItem('strat_awareness') || 'Generar visibilidad masiv
 
     if (container) {
         container.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div class="p-4 bg-slate-50 rounded-lg border">
                     <h4 class="text-xs font-bold text-gray-400 uppercase">Perfil de Creador</h4>
                     <p class="text-lg font-bold text-slate-800">${tema}</p>
+                    <p class="text-sm text-slate-600 mb-1">Pilares: ${pilares}</p>
                     <p class="text-sm text-indigo-600 font-medium mb-1">${nicho} • ${arq.join(' + ')}</p>
                     <p class="text-xs text-emerald-700 font-bold">Ejes Transversales: <span class="font-normal text-slate-600">${ejes.length > 0 ? ejes.join(', ') : 'No definidos'}</span></p>
                 </div>
@@ -2824,7 +2845,8 @@ const aw = localStorage.getItem('strat_awareness') || 'Generar visibilidad masiv
                     <p class="text-sm text-slate-700 mt-1">${publico}</p>
                 </div>
                 <div class="p-4 bg-slate-50 rounded-lg border md:col-span-2">
-                    <h4 class="text-xs font-bold text-gray-400 uppercase">Nombre y descripción del Creador (Talentos, Hobbies)</h4>
+                    <h4 class="text-xs font-bold text-gray-400 uppercase">Creador o Marca Personal</h4>
+                    <p class="text-sm font-bold text-slate-800">${nombreC}</p>
                     <p class="text-sm text-slate-700 mt-1">${creador}</p>
                 </div>
                 <div class="p-4 bg-slate-50 rounded-lg border md:col-span-2">
@@ -2832,13 +2854,14 @@ const aw = localStorage.getItem('strat_awareness') || 'Generar visibilidad masiv
                     <p class="text-sm text-slate-700 mt-1">${tono}</p>
                 </div>
                 ${visualIdentityHTML}
-            </div>`;
+            </div>
     }
 
     const prompt = `Actúa como un estratega de contenido profesional que es un creador de contenido con millones de seguidores y un gran engagement.
 CONTEXTO:
-- Nicho: ${nicho} | Tema de autoridad: ${tema}
-- Nombre y descripción del Creador: ${creador}
+- Nicho: ${nicho} | Tema de autoridad: ${tema} | Pilares (Subtemas): ${pilares}
+- Nombre del Creador / Marca: ${nombreC}
+- Descripción del Creador: ${creador}
 - Personalidad (Arquetipos): ${arq.join(', ')} | Público: ${publico}
 - Ejes Transversales: ${ejes.join(', ')}
 - Identidad y Tono de Comunicación: ${tono}
@@ -2851,17 +2874,16 @@ TAREA:
 1. Genera calendario completo de ${diasGenerar} días (una idea/día), bien detallado y con información precisa (de fuentes oficiales) y entregalo en una tabla en cualquiera de los 3 siguientes formatos: Tab-Separated, Markdown/Pipeline, o CSV. Combina mi autoridad (tema central) con mis ejes transversales, mis formatos estrella y considerando los detalles descritos anteriormente. La tabla debe tener las columnas: Día | Tipo (Presencia, Marca o Valor) | Tema (Tema Central o Eje transversal) | Formato (Estrella o Libre) | Gancho/hook (Máx 15 palabras) | Contenido (Mensaje Principal) | Guión base | Llamado a la acción (CTA)
 2. REGLA DE COPIADO OBLIGATORIA: Independientemente del formato que elijas para la tabla (Markdown, CSV o Tab-Separated), debes meter TODA la tabla estrictamente dentro de un bloque de código (usando triple acento grave, al inicio y al final). No la dejes suelta en el chat. Esto es indispensable para que la interfaz me muestre la pestaña con el botón nativo de "Copiar".
 3. Al finalizar el calendario, genera una sección titulada "Narrativa de Contenido" siguiendo este formato exacto:
-   "Yo soy ${creador}, con mi tema principal ${tema} y mis ejes transversales ${ejes.join(', ')}. Por ello, mi narrativa de contenido es: [Aquí define para cada eje cómo se cruza con tu tema de autoridad de forma única, rápida y accionable, que sea lógico y coherente con narrativas de contenido contemporáneas.
+   "Yo soy ${nombreC}, con mi tema principal ${tema} (abarcando ${pilares}) y mis ejes transversales ${ejes.join(', ')}. Por ello, mi narrativa de contenido es: [Aquí define para cada eje cómo se cruza con tu tema de autoridad de forma única, rápida y accionable, que sea lógico y coherente con narrativas de contenido contemporáneas.
 
 REGLAS CRÍTICAS:
-1. PRIORIDAD TÉCNICA: ${lineasInsumos.length > 0 ? "Debes integrar de forma prioritaria las ideas y tendencias listadas arriba." : "Genera ideas creativas e innovadoras basadas en mi nicho y ejes transversales."} pero NO mezcles temas transversales a la fuerza. Si hay intersección de temas debe ser orgánica, no forzada.
+1. PRIORIDAD TÉCNICA: ${lineasInsumos.length > 0 ? "Debes integrar de forma prioritaria las ideas y tendencias listadas arriba." : "Genera ideas creativas e innovadoras basadas en mi nicho, sus pilares de contenido y los ejes transversales. No combines pilares de contenido entre sí ni fuerces su cruce con los ejes transversales; Si hay intersección de temas debe ser orgánica, no forzada".
 2. FORMATOS ESTRELLA: Si utilizas un formato estrella listado arriba, asegúrate de que la descripción y el contenido del día sigan estrictamente la estructura de ese formato estrella específico.
 3. HOOK & ENGAGEMENT: Los ganchos deben respetar la estructura del nombre del formato estrella y llamar la atención en los primeros 3-5 segundos del video. Optimiza el hook para SEO.
 4. El contenido debe resolver algún problema o dar un tema de interés para mi público objetivo. Debe ser lógico, preciso y entretenido.
 5. DURACIÓN: Contenido diseñado para videos de 45-60 segundos.
-6. Distribución: Por Tipo (70% de valor, 20% de marca, 10% de presencia). Por formato (70% formato estrella, 30% libre). Por tema (50% tema de autoridad: ${tema}, 50% ejes transversales cruzados con el tema de autoridad: ${tema}).
+6. Distribución: Por Tipo (70% de valor, 20% de marca, 10% de presencia). Por formato (70% formato estrella, 30% libre). Por tema (50% tema de autoridad: ${tema}, distribuyendo el contenido de forma independiente entre cada uno de los pilares de contenido ${pilares}; 50% ejes transversales combinados con el tema de autoridad: ${tema}).
 7. El guión base debe ser el ESQUELETO NARRATIVO del video, mostrando claramente el mensaje y DEBE redactarse como UN SOLO PÁRRAFO continuo. Obligatoriamente debe contener: Hook verbal de alta retención (incluye promesa) + Frase de refuerzo rápida + Desarrollo dinámico y directo + Llamado a la acción (CTA) claro. El resultado debe llamar la atención, generar interés, despertar deseo y entretener. El storytelling debe ser memorable, emotivo, interesante y carismático. El guión base debe entregar información oficial, precisa y útil. Prioriza la densidad de información. Prohibido usar jerga, o términos específicos o complejos.
-
 Si utilizas un formato estrella listado arriba, asegúrate que la estructura base siga fielmente ese formato específico.
 8. TONO: Coherente con los arquetipos ${arq.join(' y ')}. Aplica estrictamente el tono descrito en CONTEXTO.`;
     if (promptArea) promptArea.value = prompt;
@@ -2900,6 +2922,8 @@ Si utilizas un formato estrella listado arriba, asegúrate que la estructura bas
     }
     
     const tema = localStorage.getItem('temaCentral') || "mi pilar de autoridad";
+    const pilares = localStorage.getItem('pilaresContenido') || "mis pilares de contenido";
+    const nombreC = localStorage.getItem('nombreCreador') || "No definido";
     const creador = localStorage.getItem('descCreador') || "No definido";
     const nicho = localStorage.getItem('nichoContenido') || "No definido";
     const publico = localStorage.getItem('publicoObjetivo') || "mi audiencia objetivo";
@@ -2992,7 +3016,9 @@ Si utilizas un formato estrella listado arriba, asegúrate que la estructura bas
   
     area.value = `Actúa como un creador de contenido en redes sociales con millones de seguidores y un gran engagement.
 MI PERFIL ESTRATÉGICO:
-- Tema central (Autoridad): ${tema}
+- Tema central (Autoridad): ${tema} | Pilares: ${pilares}
+- Nombre / Marca: ${nombreC}
+- Descripción / Talentos: ${creador}
 - Nicho: ${nicho} 
 - Personalidad (Arquetipos): ${arq.join(', ')} 
 - Público Objetivo: ${publico}
@@ -3643,6 +3669,8 @@ window.initAppState = () => {
 
             initArquetipos();
             document.getElementById('temaCentral').value = localStorage.getItem('temaCentral') || '';
+            document.getElementById('pilaresContenido').value = localStorage.getItem('pilaresContenido') || '';
+            document.getElementById('nombreCreador').value = localStorage.getItem('nombreCreador') || '';
             document.getElementById('descCreador').value = localStorage.getItem('descCreador') || '';
             document.getElementById('identidadTono').value = localStorage.getItem('identidadTono') || '';
             document.getElementById('nichoContenido').value = localStorage.getItem('nichoContenido') || '';
@@ -3961,12 +3989,14 @@ window.descargarTablaXLSX = function() {
 
 PERFIL:
 • Tema Central: ${localStorage.getItem('temaCentral') || 'N/A'}
+• Pilares de Contenido: ${localStorage.getItem('pilaresContenido') || 'N/A'}
 • Ejes Transversales: ${ejesTexto}
 • Nicho: ${localStorage.getItem('nichoContenido') || 'N/A'}
 • Arquetipos: ${JSON.parse(localStorage.getItem('arquetiposSeleccionados') || '[]').join(' + ')}
 • Público: ${localStorage.getItem('publicoObjetivo') || 'N/A'}
 
 IDENTIDAD Y TONO:
+• Nombre/Marca: ${localStorage.getItem('nombreCreador') || 'N/A'}
 • Descripción del creador: ${localStorage.getItem('descCreador') || 'N/A'}
 • Tono de comunicación: ${localStorage.getItem('identidadTono') || 'N/A'}
 
@@ -4028,6 +4058,7 @@ window.descargarEstrategiaWord = function(incluirFormatos = false) {
         <h2>👤 PERFIL DEL CREADOR</h2>
         <ul>
             <li><span class="strong">Tema Central:</span> ${localStorage.getItem('temaCentral') || 'N/A'}</li>
+            <li><span class="strong">Pilares de Contenido:</span> ${localStorage.getItem('pilaresContenido') || 'N/A'}</li>
             <li><span class="strong">Ejes Transversales:</span> ${ejesTexto}</li>
             <li><span class="strong">Nicho:</span> ${localStorage.getItem('nichoContenido') || 'N/A'}</li>
             <li><span class="strong">Arquetipos:</span> ${JSON.parse(localStorage.getItem('arquetiposSeleccionados') || '[]').join(' + ')}</li>
@@ -4035,9 +4066,10 @@ window.descargarEstrategiaWord = function(incluirFormatos = false) {
         </ul>
 
         <h2>🗣️ IDENTIDAD Y TONO</h2>
+        <p><span class="strong">Nombre/Marca:</span> ${localStorage.getItem('nombreCreador') || 'N/A'}</p>
         <p><span class="strong">Descripción:</span> ${localStorage.getItem('descCreador') || 'N/A'}</p>
         <p><span class="strong">Tono de comunicación:</span> ${localStorage.getItem('identidadTono') || 'N/A'}</p>
-
+        
         ${visualSection}
 
         <h2>🎯 FUNNEL DE OBJETIVOS</h2>
@@ -4109,7 +4141,8 @@ window.obtenerTextoEstrategiaBase = function() {
     if (visColores || visTipo || visEstilo || visLogoUrl || visLogo) {
         visualSection = `\n🎨 IDENTIDAD VISUAL:\n${visColores ? `• Paleta de Colores: ${visColores}\n` : ''}${visTipo ? `• Tipografías: ${visTipo}\n` : ''}${visEstilo ? `• Estilo Visual: ${visEstilo}\n` : ''}${visLogoUrl ? `• Enlace del Logo: ${visLogoUrl}\n` : ''}${visLogo ? `• Reglas de Espaciado: ${visLogo}\n` : ''}`;
     }
-    return `📌 ESTRATEGIA DE CONTENIDO\n\nPERFIL:\n• Tema Central: ${localStorage.getItem('temaCentral') || 'N/A'}\n• Ejes Transversales: ${ejes.length > 0 ? ejes.join(', ') : 'N/A'}\n• Nicho: ${localStorage.getItem('nichoContenido') || 'N/A'}\n• Arquetipos: ${JSON.parse(localStorage.getItem('arquetiposSeleccionados') || '[]').join(' + ')}\n• Público: ${localStorage.getItem('publicoObjetivo') || 'N/A'}\n\nIDENTIDAD Y TONO:\n• Descripción del creador: ${localStorage.getItem('descCreador') || 'N/A'}\n• Tono de comunicación: ${localStorage.getItem('identidadTono') || 'N/A'}\n${visualSection}\nFUNNEL DE OBJETIVOS:\n• Reconocimiento: ${localStorage.getItem('strat_awareness') || 'N/A'}\n• Consideración: ${localStorage.getItem('strat_consideracion') || 'N/A'}\n• Conversión: ${localStorage.getItem('strat_conversion') || 'N/A'}\n• Fidelización: ${localStorage.getItem('strat_fidelizacion') || 'N/A'}`;
+    
+    return `📌 ESTRATEGIA DE CONTENIDO\n\nPERFIL:\n• Tema Central: ${localStorage.getItem('temaCentral') || 'N/A'}\n• Pilares de Contenido: ${localStorage.getItem('pilaresContenido') || 'N/A'}\n• Ejes Transversales: ${ejes.length > 0 ? ejes.join(', ') : 'N/A'}\n• Nicho: ${localStorage.getItem('nichoContenido') || 'N/A'}\n• Arquetipos: ${JSON.parse(localStorage.getItem('arquetiposSeleccionados') || '[]').join(' + ')}\n• Público: ${localStorage.getItem('publicoObjetivo') || 'N/A'}\n\nIDENTIDAD Y TONO:\n• Nombre/Marca: ${localStorage.getItem('nombreCreador') || 'N/A'}\n• Descripción del creador: ${localStorage.getItem('descCreador') || 'N/A'}\n• Tono de comunicación: ${localStorage.getItem('identidadTono') || 'N/A'}\n${visualSection}\nFUNNEL DE OBJETIVOS:\n• Reconocimiento: ${localStorage.getItem('strat_awareness') || 'N/A'}\n• Consideración: ${localStorage.getItem('strat_consideracion') || 'N/A'}\n• Conversión: ${localStorage.getItem('strat_conversion') || 'N/A'}\n• Fidelización: ${localStorage.getItem('strat_fidelizacion') || 'N/A'}`;
 };
 
 window.copiarEstrategiaCompleta = function() {
