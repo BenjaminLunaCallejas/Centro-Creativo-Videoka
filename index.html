@@ -4409,56 +4409,66 @@ window.downloadCarouselAs = async function(format) {
         iframeDoc.write(code);
         iframeDoc.close();
 
-        // Esperamos medio segundo a que el navegador dibuje todo en tamaño real
-        await new Promise(r => setTimeout(r, 500));
+       // Incremento del retraso para asegurar el procesamiento del DOM en el iFrame
+        await new Promise(r => setTimeout(r, 1500));
 
-        let slides = Array.from(iframeDoc.querySelectorAll('.videoka-slide'));
+        // Selección rigurosa basada en el DOM real, no en variables de selección previa
+        let slides = Array.from(iframeDoc.querySelectorAll('.videoka-slide, .slide, section'));
         if (slides.length === 0) {
-            slides = Array.from(iframeDoc.querySelectorAll('body > div')).filter(div => div.innerText.trim() !== '' || div.querySelector('svg'));
+            // Fallback: Evaluación computacional de contenedores primarios válidos
+            slides = Array.from(iframeDoc.querySelectorAll('body > div')).filter(div => {
+                return div.innerText.trim() !== '' || div.querySelector('svg');
+            });
         }
 
         if (slides.length === 0) {
             document.body.removeChild(hiddenIframe);
-            throw new Error("No se detectaron diapositivas.");
+            throw new Error("No se detectaron diapositivas o contenedores válidos en el renderizado.");
         }
 
-        const assetType = document.getElementById('ideaAssetType') ? document.getElementById('ideaAssetType').value : '';
-        const isSingleFormat = !assetType.includes("Carrusel") && !assetType.includes("Diapositivas");
-        const slidesToDownload = isSingleFormat ? [slides[0]] : slides;
+        // Definición de objetivo empírico basado en el conteo real
+        const slidesToDownload = slides;
 
-        // Limpiamos los estilos de las slides para la foto
+        // Normalización estructural para mitigación del error de renderizado en blanco
         slidesToDownload.forEach(slide => {
             slide.style.width = exactWidth + 'px';
             slide.style.height = exactHeight + 'px';
             slide.style.margin = '0';
             slide.style.position = 'relative';
             slide.style.overflow = 'hidden';
-            slide.style.transform = 'none'; // Cero escalas locas que rompan la imagen
+            slide.style.transform = 'none'; 
+            slide.style.display = 'flex'; 
         });
+
+        // Retraso adicional de re-flujo para asegurar que el navegador registre los nuevos estilos
+        await new Promise(r => setTimeout(r, 800));
 
         if (slidesToDownload.length === 1) {
             // ==========================================
-            // LÓGICA PARA 1 SOLA IMAGEN (DESCARGA DIRECTA)
+            // LÓGICA DE EXPORTACIÓN ÚNICA (FLYER/POST)
             // ==========================================
-            btnElement.innerHTML = "📸 Tomando foto...";
+            btnElement.innerHTML = "📸 Renderizando imagen...";
             const slide = slidesToDownload[0];
             const compStyle = iframeDoc.defaultView.getComputedStyle(slide);
             let realBgColor = compStyle.backgroundColor;
             if (realBgColor === 'rgba(0, 0, 0, 0)' || realBgColor === 'transparent') realBgColor = '#ffffff';
 
-            const exportOptions = { quality: 0.95, width: exactWidth, height: exactHeight, backgroundColor: realBgColor, style: { background: realBgColor } };
+            const exportOptions = { quality: 0.98, width: exactWidth, height: exactHeight, backgroundColor: realBgColor, style: { background: realBgColor }, cacheBust: true };
+            
+            // Renderizado en seco (Dry Run) obligatorio para precargar el lienzo y prevenir imagen en blanco
+            await htmlToImage.toPng(slide, exportOptions);
             let dataUrl = format === 'jpg' ? await htmlToImage.toJpeg(slide, exportOptions) : await htmlToImage.toPng(slide, exportOptions);
 
             const link = document.createElement('a');
             link.href = dataUrl;
-            link.download = `Visual_Videoka_${exactWidth}x${exactHeight}.${format}`;
+            link.download = `Visual_Generado_${exactWidth}x${exactHeight}.${format}`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
 
         } else {
             // ==========================================
-            // LÓGICA PARA MÚLTIPLES IMÁGENES (ZIP)
+            // LÓGICA DE EMPAQUETADO MULTIMEDIA (ZIP)
             // ==========================================
             btnElement.innerHTML = "📦 Armando ZIP...";
             const zip = new JSZip();
@@ -4468,8 +4478,12 @@ window.downloadCarouselAs = async function(format) {
                 let realBgColor = compStyle.backgroundColor;
                 if (realBgColor === 'rgba(0, 0, 0, 0)' || realBgColor === 'transparent') realBgColor = '#ffffff';
 
-                const exportOptions = { quality: 0.95, width: exactWidth, height: exactHeight, backgroundColor: realBgColor, style: { background: realBgColor } };
+                const exportOptions = { quality: 0.98, width: exactWidth, height: exactHeight, backgroundColor: realBgColor, style: { background: realBgColor }, cacheBust: true };
+                
+                // Renderizado en seco iterativo
+                await htmlToImage.toPng(slide, exportOptions);
                 let dataUrl = format === 'jpg' ? await htmlToImage.toJpeg(slide, exportOptions) : await htmlToImage.toPng(slide, exportOptions);
+                
                 let base64Data = dataUrl.split(',')[1];
                 let ext = format === 'jpg' ? 'jpg' : 'png';
                 zip.file(`Slide_${i + 1}.${ext}`, base64Data, { base64: true });
@@ -4478,13 +4492,13 @@ window.downloadCarouselAs = async function(format) {
             const content = await zip.generateAsync({ type: "blob" });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(content);
-            link.download = `Visuales_Videoka_${exactWidth}x${exactHeight}.zip`;
+            link.download = `Carrusel_Visual_${exactWidth}x${exactHeight}.zip`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         }
 
-        // Eliminamos el estudio fotográfico para que no consuma memoria
+        // Liberación de memoria del entorno
         document.body.removeChild(hiddenIframe);
 
     } catch (error) {
