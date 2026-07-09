@@ -328,7 +328,7 @@ window.descargarDatosNube = () => {
             window.isUpdatingFromCloud = true; 
             
             const data = docSnap.data();
-            const keys = ['contentIdeas', 'ejesTags', 'contentTasks', 'blocNotasTasks', 'historyTasks', 'historyNotas', 'tablaIAGuardada', 'temaCentral', 'pilaresContenido', 'nombreCreador', 'descCreador', 'identidadTono', 'nichoContenido', 'publicoObjetivo', 'strat_awareness', 'strat_consideracion', 'strat_conversion', 'strat_fidelizacion', 'arquetiposSeleccionados', 'starFormat1_name', 'starFormat1_desc', 'starFormat2_name', 'starFormat2_desc', 'starFormat3_name', 'starFormat3_desc', 'diasPrompt', 'visualColores', 'visualTipografia', 'visualEstilo', 'visualLogoUrl', 'visualLogo'];
+            const keys = ['contentIdeas', 'ejesTags', 'contentTasks', 'blocNotasTasks', 'historyTasks', 'historyNotas', 'tablaIAGuardada', 'temaCentral', 'pilaresTags', 'nombreCreador', 'descCreador', 'identidadTono', 'nichoContenido', 'publicoObjetivo', 'strat_awareness', 'strat_consideracion', 'strat_conversion', 'strat_fidelizacion', 'arquetiposSeleccionados', 'starFormat1_name', 'starFormat1_desc', 'starFormat2_name', 'starFormat2_desc', 'starFormat3_name', 'starFormat3_desc', 'diasPrompt', 'visualColores', 'visualTipografia', 'visualEstilo', 'visualLogoUrl', 'visualLogo'];
             const setItemMethod = (typeof originalSetItem !== 'undefined') ? originalSetItem : localStorage.setItem;
             
             keys.forEach(k => {
@@ -382,7 +382,7 @@ window.syncToCloud = async () => {
         historyNotas: safeGet('historyNotas'),
         tablaIAGuardada: safeGet('tablaIAGuardada'),
         temaCentral: safeGet('temaCentral'),
-        pilaresContenido: safeGet('pilaresContenido'),
+        pilaresTags: safeGet('pilaresTags'),
         nombreCreador: safeGet('nombreCreador'),
         descCreador: safeGet('descCreador'),
         identidadTono: safeGet('identidadTono'),
@@ -1494,10 +1494,11 @@ window.aplicarAuditoriaTabla = () => {
                             <input type="text" id="temaCentral" onblur="guardarTemaCentralAuto()" placeholder="Ej. Emprendimiento STEAM y Ciencia" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                         </div>
                       
-                        <div class="mt-4">
+                       <div class="mt-4">
                             <label class="block text-sm font-semibold text-gray-600 mb-1">Pilares de Contenido (Subtemas)</label>
                             <p class="text-xs text-gray-500 mb-2">Son los subtemas específicos que se desprenden de tu Tema Central y que abarcarás en tu contenido. <br><span class="font-medium">Ejemplo:</span> <em>Innovación, Biología Sintética, Startups Tecnológicas.</em></p>
-                            <textarea id="pilaresContenido" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Innovación tecnológica, Emprendimiento joven..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll"></textarea>
+                            <input type="text" id="inputPilares" placeholder="Escribe un pilar y presiona Enter..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mb-2">
+                            <div id="listaPilares" class="flex flex-wrap"></div>
                         </div>
                         
                         <div class="mb-6 border-t pt-6">
@@ -2233,6 +2234,7 @@ window.aplicarAuditoriaTabla = () => {
 
         let ideas = [];
         let ejesTags = [];
+        let pilaresTags = [];
         let tasks = { ideas: [], audios: [], tendencias: [], proximos: [] };
         let blocNotas = { rapidas: [], borradores: [], recursos: [], personales: [] };
         let historyTasks = [];
@@ -2315,7 +2317,6 @@ let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
         function saveStrategyExtras() {
             localStorage.setItem('nichoContenido', document.getElementById('nichoContenido').value);
             localStorage.setItem('publicoObjetivo', document.getElementById('publicoObjetivo').value);
-            localStorage.setItem('pilaresContenido', document.getElementById('pilaresContenido').value);
             localStorage.setItem('nombreCreador', document.getElementById('nombreCreador').value);
             localStorage.setItem('descCreador', document.getElementById('descCreador').value);
             localStorage.setItem('identidadTono', document.getElementById('identidadTono').value);
@@ -2357,15 +2358,30 @@ let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
             renderEstrategiaResumen(); 
         };
 
-        function setupTagsInput(inputId, listId, arrayVar, storageKey) {
+function setupTagsInput(inputId, listId, storageKey) {
             const input = document.getElementById(inputId);
-            input.addEventListener('keypress', (e) => {
+            if (!input) return;
+            
+            // Usamos onkeypress en lugar de addEventListener para que no se dupliquen los "Enter"
+            input.onkeypress = (e) => {
                 if(e.key === 'Enter' && input.value.trim() !== '') {
-                    arrayVar.push(input.value.trim());
-                    input.value = '';
-                    renderTags(listId, arrayVar, storageKey);
+                    
+                    // Le decimos exactamente qué lista actualizar
+                    let listaActual;
+                    if (storageKey === 'ejesTags') {
+                        listaActual = ejesTags;
+                    } else if (storageKey === 'pilaresTags') {
+                        listaActual = pilaresTags;
+                    }
+                    
+                    // Agregamos, limpiamos y renderizamos
+                    if (listaActual) {
+                        listaActual.push(input.value.trim());
+                        input.value = '';
+                        renderTags(listId, listaActual, storageKey);
+                    }
                 }
-            });
+            };
         }
 
         function renderTags(listId, arrayVar, storageKey) {
@@ -2378,8 +2394,13 @@ let currentCalendarView = 'mes'; // Rastrea si estamos en día, semana o mes
         }
 
         function removeTag(listId, index, storageKey) {
-            ejesTags.splice(index, 1);
-            renderTags(listId, ejesTags, storageKey);
+            if (storageKey === 'ejesTags') {
+                ejesTags.splice(index, 1);
+                renderTags(listId, ejesTags, storageKey);
+            } else if (storageKey === 'pilaresTags') {
+                pilaresTags.splice(index, 1);
+                renderTags(listId, pilaresTags, storageKey);
+            }
         }
 
         function addTask(cat) {
@@ -2768,7 +2789,9 @@ function renderEstrategiaResumen() {
     const promptArea = document.getElementById('aiPromptArea');
     
     const tema = localStorage.getItem('temaCentral') || 'No definido';
-    const pilares = localStorage.getItem('pilaresContenido') || 'No definidos';
+    let pilaresArr = [];
+    try { const val = localStorage.getItem('pilaresTags'); if(val) pilaresArr = JSON.parse(val); } catch(e) {}
+    const pilares = pilaresArr.length > 0 ? pilaresArr.join(', ') : 'No definidos';
     const nicho = localStorage.getItem('nichoContenido') || 'No definido';
     const publico = localStorage.getItem('publicoObjetivo') || 'No definido';
     const nombreC = localStorage.getItem('nombreCreador') || 'No definido';
@@ -2922,7 +2945,9 @@ Si utilizas un formato estrella listado arriba, asegúrate que la estructura bas
     }
     
     const tema = localStorage.getItem('temaCentral') || "mi pilar de autoridad";
-    const pilares = localStorage.getItem('pilaresContenido') || "mis pilares de contenido";
+    let pilaresArr = ["mis pilares de contenido"];
+    try { const val = localStorage.getItem('pilaresTags'); if(val) { const parsed = JSON.parse(val); if(parsed.length) pilaresArr = parsed; } } catch(e) {}
+    const pilares = pilaresArr.join(', ');
     const nombreC = localStorage.getItem('nombreCreador') || "No definido";
     const creador = localStorage.getItem('descCreador') || "No definido";
     const nicho = localStorage.getItem('nichoContenido') || "No definido";
@@ -3658,6 +3683,7 @@ window.initAppState = () => {
             // Usamos el parse seguro para que no explote la app
             ideas = parseSeguro('contentIdeas', []);
             ejesTags = parseSeguro('ejesTags', []);
+            pilaresTags = parseSeguro('pilaresTags', []);
             tasks = parseSeguro('contentTasks', { ideas: [], audios: [], tendencias: [], proximos: [] });
             blocNotas = parseSeguro('blocNotasTasks', { rapidas: [], borradores: [], recursos: [], personales: [] });
             window.tasks = tasks;
@@ -3669,7 +3695,6 @@ window.initAppState = () => {
 
             initArquetipos();
             document.getElementById('temaCentral').value = localStorage.getItem('temaCentral') || '';
-            document.getElementById('pilaresContenido').value = localStorage.getItem('pilaresContenido') || '';
             document.getElementById('nombreCreador').value = localStorage.getItem('nombreCreador') || '';
             document.getElementById('descCreador').value = localStorage.getItem('descCreador') || '';
             document.getElementById('identidadTono').value = localStorage.getItem('identidadTono') || '';
@@ -3693,7 +3718,10 @@ window.initAppState = () => {
             }
             
             renderTags('listaEjes', ejesTags, 'ejesTags');
-            setupTagsInput('inputEjes', 'listaEjes', ejesTags, 'ejesTags');
+            setupTagsInput('inputEjes', 'listaEjes', 'ejesTags');
+            
+            renderTags('listaPilares', pilaresTags, 'pilaresTags');
+            setupTagsInput('inputPilares', 'listaPilares', 'pilaresTags');
             
             renderTasks();
             renderNotas();
@@ -3971,9 +3999,14 @@ window.descargarTablaXLSX = function() {
         };
 
        window.copiarEstrategiaResumen = function() {
+
     let ejes = [];
     try { const val = localStorage.getItem('ejesTags'); if(val) ejes = JSON.parse(val); } catch(e) {}
     const ejesTexto = ejes.length > 0 ? ejes.join(', ') : 'N/A';
+
+    let pilaresArr = [];
+    try { const val = localStorage.getItem('pilaresTags'); if(val) pilaresArr = JSON.parse(val); } catch(e) {}
+    const pilaresTexto = pilaresArr.length > 0 ? pilaresArr.join(', ') : 'N/A';
 
     const visColores = localStorage.getItem('visualColores');
     const visTipo = localStorage.getItem('visualTipografia');
@@ -3989,7 +4022,7 @@ window.descargarTablaXLSX = function() {
 
 PERFIL:
 • Tema Central: ${localStorage.getItem('temaCentral') || 'N/A'}
-• Pilares de Contenido: ${localStorage.getItem('pilaresContenido') || 'N/A'}
+• Pilares de Contenido: ${pilaresTexto}
 • Ejes Transversales: ${ejesTexto}
 • Nicho: ${localStorage.getItem('nichoContenido') || 'N/A'}
 • Arquetipos: ${JSON.parse(localStorage.getItem('arquetiposSeleccionados') || '[]').join(' + ')}
@@ -4017,9 +4050,14 @@ FUNNEL DE OBJETIVOS:
 };
 
 window.descargarEstrategiaWord = function(incluirFormatos = false) {
+
     let ejes = [];
     try { const val = localStorage.getItem('ejesTags'); if(val) ejes = JSON.parse(val); } catch(e) {}
     const ejesTexto = ejes.length > 0 ? ejes.join(', ') : 'N/A';
+
+    let pilaresArr = [];
+    try { const val = localStorage.getItem('pilaresTags'); if(val) pilaresArr = JSON.parse(val); } catch(e) {}
+    const pilaresTexto = pilaresArr.length > 0 ? pilaresArr.join(', ') : 'N/A';
 
     const visColores = localStorage.getItem('visualColores');
     const visTipo = localStorage.getItem('visualTipografia');
@@ -4058,7 +4096,7 @@ window.descargarEstrategiaWord = function(incluirFormatos = false) {
         <h2>👤 PERFIL DEL CREADOR</h2>
         <ul>
             <li><span class="strong">Tema Central:</span> ${localStorage.getItem('temaCentral') || 'N/A'}</li>
-            <li><span class="strong">Pilares de Contenido:</span> ${localStorage.getItem('pilaresContenido') || 'N/A'}</li>
+            <li><span class="strong">Pilares de Contenido:</span> ${pilaresTexto}</li>
             <li><span class="strong">Ejes Transversales:</span> ${ejesTexto}</li>
             <li><span class="strong">Nicho:</span> ${localStorage.getItem('nichoContenido') || 'N/A'}</li>
             <li><span class="strong">Arquetipos:</span> ${JSON.parse(localStorage.getItem('arquetiposSeleccionados') || '[]').join(' + ')}</li>
@@ -4134,6 +4172,8 @@ window.descargarFormatosEstrellaWord = function() {
 
 window.obtenerTextoEstrategiaBase = function() {
     let ejes = []; try { const val = localStorage.getItem('ejesTags'); if(val) ejes = JSON.parse(val); } catch(e) {}
+    let pilaresArr = []; try { const val = localStorage.getItem('pilaresTags'); if(val) pilaresArr = JSON.parse(val); } catch(e) {}
+    const pilaresTexto = pilaresArr.length > 0 ? pilaresArr.join(', ') : 'N/A';
     const visColores = localStorage.getItem('visualColores'); const visTipo = localStorage.getItem('visualTipografia');
     const visEstilo = localStorage.getItem('visualEstilo'); const visLogoUrl = localStorage.getItem('visualLogoUrl');
     const visLogo = localStorage.getItem('visualLogo');
@@ -4142,7 +4182,7 @@ window.obtenerTextoEstrategiaBase = function() {
         visualSection = `\n🎨 IDENTIDAD VISUAL:\n${visColores ? `• Paleta de Colores: ${visColores}\n` : ''}${visTipo ? `• Tipografías: ${visTipo}\n` : ''}${visEstilo ? `• Estilo Visual: ${visEstilo}\n` : ''}${visLogoUrl ? `• Enlace del Logo: ${visLogoUrl}\n` : ''}${visLogo ? `• Reglas de Espaciado: ${visLogo}\n` : ''}`;
     }
     
-    return `📌 ESTRATEGIA DE CONTENIDO\n\nPERFIL:\n• Tema Central: ${localStorage.getItem('temaCentral') || 'N/A'}\n• Pilares de Contenido: ${localStorage.getItem('pilaresContenido') || 'N/A'}\n• Ejes Transversales: ${ejes.length > 0 ? ejes.join(', ') : 'N/A'}\n• Nicho: ${localStorage.getItem('nichoContenido') || 'N/A'}\n• Arquetipos: ${JSON.parse(localStorage.getItem('arquetiposSeleccionados') || '[]').join(' + ')}\n• Público: ${localStorage.getItem('publicoObjetivo') || 'N/A'}\n\nIDENTIDAD Y TONO:\n• Nombre/Marca: ${localStorage.getItem('nombreCreador') || 'N/A'}\n• Descripción del creador: ${localStorage.getItem('descCreador') || 'N/A'}\n• Tono de comunicación: ${localStorage.getItem('identidadTono') || 'N/A'}\n${visualSection}\nFUNNEL DE OBJETIVOS:\n• Reconocimiento: ${localStorage.getItem('strat_awareness') || 'N/A'}\n• Consideración: ${localStorage.getItem('strat_consideracion') || 'N/A'}\n• Conversión: ${localStorage.getItem('strat_conversion') || 'N/A'}\n• Fidelización: ${localStorage.getItem('strat_fidelizacion') || 'N/A'}`;
+    return `📌 ESTRATEGIA DE CONTENIDO\n\nPERFIL:\n• Tema Central: ${localStorage.getItem('temaCentral') || 'N/A'}\n• Pilares de Contenido: ${pilaresTexto}\n• Ejes Transversales: ${ejes.length > 0 ? ejes.join(', ') : 'N/A'}\n• Nicho: ${localStorage.getItem('nichoContenido') || 'N/A'}\n• Arquetipos: ${JSON.parse(localStorage.getItem('arquetiposSeleccionados') || '[]').join(' + ')}\n• Público: ${localStorage.getItem('publicoObjetivo') || 'N/A'}\n\nIDENTIDAD Y TONO:\n• Nombre/Marca: ${localStorage.getItem('nombreCreador') || 'N/A'}\n• Descripción del creador: ${localStorage.getItem('descCreador') || 'N/A'}\n• Tono de comunicación: ${localStorage.getItem('identidadTono') || 'N/A'}\n${visualSection}\nFUNNEL DE OBJETIVOS:\n• Reconocimiento: ${localStorage.getItem('strat_awareness') || 'N/A'}\n• Consideración: ${localStorage.getItem('strat_consideracion') || 'N/A'}\n• Conversión: ${localStorage.getItem('strat_conversion') || 'N/A'}\n• Fidelización: ${localStorage.getItem('strat_fidelizacion') || 'N/A'}`;
 };
 
 window.copiarEstrategiaCompleta = function() {
