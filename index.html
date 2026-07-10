@@ -3150,8 +3150,8 @@ let basePrompt = "";
 1. ARCHIVOS DESCARGABLES OBLIGATORIOS: Independientemente de si tienes la capacidad de generar la imagen, video o presentación final visualmente, DEBES crear y entregar mediante tu intérprete de código (ej. Python) un archivo PDF vectorizable y un archivo HTML independientes, ambos listos para su descarga.
 2. REGLA CRÍTICA PARA EL PDF (COMPATIBILIDAD CON CANVA): Si generas el PDF, DEBES asegurarte de que el texto sea "texto en vivo" (seleccionable, no trazado ni convertido a curvas) y que las formas sean vectores puros. Esto es estrictamente necesario para que, al importar el PDF a Canva, la plataforma reconozca las capas, los textos y me permita editar el diseño fácilmente.
 3. CÓDIGO HTML/SVG OBLIGATORIO: Además de los archivos descargables, SIEMPRE debes generar el diseño en código HTML/CSS/SVG completo y listo para renderizar, metido en un solo bloque markdown.
-4. ESCALA Y SAFE ZONES (CRÍTICO EN EL CÓDIGO): Usa tamaños de fuente proporcionales al lienzo (ej. 80px a 150px) y anchos al 100% para que el diseño no se vea minúsculo. Para evitar que la interfaz de la plataforma oculte la información, es OBLIGATORIO aplicar los siguientes márgenes internos (Safe Zones) en el contenedor principal o en cada slide: -> ${safeZonesText} Los textos NUNCA deben tocar las orillas ni verse apretados ni tocar ni invadir estos márgenes.
-5. FONDO SÓLIDO (EN EL CÓDIGO): El contenedor debe tener obligatoriamente un color de fondo sólido de la paleta. NUNCA transparente.`;
+4. ESCALA Y ESTRUCTURA CSS (CRÍTICO): Para evitar que los textos se encimen, incluye OBLIGATORIAMENTE la regla: \`* { box-sizing: border-box; }\`. Usa Flexbox (\`display: flex; flex-direction: column;\`) para estructurar el contenido de forma limpia y NO abuses de \`position: absolute\`. Usa tamaños de fuente grandes proporcionales al lienzo (ej. 80px a 150px).
+5. FONDO Y SAFE ZONES (MÁRGENES INTERNOS): El contenedor principal \`.videoka-slide\` debe tener un fondo sólido de la paleta. Para evitar que la plataforma oculte información, aplica las Safe Zones EXCLUSIVAMENTE usando \`padding\` en el contenedor principal y asegúrate de que nada lo invada: -> ${safeZonesText}`;
 
         if (assetType.includes("fotorrealistas")) {
             basePrompt = `Genera una imagen fotorrealista basada en este contexto:\n"${textoBaseParaVisual}"${parametrosComunes}\n- Calidad técnica: ${visualQuality}\nNota: Si no puedes generar la imagen, entrega el prompt detallado en inglés para Midjourney/DALL-E.`;
@@ -3162,8 +3162,8 @@ let basePrompt = "";
         } else if (assetType.includes("Video")) {
             basePrompt = `[Si usas IA de Video como Sora, Runway, Veo, usa esto en inglés]:\nGenerate a highly detailed video for a ${formato} format. Associated deliverable: ${nombreEntregableVisual}. Subject/Action based on this context:\n"${textoBaseParaVisual}"\nVisual settings and Style: ${visEstilo}. Brand colors: ${visColores}. Technical quality: ${visualQuality}. Smooth cinematic motion, no morphing. Aspect Ratio: ${aspecto} (Exact size: ${exactWidth}x${exactHeight} px). Output format: ${visualOutputFormat}.`;
         
-        } else if (assetType.includes("Carrusel")) {
-            basePrompt = `Diseña un Carrusel completo de diapositivas basándote en este contexto:\n"${textoBaseParaVisual}"${parametrosComunes}\n- Tipografía: ${visTipo}\n\nREGLAS ESPECÍFICAS DE CARRUSEL:\n- Para el código HTML obligatorio: Todo debe ser vectorial o estilizable. Cada slide DEBE ir en un contenedor individual: <div class="videoka-slide" style="width:${exactWidth}px; height:${exactHeight}px; position:relative; overflow:hidden;">...</div>.${reglasCodigo}`;
+      } else if (assetType.includes("Carrusel")) {
+            basePrompt = `Diseña un Carrusel completo de diapositivas basándote en este contexto:\n"${textoBaseParaVisual}"${parametrosComunes}\n- Tipografía: ${visTipo}\n\nREGLAS ESPECÍFICAS DE CARRUSEL:\n- Para el código HTML obligatorio: Todo debe ser vectorial o estilizable. Cada slide DEBE ir en un contenedor individual exacto: <div class="videoka-slide" style="width:${exactWidth}px; height:${exactHeight}px; position:relative; overflow:hidden; box-sizing:border-box; display:flex; flex-direction:column; justify-content:center;">...</div>.${reglasCodigo}`;
         
         } else if (assetType.includes("Diapositivas")) {
             basePrompt = `Diseña las diapositivas de presentación basadas en este contexto:\n"${textoBaseParaVisual}"${parametrosComunes}\n- Tipografía: ${visTipo}${reglasCodigo}`;
@@ -4338,7 +4338,7 @@ window.previewVisuals = function() {
     // Inyectar el código de la IA
     const iframeDoc = iframe.contentWindow.document;
     iframeDoc.open();
-    iframeDoc.write(code);
+    iframeDoc.write(`<style>* { box-sizing: border-box !important; }</style>\n` + code);
     iframeDoc.close();
 
     // Procesar las slides
@@ -4406,7 +4406,7 @@ window.downloadCarouselAs = async function(format) {
 
         const iframeDoc = hiddenIframe.contentWindow.document;
         iframeDoc.open();
-        iframeDoc.write(code);
+        iframeDoc.write(`<style>* { box-sizing: border-box !important; }</style>\n` + code);
         iframeDoc.close();
 
        // Incremento del retraso para asegurar el procesamiento del DOM en el iFrame
