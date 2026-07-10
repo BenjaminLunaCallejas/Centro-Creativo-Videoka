@@ -3152,8 +3152,13 @@ let basePrompt = "";
 3. CÓDIGO HTML/SVG OBLIGATORIO: Además de los archivos descargables, SIEMPRE debes generar el diseño en código HTML/CSS/SVG completo y listo para renderizar, metido en un solo bloque markdown.
 4. ESCALA Y ESTRUCTURA CSS (CRÍTICO): Para evitar que los textos se encimen, incluye OBLIGATORIAMENTE la regla: \`* { box-sizing: border-box; }\`. Usa Flexbox (\`display: flex; flex-direction: column;\`) para estructurar el contenido de forma limpia y NO abuses de \`position: absolute\`. Usa tamaños de fuente grandes proporcionales al lienzo (ej. 80px a 150px).
 5. FONDO Y SAFE ZONES (MÁRGENES INTERNOS): El contenedor principal \`.videoka-slide\` debe tener un fondo sólido de la paleta. Para evitar que la plataforma oculte información, aplica las Safe Zones EXCLUSIVAMENTE usando \`padding\` en el contenedor principal y asegúrate de que nada lo invada: -> ${safeZonesText}
-6. LÓGICA ESTRICTA PARA EL PDF EN PYTHON (¡MUY IMPORTANTE!): Al programar el PDF en Python, DEBES: a) Usar clases que soporten AUTO-WRAP automático (ej. Paragraph de Platypus en ReportLab) para que el texto fluya hacia abajo y NUNCA se salga de los márgenes estipulados. b) Usar tamaños de fuente GIGANTES acordes al lienzo (Títulos 100pt-140pt, Cuerpo 50pt-80pt). c) Dibujar en el canvas del PDF los fondos de colores y exactamente las mismas formas geométricas que diseñaste para el HTML. El PDF debe ser visualmente idéntico al HTML.`;
-
+6. LÓGICA ESTRICTA PARA EL PDF EN PYTHON (¡MUY IMPORTANTE!): Al programar el PDF en Python (ej. con ReportLab), DEBES cumplir estrictamente con todo esto:
+   - Usa clases que soporten AUTO-WRAP automático (ej. Paragraph de Platypus) para que el texto fluya hacia abajo y NUNCA se salga de los márgenes estipulados.
+   - Usa tamaños de fuente GIGANTES acordes al lienzo (Títulos 100pt-140pt, Cuerpo 50pt-80pt).
+   - Dibuja en el canvas del PDF los fondos de colores y exactamente las mismas formas geométricas que diseñaste para el HTML. El PDF debe ser visualmente idéntico al HTML.
+   - Es CRÍTICO que los elementos no colisionen. Configura un interlineado ('leading') de al menos 1.2x el tamaño de la fuente en los estilos del Paragraph.
+   - Usa objetos 'Spacer' con suficiente altura (ej. 50-100 puntos) entre cada bloque de texto y/o figura geométrica.
+   - Si dibujas etiquetas con caja de fondo, calcula matemáticamente la coordenada Y para que el título principal empiece bien abajo de esa caja y NUNCA se superpongan. Todo el contenido debe fluir hacia abajo con respiración visual.`;
         if (assetType.includes("fotorrealistas")) {
             basePrompt = `Genera una imagen fotorrealista basada en este contexto:\n"${textoBaseParaVisual}"${parametrosComunes}\n- Calidad técnica: ${visualQuality}\nNota: Si no puedes generar la imagen, entrega el prompt detallado en inglés para Midjourney/DALL-E.`;
         
