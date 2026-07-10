@@ -1820,6 +1820,8 @@ window.aplicarAuditoriaTabla = () => {
                                     <option value="Lives">Lives</option>
                                     <option value="Storie (Video)">Storie (Video)</option>
                                     <option value="Storie (Estática)">Storie (Estática)</option>
+                                    <option value="Miniatura (YouTube/FB)">Miniatura (YouTube/FB)</option>
+                                    <option value="Portada (Reels/TikTok)">Portada (Reels/TikTok)</option>
                                     <option value="Carrusel">Carrusel</option>
                                     <option value="Infografía">Infografía</option>
                                     <option value="Visual">Visual</option>
@@ -2064,10 +2066,13 @@ window.aplicarAuditoriaTabla = () => {
                                 <div>
                                     <label class="block text-sm font-semibold text-emerald-800 mb-2">Tipo de recurso:</label>
                                     <select id="ideaAssetType" onchange="updateLivePrompt()" class="w-full p-3 border border-emerald-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-bold text-emerald-900 bg-white shadow-sm">
+                                        <option value="Imagen Libre">Imagen Libre (Sin estilo forzado)</option>
                                         <option value="Imágenes fotorrealistas">Imágenes realistas (Midjourney/DALL-E/Gemini)</option>
                                         <option value="Ilustraciones y Vectores">Ilustraciones / SVG (Claude/Gemini/Gráficos)</option>
                                         <option value="Flyer promocional">Flyer promocional (Póster/Volante)</option>
                                         <option value="Diseño de Carrusel">Diseño de Carrusel (UI/UX - Claude/Gemini)</option>
+                                        <option value="Miniatura de Video">Miniatura de Video (YouTube/FB)</option>
+                                        <option value="Portada de Reel">Portada de Reel / Short</option>
                                         <option value="Video generativo con IA">Video con IA (Sora/Runway/Luma/Gemini/Veo)</option>
                                         <option value="Animación Motion Graphics">Animación 2D / Motion Graphics</option>
                                         <option value="Diapositivas y Presentaciones">Diapositivas (Layout y Código - Claude/Gemini)</option> 
@@ -2986,6 +2991,7 @@ Si utilizas un formato estrella listado arriba, asegúrate que la estructura bas
 
     const estaticos = ["Visual", "Storie (Estática)", "Infografía", "Fotos", "Memes", "Carrusel"];
     const longContent = ["Long Content", "Podcast", "Ponencias", "Lives"];
+    const thumbnails = ["Miniatura (YouTube/FB)", "Portada (Reels/TikTok)"];
 
     if (longContent.includes(formato)) {
         reglaFormato = "Estructura y Duración: Formato largo de más de 8 minutos. Desarrolla la información a profundidad. Incluye introducciones sólidas, desarrollo estructurado en puntos clave y conclusiones reflexivas diseñadas para retener la atención por varios minutos.";
@@ -2993,6 +2999,8 @@ Si utilizas un formato estrella listado arriba, asegúrate que la estructura bas
         reglaFormato = "Estructura: Contenido estático/visual. Redacta texto altamente directo y legible, optimizado para leerse gráficamente en 8-12 diapositivas o imágenes en formato JPG y cuyo contenido esté dentro de la zona segura del formato digital.";
     } else if (formato === "Storie (Video 9:16)") {
         reglaFormato = "Duración: 15-30 segundos. Formato efímero: sumamente rápido, interactivo, casual y al grano para conectar de inmediato con la audiencia.";
+    } else if (thumbnails.includes(formato)) { // <-- NUEVO BLOQUE
+        reglaFormato = "Estructura: Diseño estático de altísimo impacto visual y contraste psicológico diseñado para capturar clics (CTR) en milisegundos.";
     } else if (formato === "Short Content") {
         reglaFormato = "Duración: 45-60 segundos."; // Intacto como pediste
     }
@@ -3035,6 +3043,12 @@ Si utilizas un formato estrella listado arriba, asegúrate que la estructura bas
     } else if (nombreEntregable.includes("Presentación")) {
         reglaEstructura = "Redacta diapositivas para exposición profesional. Estructura: Título de Diapositiva, Bullet points clave (ideas escaneables), y 'Talking Points' (notas para el ponente).";
         reglaAdicional = "No satures las diapositivas de texto. El valor de retención debe estar en las notas del ponente y el impacto visual.";
+   } else if (nombreEntregable.includes("Concepto visual")) {
+        reglaEstructura = "Describe la composición gráfica exacta para la miniatura/portada: 1) Foco principal (ej. Rostro con emoción extrema o sujeto en acción), 2) Fondo, 3) Colores de alto contraste, 4) Ubicación sugerida del texto.";
+        reglaAdicional = "Enfócate en la psicología del clic (CTR). El concepto debe generar urgencia o curiosidad inmediata.";
+    } else if (nombreEntregable.includes("Textos para miniatura")) {
+        reglaEstructura = "Redacta de 3 a 5 opciones de texto ULTRA-CORTO (estrictamente máximo 5 palabras) diseñado para leerse en tamaño pequeño dentro de una miniatura.";
+        reglaAdicional = "REGLA DE ORO: El texto de la miniatura complementa el título del video, NUNCA lo repite. Usa clickbait ético, contraste o preguntas abiertas.";
     } else {
         reglaEstructura = "Diseña el material enfocándote en alta retención y potencial de compartición. Organiza tu respuesta según las convenciones profesionales de este formato.";
         reglaAdicional = "Adapta tu nivel de detalle (descripción visual, diálogos, copy, o viñetas) al entregable solicitado.";
@@ -3179,6 +3193,15 @@ let basePrompt = "";
         
         } else if (assetType.includes("Flyer promocional")) {
             basePrompt = `Diseña un Flyer o póster promocional basado en este contexto:\n"${textoBaseParaVisual}"${parametrosComunes}\n- Tipografía: ${visTipo}${reglasCodigo}`;
+      
+        } else if (assetType.includes("Imagen Libre")) {
+            // Aquí le quitamos "parametrosComunes" y "reglasLogoVisual" para que sea verdaderamente libre
+            basePrompt = `Genera un prompt magistral, detallado y en inglés para una IA generativa de imágenes (ej. Midjourney/DALL-E) basado en este concepto: "${textoBaseParaVisual}".\n- Relación de aspecto deseada: ${aspecto} (Size: ${exactWidth}x${exactHeight}).\n- Calidad/Estilo solicitado: ${visualQuality}\n\nNOTA CRÍTICA: Ignora la paleta de colores de marca. Usa tu libertad creativa máxima para lograr una imagen espectacular, artística o fotorrealista.`;
+            reglasLogoVisual = ""; // Limpiamos las reglas de logo para esta opción.
+            
+        } else if (assetType.includes("Miniatura de Video") || assetType.includes("Portada de Reel")) {
+            // Prompt especializado en Thumbnails que funciona tanto para HTML como para DALL-E
+            basePrompt = `Crea el diseño final de una ${assetType} de altísimo impacto de clics (CTR) basada en:\n"${textoBaseParaVisual}"${parametrosComunes}\n- Tipografía fuerte y gruesa: ${visTipo}${reglasCodigo}\n\nREGLAS DE MINIATURA/PORTADA: 1) Destaca un elemento o rostro principal gigante. 2) Usa fondos muy contrastantes. 3) Asegúrate de que el texto (si existe) sea masivo, corto (máx 5 palabras) y ultra-legible a tamaños pequeños.`;
         }
 
        visualArea.value = `Actúa como un creador de contenido súper exitoso que es diseñador experto en UX/UI y redes sociales y ayúdame con la siguiente tarea:\n\n${basePrompt}${reglasLogoVisual}`;
@@ -3875,6 +3898,14 @@ document.addEventListener('click', function(event) {
                     {val: "Guión general", text: "Guión general (Discurso completo)"},
                     {val: "Brief creativo", text: "Brief creativo (Objetivo, tono y mensaje)"}
                 ];
+
+            } else if (formato === "Miniatura (YouTube/FB)" || formato === "Portada (Reels/TikTok)") {
+                opciones = [
+                    {val: "Concepto visual", text: "Concepto visual (Idea de composición para alto CTR)"},
+                    {val: "Textos para miniatura", text: "Textos para miniatura (Clickbait ético, máx 5 palabras)"},
+                    {val: "Brief creativo", text: "Brief creativo (Objetivo, tono y mensaje)"}
+                ];
+                
             } else {
                  opciones = [
                     {val: "Concepto creativo", text: "Concepto creativo (Idea general de la pieza)"},
