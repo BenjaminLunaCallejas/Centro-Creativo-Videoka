@@ -2065,20 +2065,20 @@ window.aplicarAuditoriaTabla = () => {
                          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                                 <div>
                                     <label class="block text-sm font-semibold text-emerald-800 mb-2">Tipo de recurso:</label>
-                                   <select id="ideaAssetType" onchange="updateLivePrompt()" class="w-full p-3 border border-emerald-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-bold text-emerald-900 bg-white shadow-sm">
+                      <select id="ideaAssetType" onchange="updateLivePrompt()" class="w-full p-3 border border-emerald-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-bold text-emerald-900 bg-white shadow-sm">
                                     <option value="Imagen">Imagen</option>
-                                    <option value="Stories estáticas">Stories estáticas</option>
-                                    <option value="Stories dinámicas">Stories dinámicas (Video)</option>
                                     <option value="Imágenes fotorrealistas">Imágenes realistas (Midjourney/DALL-E/Gemini)</option>
                                     <option value="Ilustraciones y Vectores">Ilustraciones / SVG (Claude/Gemini/Gráficos)</option>
-                                        <option value="Flyer promocional">Flyer promocional (Póster/Volante)</option>
-                                        <option value="Diseño de Carrusel">Diseño de Carrusel (UI/UX - Claude/Gemini)</option>
-                                        <option value="Miniatura de Video">Miniatura de Video (YouTube/FB)</option>
-                                        <option value="Portada de Reel">Portada de Reel / Short</option>
-                                        <option value="Video generativo con IA">Video con IA (Sora/Runway/Luma/Gemini/Veo)</option>
-                                        <option value="Animación Motion Graphics">Animación 2D / Motion Graphics</option>
-                                        <option value="Diapositivas y Presentaciones">Diapositivas (Layout y Código - Claude/Gemini)</option> 
-                                    </select>
+                                    <option value="Stories estáticas">Stories estáticas</option>
+                                    <option value="Stories dinámicas">Stories dinámicas (Video)</option>
+                                    <option value="Flyer promocional">Flyer promocional (Póster/Volante)</option>
+                                    <option value="Diseño de Carrusel">Diseño de Carrusel (UI/UX - Claude/Gemini)</option>
+                                    <option value="Miniatura de Video">Miniatura de Video (YouTube/FB)</option>
+                                    <option value="Portada de Reel">Portada de Reel / Short</option>
+                                    <option value="Video generativo con IA">Video con IA (Sora/Runway/Luma/Gemini/Veo)</option>
+                                    <option value="Animación Motion Graphics">Animación 2D / Motion Graphics</option>
+                                    <option value="Diapositivas y Presentaciones">Diapositivas (Layout y Código - Claude/Gemini)</option> 
+                                </select>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-semibold text-emerald-800 mb-2">Calidad / Resolución:</label>
@@ -3218,7 +3218,7 @@ let basePrompt = "";
       
         } else if (assetType === "Imagen") {
             // Se pide la imagen directamente y sólo si la IA falla da el prompt
-            basePrompt = `Genera y muéstrame directamente una imagen final basada en este concepto: "${textoBaseParaVisual}".\n- Relación de aspecto deseada: ${aspecto} (Size: ${exactWidth}x${exactHeight}).\n- Calidad/Estilo solicitado: ${visualQuality}\n\nNOTA CRÍTICA: Ignora la paleta de colores de marca. Usa tu libertad creativa máxima para lograr una imagen espectacular, artística o fotorrealista. Si por tus capacidades técnicas te resulta completamente imposible generar la imagen visualmente, entonces y SÓLO ENTONCES, entrega un prompt magistral y detallado en inglés para Midjourney/DALL-E.`;
+            basePrompt = `Genera y muéstrame directamente una imagen final basada en este concepto: "${textoBaseParaVisual}".\n- Relación de aspecto deseada: ${aspecto} (Size: ${exactWidth}x${exactHeight}).\n- Calidad/Estilo solicitado: ${visualQuality}\n\nNOTA CRÍTICA: Usa tu libertad creativa máxima para lograr una imagen espectacular, artística o fotorrealista. Si por tus capacidades técnicas te resulta completamente imposible generar la imagen visualmente, entonces y SÓLO ENTONCES, entrega un prompt magistral y detallado en inglés para Midjourney/DALL-E.`;
             reglasLogoVisual = ""; // Limpiamos las reglas de logo para esta opción.
 
         } else if (assetType === "Stories estáticas") {
