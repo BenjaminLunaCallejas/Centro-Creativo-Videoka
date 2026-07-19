@@ -1529,10 +1529,10 @@ window.aplicarAuditoriaTabla = () => {
                                     <option value="Misterio">Misterio / Storytelling</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-600 mb-2">Público Objetivo</label>
-                                <input type="text" id="publicoObjetivo" onblur="saveStrategyExtras()" placeholder="¿A quién diriges tus videos?" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                            </div>
+                           <div>
+    <label class="block text-sm font-semibold text-gray-600 mb-2">Público Objetivo</label>
+    <textarea id="publicoObjetivo" onblur="saveStrategyExtras()" rows="1" placeholder="¿A quién diriges tus videos?" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll overflow-hidden auto-grow"></textarea>
+</div>
                         </div>
                         
                     <div class="border-t pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1570,7 +1570,7 @@ window.aplicarAuditoriaTabla = () => {
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-gray-600 mb-1">Tipografías (peso, estilo, espaciado, interlineado, jerarquía)</label>
-                                <textarea id="visualTipografia" onblur="saveStrategyExtras()" rows="1" placeholder="Ej: Montserrat (bold, normal, 1.2%, 110%, Título H1), Open Sans (thin, italic, 1.5%, 112%, Cuerpo)..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll overflow-hidden auto-grow"></textarea>
+                                <textarea id="visualTipografia" onblur="saveStrategyExtras()" rows="1" placeholder="Ej: Montserrat (bold, normal, +20, 1.1, Título H1), Open Sans (thin, italic, -50, 1.12, Cuerpo)..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll overflow-hidden auto-grow"></textarea>
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-semibold text-gray-600 mb-1">Estilo Visual (corriente artística o movimiento estético)</label>
