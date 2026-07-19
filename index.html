@@ -2065,10 +2065,12 @@ window.aplicarAuditoriaTabla = () => {
                          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                                 <div>
                                     <label class="block text-sm font-semibold text-emerald-800 mb-2">Tipo de recurso:</label>
-                                    <select id="ideaAssetType" onchange="updateLivePrompt()" class="w-full p-3 border border-emerald-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-bold text-emerald-900 bg-white shadow-sm">
-                                        <option value="Imagen Libre">Imagen Libre (Sin estilo forzado)</option>
-                                        <option value="Imágenes fotorrealistas">Imágenes realistas (Midjourney/DALL-E/Gemini)</option>
-                                        <option value="Ilustraciones y Vectores">Ilustraciones / SVG (Claude/Gemini/Gráficos)</option>
+                                   <select id="ideaAssetType" onchange="updateLivePrompt()" class="w-full p-3 border border-emerald-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-400 text-sm font-bold text-emerald-900 bg-white shadow-sm">
+                                    <option value="Imagen">Imagen</option>
+                                    <option value="Stories estáticas">Stories estáticas</option>
+                                    <option value="Stories dinámicas">Stories dinámicas (Video)</option>
+                                    <option value="Imágenes fotorrealistas">Imágenes realistas (Midjourney/DALL-E/Gemini)</option>
+                                    <option value="Ilustraciones y Vectores">Ilustraciones / SVG (Claude/Gemini/Gráficos)</option>
                                         <option value="Flyer promocional">Flyer promocional (Póster/Volante)</option>
                                         <option value="Diseño de Carrusel">Diseño de Carrusel (UI/UX - Claude/Gemini)</option>
                                         <option value="Miniatura de Video">Miniatura de Video (YouTube/FB)</option>
@@ -2936,11 +2938,19 @@ Si utilizas un formato estrella listado arriba, asegúrate que la estructura bas
     const titulo = document.getElementById('ideaTitulo').value || "[TEMA O TÍTULO NO DEFINIDO]";
     const hook = document.getElementById('ideaHook').value || "[INSERTAR GANCHO AQUÍ]";
     const enlaces = document.getElementById('ideaEnlaces').value.trim();
-    const guionBase = document.getElementById('ideaGuionBase').value.trim();
+const guionBase = document.getElementById('ideaGuionBase').value.trim();
+    const guionEscrito = document.getElementById('ideaGuion') ? document.getElementById('ideaGuion').value.trim() : '';
 
     let especificacionesOpcionales = "";
     if (enlaces) especificacionesOpcionales += `\n- ENLACES CON INFORMACIÓN RELEVANTE DE SOPORTE:\n${enlaces}`;
-    if (guionBase) especificacionesOpcionales += `\n- IDEA INICIAL / ESTRUCTURA BASE DESEADA:\n${guionBase}`;
+    
+    // LÓGICA DE NO DUPLICACIÓN: Si ya hay un guion escrito, usamos ese y omitimos el guion base.
+    if (guionEscrito) {
+        especificacionesOpcionales += `\n- GUIÓN / ENTREGABLE ACTUAL (Úsalo como referencia principal):\n${guionEscrito}`;
+    } else if (guionBase) {
+        especificacionesOpcionales += `\n- IDEA INICIAL / ESTRUCTURA BASE DESEADA:\n${guionBase}`;
+    }
+    
     if (starFormatSelect) {
         for (let i = 1; i <= 3; i++) {
             const name = localStorage.getItem(`starFormat${i}_name`);
@@ -3090,6 +3100,7 @@ INSTRUCCIONES DE REDACCIÓN:
 7. Prohibido usar jerga, o términos específicos o complejos. Usa analogías sencillas. 
 8. Si se incluye un hook propuesto, este se debe respetar y adaptar al 100% en el entregable generado.
 9. Sólo considera ${guiaVisualPrompt} para el diseño si el contenido son visuales, fotos, memes, infografías, carruseles y stories estáticas.
+10. REGLA DE IDIOMA: Si el título, el gancho, el guión base o la idea proporcionados están en inglés o en otro idioma, debes redactar y entregar TODO este material solicitado exactamente en ese mismo idioma.
 
 ENTREGABLES ADICIONALES (Al final de tu respuesta):
 - COPYWRITING: Primera línea provocativa (que obligue a dar clic en 'ver más'). Breve resumen del contenido del ${entregable}, incluir un dato adicional relevante, palabras clave SEO, CTA claro. Máx 4 líneas.
@@ -3115,14 +3126,22 @@ ENTREGABLES ADICIONALES (Al final de tu respuesta):
         }
         
         // 2. COMBINAR TODO EL CONTEXTO DISPONIBLE (GANCHO, GUIÓN, COPY, ETC)
-        const guionEscrito = document.getElementById('ideaGuion') ? document.getElementById('ideaGuion').value.trim() : '';
+const guionEscrito = document.getElementById('ideaGuion') ? document.getElementById('ideaGuion').value.trim() : '';
         const copyEscrito = document.getElementById('ideaCopy') ? document.getElementById('ideaCopy').value.trim() : '';
         
         let fragmentosContexto = [];
         if (titulo && titulo !== "[TEMA O TÍTULO NO DEFINIDO]") fragmentosContexto.push(`TÍTULO: ${titulo}`);
         if (hook && hook !== "[INSERTAR GANCHO AQUÍ]") fragmentosContexto.push(`GANCHO: ${hook}`);
-        if (guionBase) fragmentosContexto.push(`IDEA BASE: ${guionBase}`);
-        if (guionEscrito) fragmentosContexto.push(`GUIÓN/ENTREGABLE: ${guionEscrito}`);
+        
+        // LÓGICA DE NO DUPLICACIÓN:
+        // Si existe "Guion o Entregable", úsalo y NO copies el Guion Base. 
+        // Si está vacío, usa el Guion Base.
+        if (guionEscrito) {
+            fragmentosContexto.push(`GUIÓN/ENTREGABLE: ${guionEscrito}`);
+        } else if (guionBase) {
+            fragmentosContexto.push(`IDEA BASE: ${guionBase}`);
+        }
+        
         if (copyEscrito) fragmentosContexto.push(`COPY: ${copyEscrito}`);
         
         const textoBaseParaVisual = fragmentosContexto.length > 0 ? fragmentosContexto.join(" | ") : "el tema principal";
@@ -3194,20 +3213,26 @@ let basePrompt = "";
         } else if (assetType.includes("Motion Graphics")) {
             basePrompt = `Genera la dirección de arte y los keyframes visuales para una animación 2D (Motion Graphics) basada en:\n"${textoBaseParaVisual}"${parametrosComunes}\n- Calidad técnica: ${visualQuality}.`;
         
-        } else if (assetType.includes("Flyer promocional")) {
+} else if (assetType.includes("Flyer promocional")) {
             basePrompt = `Diseña un Flyer o póster promocional basado en este contexto:\n"${textoBaseParaVisual}"${parametrosComunes}\n- Tipografía: ${visTipo}${reglasCodigo}`;
       
-        } else if (assetType.includes("Imagen Libre")) {
-            // Aquí le quitamos "parametrosComunes" y "reglasLogoVisual" para que sea verdaderamente libre
-            basePrompt = `Genera un prompt magistral, detallado y en inglés para una IA generativa de imágenes (ej. Midjourney/DALL-E) basado en este concepto: "${textoBaseParaVisual}".\n- Relación de aspecto deseada: ${aspecto} (Size: ${exactWidth}x${exactHeight}).\n- Calidad/Estilo solicitado: ${visualQuality}\n\nNOTA CRÍTICA: Ignora la paleta de colores de marca. Usa tu libertad creativa máxima para lograr una imagen espectacular, artística o fotorrealista.`;
+        } else if (assetType === "Imagen") {
+            // Se pide la imagen directamente y sólo si la IA falla da el prompt
+            basePrompt = `Genera y muéstrame directamente una imagen final basada en este concepto: "${textoBaseParaVisual}".\n- Relación de aspecto deseada: ${aspecto} (Size: ${exactWidth}x${exactHeight}).\n- Calidad/Estilo solicitado: ${visualQuality}\n\nNOTA CRÍTICA: Ignora la paleta de colores de marca. Usa tu libertad creativa máxima para lograr una imagen espectacular, artística o fotorrealista. Si por tus capacidades técnicas te resulta completamente imposible generar la imagen visualmente, entonces y SÓLO ENTONCES, entrega un prompt magistral y detallado en inglés para Midjourney/DALL-E.`;
             reglasLogoVisual = ""; // Limpiamos las reglas de logo para esta opción.
+
+        } else if (assetType === "Stories estáticas") {
+            basePrompt = `Crea el diseño de Stories estáticas (para Instagram/Facebook/TikTok) basadas en este contexto:\n"${textoBaseParaVisual}"${parametrosComunes}\n- Tipografía: ${visTipo}${reglasCodigo}\n\nREGLAS DE STORIES ESTÁTICAS: Mantén los márgenes de seguridad. El texto debe ser muy breve, con ganchos potentes y mucho espacio visual para que no se vea saturado.`;
+
+        } else if (assetType.includes("Stories dinámicas")) {
+            basePrompt = `Genera la dirección de arte, los textos y la idea de movimiento/animación para Stories Dinámicas (video vertical rápido) basadas en este contexto:\n"${textoBaseParaVisual}"${parametrosComunes}\n- Calidad técnica: ${visualQuality}\n\nREGLAS: Describe cómo animar el texto y las imágenes/videos de fondo en los primeros 3 a 5 segundos para retener la atención.`;
             
         } else if (assetType.includes("Miniatura de Video") || assetType.includes("Portada de Reel")) {
             // Prompt especializado en Thumbnails que funciona tanto para HTML como para DALL-E
             basePrompt = `Crea el diseño final de una ${assetType} de altísimo impacto de clics (CTR) basada en:\n"${textoBaseParaVisual}"${parametrosComunes}\n- Tipografía fuerte y gruesa: ${visTipo}${reglasCodigo}\n\nREGLAS DE MINIATURA/PORTADA: 1) Destaca un elemento o rostro principal gigante. 2) Usa fondos muy contrastantes. 3) Asegúrate de que el texto (si existe) sea masivo, corto (máx 5 palabras) y ultra-legible a tamaños pequeños.`;
         }
 
-       visualArea.value = `Actúa como un creador de contenido súper exitoso que es diseñador experto en UX/UI y redes sociales y ayúdame con la siguiente tarea:\n\n${basePrompt}${reglasLogoVisual}`;
+       visualArea.value = `Actúa como un creador de contenido súper exitoso que es diseñador experto en UX/UI y redes sociales y ayúdame con la siguiente tarea:\n\n${basePrompt}${reglasLogoVisual}\n\nREGLA DE IDIOMA: Si el título, guión o texto proporcionado está en inglés o en otro idioma, debes entregar el resultado y todo el material visual solicitado en ese mismo idioma.`;
     }
 }
         function copyPrompt() {
