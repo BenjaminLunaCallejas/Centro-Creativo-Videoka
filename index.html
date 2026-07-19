@@ -3216,10 +3216,9 @@ let basePrompt = "";
 } else if (assetType.includes("Flyer promocional")) {
             basePrompt = `Diseña un Flyer o póster promocional basado en este contexto:\n"${textoBaseParaVisual}"${parametrosComunes}\n- Tipografía: ${visTipo}${reglasCodigo}`;
       
-        } else if (assetType === "Imagen") {
-            // Se pide la imagen directamente y sólo si la IA falla da el prompt
-            basePrompt = `Genera y muéstrame directamente una imagen final basada en este concepto: "${textoBaseParaVisual}".\n- Relación de aspecto deseada: ${aspecto} (Size: ${exactWidth}x${exactHeight}).\n- Calidad/Estilo solicitado: ${visualQuality}\n\nNOTA CRÍTICA: Usa tu libertad creativa máxima para lograr una imagen espectacular, artística o fotorrealista. Si por tus capacidades técnicas te resulta completamente imposible generar la imagen visualmente, entonces y SÓLO ENTONCES, entrega un prompt magistral y detallado en inglés para Midjourney/DALL-E.`;
-            reglasLogoVisual = ""; // Limpiamos las reglas de logo para esta opción.
+} else if (assetType === "Imagen") {
+            // Se pide la imagen directamente aplicando rigurosamente la marca, y si falla, da el prompt.
+            basePrompt = `Genera y muéstrame directamente una imagen final de altísimo impacto visual basada en este contexto:\n"${textoBaseParaVisual}"${parametrosComunes}\n- Tipografía (si incluye texto): ${visTipo}\n- Calidad/Estilo solicitado: ${visualQuality}\n\nREGLAS DE DISEÑO: Aplica rigurosamente la paleta de colores de la marca (${visColores}) y nuestro estilo visual central (${visEstilo}). La composición debe ser estéticamente perfecta, profesional y lista para publicarse. Si por tus restricciones técnicas te resulta completamente imposible generar la imagen visualmente, entonces y SÓLO ENTONCES, entrégame un prompt magistral, súper detallado y en inglés (optimizando la iluminación, los colores exactos de la marca y la composición) para que yo pueda generarla en Midjourney o DALL-E.`;
 
         } else if (assetType === "Stories estáticas") {
             basePrompt = `Crea el diseño de Stories estáticas (para Instagram/Facebook/TikTok) basadas en este contexto:\n"${textoBaseParaVisual}"${parametrosComunes}\n- Tipografía: ${visTipo}${reglasCodigo}\n\nREGLAS DE STORIES ESTÁTICAS: Mantén los márgenes de seguridad. El texto debe ser muy breve, con ganchos potentes y mucho espacio visual para que no se vea saturado.`;
