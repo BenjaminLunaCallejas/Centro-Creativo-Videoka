@@ -2409,10 +2409,11 @@ function setupTagsInput(inputId, listId, storageKey) {
             }
         }
 
-        function addTask(cat) {
+   function addTask(cat) {
             const input = document.getElementById(`inputTarea_${cat}`);
             if(!input.value.trim()) return;
-            tasks[cat].push({ text: input.value, done: false });
+            // Usamos unshift para que se coloque al inicio (arriba)
+            tasks[cat].unshift({ text: input.value, done: false }); 
             input.value = '';
             renderTasks();
             localStorage.setItem('contentTasks', JSON.stringify(tasks));
@@ -2437,10 +2438,11 @@ function setupTagsInput(inputId, listId, storageKey) {
             });
         }
 
-        function addNota(cat) {
+   function addNota(cat) {
             const input = document.getElementById(`inputNota_${cat}`);
             if(!input.value.trim()) return;
-            blocNotas[cat].push({ text: input.value, done: false });
+            // Usamos unshift para que se coloque al inicio (arriba)
+            blocNotas[cat].unshift({ text: input.value, done: false });
             input.value = '';
             renderNotas();
             localStorage.setItem('blocNotasTasks', JSON.stringify(blocNotas));
@@ -3671,9 +3673,9 @@ tr.innerHTML = `
             renderTasks(); renderHistoryTasks(); renderHistoryNotas();
         }
 
-        function restoreTask(index) {
+ function restoreTask(index) {
             const item = historyTasks.splice(index, 1)[0];
-            tasks[item.cat].push({ text: item.text, done: false });
+            tasks[item.cat].unshift({ text: item.text, done: false });
             localStorage.setItem('contentTasks', JSON.stringify(tasks));
             localStorage.setItem('historyTasks', JSON.stringify(historyTasks));
             renderTasks(); renderHistoryTasks(); renderHistoryNotas();
@@ -3708,9 +3710,9 @@ tr.innerHTML = `
             renderNotas(); renderHistoryNotas();
         }
 
-        function restoreNota(index) {
+function restoreNota(index) {
             const item = historyNotas.splice(index, 1)[0];
-            blocNotas[item.cat].push({ text: item.text, done: false });
+            blocNotas[item.cat].unshift({ text: item.text, done: false });
             localStorage.setItem('blocNotasTasks', JSON.stringify(blocNotas));
             localStorage.setItem('historyNotas', JSON.stringify(historyNotas));
             renderNotas(); renderHistoryNotas();
@@ -4046,7 +4048,7 @@ window.descargarTablaXLSX = function() {
             }
         }
 
-        function trasladarHook(index) {
+function trasladarHook(index) {
             if (!tablaIAParsed || !tablaIAParsed[index]) return;
             const hookTexto = tablaIAParsed[index].hook;
             if (!hookTexto || hookTexto.trim() === '') return alert("⚠️ El gancho está vacío.");
@@ -4055,8 +4057,8 @@ window.descargarTablaXLSX = function() {
             if (!tasks) tasks = { ideas: [], audios: [], tendencias: [], proximos: [] };
             if (!tasks.ideas) tasks.ideas = [];
 
-            // Añadimos el hook a "Ideas Crudas"
-            tasks.ideas.push({ text: "Gancho IA: " + hookTexto, done: false });
+            // Añadimos el hook a "Ideas Crudas" usando unshift
+            tasks.ideas.unshift({ text: "Gancho IA: " + hookTexto, done: false });
             localStorage.setItem('contentTasks', JSON.stringify(tasks));
             
             // Actualizamos la vista de la Pestaña 2
@@ -4064,6 +4066,7 @@ window.descargarTablaXLSX = function() {
             
             alert("✅ ¡Gancho trasladado con éxito a la lista de Ideas Crudas!");
         }
+        
         window.desplazarTablaPrincipal = function(cantidad) {
             const contenedor = document.getElementById('contenedorTablaPrincipalScroll');
             if (contenedor) {
