@@ -762,7 +762,7 @@ window.aplicarAuditoria = () => {
     if(document.getElementById('ideaEnlaceCarpeta')) document.getElementById('ideaEnlaceCarpeta').value = carpetaFinal;
     if(document.getElementById('ideaObservaciones')) document.getElementById('ideaObservaciones').value = obsFinal;
     
-    // 3. Guardamos los cambios en segundo plano
+// 3. Guardamos los cambios en segundo plano (Sincronización Local y Nube)
     if (typeof editandoId !== 'undefined' && editandoId && typeof ideas !== 'undefined') {
         const index = ideas.findIndex(i => i.id === editandoId);
         if (index > -1) {
@@ -775,6 +775,21 @@ window.aplicarAuditoria = () => {
             ideas[index].observaciones = obsFinal;
             
             localStorage.setItem('contentIdeas', JSON.stringify(ideas));
+
+            // Actualización bidireccional: Sobrescribe la nube con la versión auditada
+            if (ideas[index].sharedId && window.db) {
+                const docRef = doc(window.db, "shared_guiones", ideas[index].sharedId);
+                setDoc(docRef, {
+                    guion: guionFinal,
+                    copy: copyFinal,
+                    hashtags: tagsFinal,
+                    textoPortada: textoPortadaFinal,
+                    enlaces: enlacesFinal,
+                    enlaceCarpeta: carpetaFinal,
+                    observaciones: obsFinal,
+                    lastUpdate: window.serverTimestamp()
+                }, { merge: true }).catch(err => console.error("Error técnico al actualizar la nube:", err));
+            }
         }
     }
 
@@ -1258,11 +1273,21 @@ window.aplicarAuditoriaTabla = () => {
     window.tablaIAParsed = nuevaTabla;
     localStorage.setItem('tablaIAGuardada', JSON.stringify(window.tablaIAParsed));
     
-    // Forzamos la actualización de la vista y el guardado en la nube
+    // Actualización bidireccional de la tabla en Firebase
+    const sharedId = localStorage.getItem('sharedTablaActiva');
+    if (sharedId && window.db) {
+        const docRef = doc(window.db, "shared_tablas", sharedId);
+        setDoc(docRef, { 
+            datos: nuevaTabla, 
+            lastUpdate: window.serverTimestamp() 
+        }, { merge: true }).catch(err => console.error("Error al sincronizar tabla auditada:", err));
+    }
+    
+    // Forzamos la actualización de la vista
     if(typeof window.renderTablaCalendario === 'function') window.renderTablaCalendario();
     
     if (typeof closeModal === 'function') closeModal(null);
-    alert("✅ Cambios auditados e integrados en su base de datos local satisfactoriamente.");
+    alert("✅ Cambios auditados y sincronizados correctamente con la nube.");
 };
         
     </script>
