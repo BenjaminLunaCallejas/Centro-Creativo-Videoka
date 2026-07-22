@@ -638,7 +638,7 @@ window.cambiarCuenta = function(id) {
             ).join(' ');
         };
         
-window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT, lE, nE, lCarp, nCarp, lObs, nObs) => {
+window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT, lTP, nTP, lE, nE, lCarp, nCarp, lObs, nObs) => {
             const modal = document.getElementById('modalOverlay');
             const content = document.getElementById('modalContent');
             
@@ -651,6 +651,9 @@ window.mostrarAuditoriaCambios = (lG, nG, lC, nC, lT, nT, lE, nE, lCarp, nCarp, 
             
             const addedTags = window.highlightAdditions(lT, nT);
             const deletedTags = window.highlightDeletions(lT, nT);
+
+            const addedTextoPortada = window.highlightAdditions(lTP, nTP);
+            const deletedTextoPortada = window.highlightDeletions(lTP, nTP);
 
     const addedEnlaces = window.highlightAdditions(lE, nE);
     const deletedEnlaces = window.highlightDeletions(lE, nE);
@@ -698,6 +701,14 @@ content.innerHTML = `
                 </div>
 
                 <div>
+                    <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2"><span>📸</span> Texto de Miniatura / Portada</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col"><label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label><div class="audit-text-container">${deletedTextoPortada}</div></div>
+                        <div class="flex flex-col"><label class="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Versión Nube (Editable ✏️)</label><div id="auditTextoPortadaFinal" class="audit-text-container border-emerald-200 bg-emerald-50 cursor-text focus:ring-2 focus:ring-emerald-400 outline-none transition-all" contenteditable="true">${addedTextoPortada}</div></div>
+                    </div>
+                </div>
+
+                <div>
                     <h4 class="font-bold text-indigo-800 border-b border-indigo-100 pb-1 mb-3 uppercase tracking-wide text-sm flex items-center gap-2"><span>🔗</span> Enlaces de Referencia</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="flex flex-col"><label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Versión Local</label><div class="audit-text-container">${deletedEnlaces}</div></div>
@@ -737,6 +748,7 @@ window.aplicarAuditoria = () => {
     const guionFinal = document.getElementById('auditGuionFinal').innerText;
     const copyFinal = document.getElementById('auditCopyFinal').innerText;
     const tagsFinal = document.getElementById('auditTagsFinal').innerText;
+    const textoPortadaFinal = document.getElementById('auditTextoPortadaFinal') ? document.getElementById('auditTextoPortadaFinal').innerText : '';
     const enlacesFinal = document.getElementById('auditEnlacesFinal').innerText;
     const carpetaFinal = document.getElementById('auditCarpetaFinal').innerText;
     const obsFinal = document.getElementById('auditObsFinal').innerText;
@@ -745,6 +757,7 @@ window.aplicarAuditoria = () => {
     if(document.getElementById('ideaGuion')) document.getElementById('ideaGuion').value = guionFinal;
     if(document.getElementById('ideaCopy')) document.getElementById('ideaCopy').value = copyFinal;
     if(document.getElementById('ideaHashtags')) document.getElementById('ideaHashtags').value = tagsFinal;
+    if(document.getElementById('ideaTextoPortada')) document.getElementById('ideaTextoPortada').value = textoPortadaFinal;
     if(document.getElementById('ideaEnlaces')) document.getElementById('ideaEnlaces').value = enlacesFinal;
     if(document.getElementById('ideaEnlaceCarpeta')) document.getElementById('ideaEnlaceCarpeta').value = carpetaFinal;
     if(document.getElementById('ideaObservaciones')) document.getElementById('ideaObservaciones').value = obsFinal;
@@ -756,6 +769,7 @@ window.aplicarAuditoria = () => {
             ideas[index].guion = guionFinal;
             ideas[index].copy = copyFinal;
             ideas[index].hashtags = tagsFinal;
+            ideas[index].textoPortada = textoPortadaFinal;
             ideas[index].enlaces = enlacesFinal;
             ideas[index].enlaceCarpeta = carpetaFinal;
             ideas[index].observaciones = obsFinal;
@@ -765,7 +779,7 @@ window.aplicarAuditoria = () => {
     }
 
     // 4. Ajustamos automáticamente la altura de las cajas de texto
-    ['ideaGuion', 'ideaCopy', 'ideaHashtags', 'ideaEnlaces', 'ideaEnlaceCarpeta'].forEach(id => {
+    ['ideaGuion', 'ideaCopy', 'ideaHashtags', 'ideaTextoPortada', 'ideaEnlaces', 'ideaEnlaceCarpeta'].forEach(id => {
         const el = document.getElementById(id);
         if(el) {
             el.style.height = 'auto';
@@ -808,6 +822,7 @@ window.aplicarAuditoria = () => {
     document.getElementById('ideaGuion').value || '', data.guion || '',
     document.getElementById('ideaCopy').value || '', data.copy || '',
     document.getElementById('ideaHashtags').value || '', data.hashtags || '',
+    (document.getElementById('ideaTextoPortada') ? document.getElementById('ideaTextoPortada').value : ''), data.textoPortada || '',
     (document.getElementById('ideaEnlaces') ? document.getElementById('ideaEnlaces').value : ''), data.enlaces || '',
     (document.getElementById('ideaEnlaceCarpeta') ? document.getElementById('ideaEnlaceCarpeta').value : ''), data.enlaceCarpeta || '',
     (document.getElementById('ideaObservaciones') ? document.getElementById('ideaObservaciones').value : ''), data.observaciones || ''
@@ -852,6 +867,7 @@ window.generarEnlaceColaborativo = async () => {
                 guion: document.getElementById('ideaGuion').value,
                 copy: document.getElementById('ideaCopy').value,
                 hashtags: document.getElementById('ideaHashtags').value,
+                textoPortada: document.getElementById('ideaTextoPortada') ? document.getElementById('ideaTextoPortada').value : '',
                 enlaces: document.getElementById('ideaEnlaces') ? document.getElementById('ideaEnlaces').value : '',
                 enlaceCarpeta: document.getElementById('ideaEnlaceCarpeta') ? document.getElementById('ideaEnlaceCarpeta').value : '',
                 observaciones: document.getElementById('ideaObservaciones') ? document.getElementById('ideaObservaciones').value : '',
@@ -889,6 +905,7 @@ window.generarEnlaceColaborativo = async () => {
             const txtGuion = document.getElementById('sharedGuionTextarea');
             const txtCopy = document.getElementById('sharedCopyTextarea');
             const txtTags = document.getElementById('sharedHashtagsTextarea');
+            const txtTextoPortada = document.getElementById('sharedTextoPortadaTextarea');
             const txtEnlaces = document.getElementById('sharedEnlacesTextarea');
             const txtCarpeta = document.getElementById('sharedCarpetaTextarea');
             const txtObs = document.getElementById('sharedObservacionesTextarea');
@@ -923,6 +940,7 @@ window.generarEnlaceColaborativo = async () => {
                     if (document.activeElement !== txtGuion) txtGuion.value = data.guion || '';
                     if (document.activeElement !== txtCopy) txtCopy.value = data.copy || '';
                     if (document.activeElement !== txtTags) txtTags.value = data.hashtags || '';
+                    if (document.activeElement !== txtTextoPortada) txtTextoPortada.value = data.textoPortada || '';
                     if (document.activeElement !== txtEnlaces) txtEnlaces.value = data.enlaces || '';
                     if (document.activeElement !== txtCarpeta) txtCarpeta.value = data.enlaceCarpeta || '';
                     if (document.activeElement !== txtObs) txtObs.value = data.observaciones || '';
@@ -944,6 +962,7 @@ window.generarEnlaceColaborativo = async () => {
                     guion: txtGuion.value,
                     copy: txtCopy.value,
                     hashtags: txtTags.value,
+                    textoPortada: txtTextoPortada.value,
                     enlaces: txtEnlaces.value,
                     enlaceCarpeta: txtCarpeta.value,
                     observaciones: txtObs.value,
@@ -1348,7 +1367,12 @@ window.aplicarAuditoriaTabla = () => {
                     <label class="block text-sm font-bold text-indigo-900 mb-2">3. Hashtags</label>
                     <textarea id="sharedHashtagsTextarea" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 text-gray-800 text-sm leading-relaxed custom-scroll shadow-inner min-h-[60px] overflow-hidden"></textarea>
                 </div>
-                
+     
+                <div>
+                    <label class="block text-sm font-bold text-indigo-900 mb-2">3.5 Texto de Miniatura / Portada</label>
+                    <textarea id="sharedTextoPortadaTextarea" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 text-gray-800 text-sm leading-relaxed custom-scroll shadow-inner min-h-[60px] overflow-hidden"></textarea>
+                </div>
+     
                 <div>
                     <label class="block text-sm font-bold text-indigo-900 mb-2">4. Enlaces de Referencia</label>
                     <textarea id="sharedEnlacesTextarea" class="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 text-gray-800 text-sm leading-relaxed custom-scroll shadow-inner min-h-[60px] overflow-hidden"></textarea>
@@ -2040,6 +2064,13 @@ window.aplicarAuditoriaTabla = () => {
                             <p class="text-[10px] text-gray-400 mb-2">🏷️ Usa 4: #TipoContenido #Tema #Nicho #ProgramaTiktok (Ej: #tutorial #Bioestadistica #LGBT #STEAM)</p>
                             <input type="text" id="ideaHashtags" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400" placeholder="#tag1 #tag2 #tag3 #tag4">
                         </div>
+
+                        <div class="mb-6 bg-slate-50 p-4 rounded-lg border border-slate-100">
+                            <label class="block text-sm font-semibold text-gray-600 mb-1">Texto de Miniatura / Portada</label>
+                            <p class="text-[10px] text-gray-400 mb-2">📸 Inserta aquí el texto generado por la IA para tu miniatura o portada (Clickbait ético).</p>
+                            <textarea id="ideaTextoPortada" rows="2" class="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 custom-scroll" placeholder="Ej: ¡No cometas este error!..."></textarea>
+                        </div>
+                        
                     <div class="mb-4 bg-slate-50 p-4 rounded-lg border border-slate-100">
     <label class="block text-sm font-semibold text-gray-600 mb-1">Enlace de Carpeta de Recursos</label>
     <div class="text-[10px] text-indigo-500 mb-3 leading-tight">
@@ -2562,6 +2593,7 @@ function guardarIdea() {
                 guion: document.getElementById('ideaGuion').value,
                 copy: document.getElementById('ideaCopy').value,
                 hashtags: document.getElementById('ideaHashtags').value,
+                textoPortada: document.getElementById('ideaTextoPortada') ? document.getElementById('ideaTextoPortada').value : '',
                 enlaceCarpeta: document.getElementById('ideaEnlaceCarpeta').value,
                 observaciones: document.getElementById('ideaObservaciones').value
             };
@@ -2616,6 +2648,7 @@ function guardarIdea() {
             document.getElementById('ideaGuion').value = idea.guion || '';
             document.getElementById('ideaCopy').value = idea.copy || '';
             document.getElementById('ideaHashtags').value = idea.hashtags || '';
+            if(document.getElementById('ideaTextoPortada')) document.getElementById('ideaTextoPortada').value = idea.textoPortada || '';
             document.getElementById('ideaEnlaceCarpeta').value = idea.enlaceCarpeta || '';
             document.getElementById('ideaObservaciones').value = idea.observaciones || '';
             
@@ -2637,7 +2670,7 @@ function guardarIdea() {
             editandoId = null;
             document.getElementById('btnGuardarGuion').innerText = "Guardar Guión o Entregable";
             document.getElementById('btnCancelarEdicion').classList.add('hidden');
-            ['ideaTitulo','ideaGuion','ideaCopy','ideaHashtags','ideaFecha','ideaHora', 'ideaHook', 'ideaEnlaces', 'ideaGuionBase', 'ideaStarFormat', 'ideaEnlaceCarpeta', 'ideaObservaciones', 'ideaAspecto', 'ideaEntregable', 'ideaAssetType', 'ideaVisualQuality', 'ideaVisualFormat'].forEach(id => document.getElementById(id).value = '');
+            ['ideaTitulo','ideaGuion','ideaCopy','ideaHashtags','ideaTextoPortada','ideaFecha','ideaHora', 'ideaHook', 'ideaEnlaces', 'ideaGuionBase', 'ideaStarFormat', 'ideaEnlaceCarpeta', 'ideaObservaciones', 'ideaAspecto', 'ideaEntregable', 'ideaAssetType', 'ideaVisualQuality', 'ideaVisualFormat'].forEach(id => document.getElementById(id).value = '');
             updateLivePrompt();
             document.getElementById('btnSyncEnlace').classList.add('hidden');
         }
@@ -3295,6 +3328,13 @@ let basePrompt = "";
                         <div class="p-4 bg-gray-50 rounded-lg text-sm font-mono text-indigo-600 border border-gray-100 tracking-wide">${idea.hashtags}</div>
                     </div>
                     ` : ''}
+                  
+                    ${idea.textoPortada ? `
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 mt-3">Texto de Miniatura / Portada</label>
+                        <div class="p-4 bg-gray-50 rounded-lg text-sm font-bold text-slate-800 border border-gray-100">${idea.textoPortada}</div>
+                    </div>
+                    ` : ''}
                     
                    ${idea.enlaceCarpeta ? `
                     <div>
@@ -3362,6 +3402,11 @@ ${idea.copy || 'N/A'}`;
         if (idea.hashtags && idea.hashtags.trim() !== '') {
             text += `\n\n🏷️ HASHTAGS:\n${idea.hashtags}`;
         }
+    
+    if (idea.textoPortada && idea.textoPortada.trim() !== '') {
+            text += `\n\n📸 TEXTO PARA MINIATURA / PORTADA:\n${idea.textoPortada}`;
+        }
+    
         if (idea.enlaces && idea.enlaces.trim() !== '') {
             text += `\n\n🔗 ENLACES DE REFERENCIA:\n${idea.enlaces}`;
         }
@@ -3431,6 +3476,12 @@ ${idea.copy || 'N/A'}`;
         if (idea.hashtags && idea.hashtags.trim() !== '') {
             html += `<h2>🏷️ HASHTAGS:</h2><p>${idea.hashtags}</p>`;
         }
+
+       if (idea.textoPortada && idea.textoPortada.trim() !== '') {
+       let portadaHtml = idea.textoPortada.replace(/\n/g, '<br>');
+       html += `<h2>📸 TEXTO PARA MINIATURA / PORTADA:</h2><p class="strong">${portadaHtml}</p>`;
+        }
+            
         if (idea.enlaces && idea.enlaces.trim() !== '') {
             let enlacesHtml = idea.enlaces.replace(/\n/g, '<br>');
             html += `<h2>🔗 ENLACES DE REFERENCIA:</h2><p>${enlacesHtml}</p>`;
