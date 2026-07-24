@@ -1591,9 +1591,9 @@ window.aplicarAuditoriaTabla = () => {
                             </div>
                         
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-semibold text-gray-600 mb-1">Descripción (Intereses, hobbies, características)</label>
-                                <p class="text-xs text-gray-500 mb-2">Describe tus talentos y características personales. Esta información humanizará tu estrategia y se integrará en el prompt de la IA.</p>
-                                <textarea id="descCreador" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Soy un creador que le encanta tocar la guitarra, soy fan de la ciencia ficción, y disfruto el diseño digital..." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll"></textarea>
+                                <label class="block text-sm font-semibold text-gray-600 mb-1">Descripción y Perfil Creativo (intereses, hobbies, características, inspiración)</label>
+                                <p class="text-xs text-gray-500 mb-2">Describe tu marca y comparte tus intereses, hobbies, talentos, valores y características personales, así como los creadores de contenido, marcas o referentes que te inspiran. Esta información ayudará a humanizar tu estrategia y se integrará en el prompt de la IA para generar contenido más auténtico y alineado con tu identidad.</p>
+                                <textarea id="descCreador" onblur="saveStrategyExtras()" rows="2" placeholder="Ej. Soy un creador de contenido especializado en divulgación científica. Me apasiona tocar la guitarra, la ciencia ficción y el diseño digital. Soy una persona curiosa, analítica y con buen sentido del humor. Me inspiran creadores como Aaron Mercury por su forma de conectar con la audiencia y combinar entretenimiento con storytelling." class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none custom-scroll"></textarea>
                             </div>
                         </div>
 
@@ -1896,29 +1896,44 @@ window.aplicarAuditoriaTabla = () => {
                                 </select>
                             </div>
                             
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-600 mb-2">Tipo de Contenido</label>
-                                <select id="ideaTipo" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
-                                    <option value="Divulgación">Divulgación</option>
-                                    <option value="Opiniones">Opiniones</option>
-                                    <option value="Tutoriales">Tutoriales</option>
-                                    <option value="POV">POV</option>
-                                    <option value="Bailes/Trends">Bailes/Trends</option>
-                                    <option value="Videoreeacciones">Videoreeacciones</option>
-                                    <option value="Videoblogs">Videoblogs</option>
-                                    <option value="Visitas a lugares">Visitas a lugares</option>
-                                    <option value="Recomendaciones">Recomendaciones</option>
-                                    <option value="Misterio">Misterio</option>
-                                    <option value="Viajes">Viajes</option>
-                                    <option value="Storytime">Storytime</option>
-                                    <option value="Trivias">Trivias</option>
-                                    <option value="Dinámicas">Dinámicas</option>
-                                    <option value="Entrevistas">Entrevistas</option>
-                                    <option value="Gameplays">Gameplays</option>
-                                    <option value="GRWM">GRWM</option>
-                                    <option value="Actuación">Actuación</option>
-                                </select>
-                            </div>
+             <div>
+    <label class="block text-sm font-semibold text-gray-600 mb-2">Tipo de Contenido</label>
+    <select id="ideaTipo" onchange="updateLivePrompt()" class="w-full p-3 border rounded-lg outline-none">
+        <option value="Storytelling">Storytelling</option>
+        <option value="Divulgación">Divulgación</option>
+        <option value="Opiniones">Opiniones</option>
+        <option value="Tutoriales">Tutoriales</option>
+        <option value="POV">POV</option>
+        <option value="Bailes/Trends">Bailes/Trends</option>
+        <option value="Videoreeacciones">Videoreeacciones</option>
+        <option value="Videoblogs">Videoblogs</option>
+        <option value="Visitas a lugares">Visitas a lugares</option>
+        <option value="Recomendaciones">Recomendaciones</option>
+        <option value="Misterio">Misterio</option>
+        <option value="Viajes">Viajes</option>
+        <option value="Storytime">Storytime</option>
+        <option value="Trivias">Trivias</option>
+        <option value="Dinámicas">Dinámicas</option>
+        <option value="Entrevistas">Entrevistas</option>
+        <option value="Gameplays">Gameplays</option>
+        <option value="GRWM">GRWM</option>
+        <option value="Actuación">Actuación</option>
+        <option value="Polémicas / Salseo / Unpopular Opinions">Polémicas / Salseo / Unpopular Opinions</option>
+        <option value="Retos / Challenges">Retos / Challenges</option>
+        <option value="Unboxing / Hauls">Unboxing / Hauls</option>
+        <option value="Coaching / Motivacional">Coaching / Motivacional</option>
+        <option value="Venta Directa / Promocional">Venta Directa / Promocional</option>
+        <option value="Casos de Éxito / Testimonios">Casos de Éxito / Testimonios</option>
+        <option value="Edits">Edits</option>
+        <option value="Detrás de Cámaras (BTS)">Detrás de Cámaras (Behind the Scenes / BTS)</option>
+        <option value="Clips de Podcast">Clips de Podcast</option>
+        <option value="Streams / Transmisiones en Vivo">Streams / Transmisiones en Vivo</option>
+        <option value="ASMR">ASMR</option>
+        <option value="Webinars / Masterclasses">Webinars / Masterclasses</option>
+        <option value="Q&A (Preguntas y Respuestas / AMA)">Q&A (Preguntas y Respuestas / AMA)</option>
+        <option value="Sorteos / Giveaways">Sorteos / Giveaways</option>
+    </select>
+</div>
                             
                             <div>
                                 <label class="block text-sm font-semibold text-gray-600 mb-2">Objetivo del Contenido</label>
